@@ -11,6 +11,7 @@ import {
   Account,
   BasePool,
   BasePoolKind,
+  DelegationNft,
   GlobalState,
   Session,
   StakePool,
@@ -21,15 +22,10 @@ import {
   WorkerState,
 } from './model'
 import serializeEvents from './serializeEvents'
-import {
-  combineIds,
-  createPool,
-  getAccount,
-  getStakePool,
-  toMap,
-  updateWorkerShare,
-  updateWorkerSMinAndSMax,
-} from './utils/common'
+import {createPool} from './utils/basePool'
+import {combineIds, getAccount, getStakePool, toMap} from './utils/common'
+import {queryIdentities} from './utils/identity'
+import {updateWorkerShares, updateWorkerSMinAndSMax} from './utils/worker'
 
 const processor = new SubstrateBatchProcessor()
   .setDataSource({
@@ -93,11 +89,12 @@ processor.run(new TypeormDatabase(), async (ctx) => {
 
   const identityUpdatedAccountIdSet = new Set<string>()
   const basePoolIdSet = new Set<string>()
-  const basePoolCIdSet = new Set<number>()
+  const basePoolCidSet = new Set<number>()
   const stakePoolIdSet = new Set<string>()
   const vaultIdSet = new Set<string>()
   const workerIdSet = new Set<string>()
   const sessionIdSet = new Set<string>()
+  const delegationNftIdSet = new Set<string>()
   const stakePoolWhitelistIdSet = new Set<string>()
 
   for (const {name, args} of events) {
@@ -161,7 +158,11 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     }
 
     if (name === 'RmrkCore.NftMinted') {
-      basePoolCIdSet.add(args.collectionId)
+      basePoolCidSet.add(args.collectionId)
+    }
+
+    if (name === 'RmrkCore.NFTBurned' || name === 'RmrkCore.PropertySet') {
+      delegationNftIdSet.add(combineIds(args.collectionId, args.nftId))
     }
 
     if (
@@ -182,36 +183,42 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   const accountMap: Map<string, Account> = await ctx.store
     .find(Account)
     .then(toMap)
-  const basePoolMap: Map<string, BasePool> = await ctx.store
-    .find(BasePool, {
-      where: [{id: In([...basePoolIdSet])}, {cid: In([...basePoolCIdSet])}],
-    })
-    .then(toMap)
-  const stakePoolMap: Map<string, StakePool> = await ctx.store
+  const basePools = await ctx.store.find(BasePool, {
+    where: [{id: In([...basePoolIdSet])}, {cid: In([...basePoolCidSet])}],
+  })
+  const basePoolMap = toMap(basePools)
+  const basePoolCidMap = toMap(basePools, 'cid')
+  const stakePoolMap = await ctx.store
     .find(StakePool, {
       where: {id: In([...stakePoolIdSet])},
       relations: {basePool: true},
     })
     .then(toMap)
-  const vaultMap: Map<string, Vault> = await ctx.store
+  const vaultMap = await ctx.store
     .find(Vault, {
       where: {id: In([...vaultIdSet])},
       relations: {basePool: true},
     })
     .then(toMap)
-  const workerMap: Map<string, Worker> = await ctx.store
+  const workerMap = await ctx.store
     .find(Worker, {
       where: {id: In([...workerIdSet])},
       relations: {stakePool: true, session: true},
     })
     .then(toMap)
-  const sessionMap: Map<string, Session> = await ctx.store
+  const sessionMap = await ctx.store
     .find(Session, {
       where: {id: In([...sessionIdSet])},
       relations: {stakePool: true, worker: true},
     })
     .then(toMap)
-  const stakePoolWhitelistMap: Map<string, StakePoolWhitelist> = await ctx.store
+  const delegationNftMap = await ctx.store
+    .find(DelegationNft, {
+      where: {id: In([...delegationNftIdSet])},
+      relations: {basePool: true, owner: true},
+    })
+    .then(toMap)
+  const stakePoolWhitelistMap = await ctx.store
     .find(StakePoolWhitelist, {
       where: {id: In([...stakePoolWhitelistIdSet])},
       relations: {stakePool: true, account: true},
@@ -222,11 +229,11 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     const blockTime = new Date(block.timestamp)
     switch (name) {
       case 'PhalaStakePoolv2.PoolCreated': {
-        const {pid, owner} = args
+        const {pid, owner, cid} = args
         const ownerAccount = getAccount(accountMap, owner)
         const {stakePool, basePool} = createPool(BasePoolKind.StakePool, {
           pid,
-          cid: 1,
+          cid,
           owner: ownerAccount,
         })
         basePoolMap.set(pid, basePool)
@@ -288,7 +295,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const session = sessionMap.get(worker.session.id)
         assert(session)
         session.stake = amount
-        // stakePool.freeStake = stakePool.freeStake.minus(amount)
+        stakePool.freeStake = stakePool.freeStake.minus(amount)
         break
       }
       case 'PhalaStakePoolv2.RewardReceived': {
@@ -303,7 +310,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         // const stakePoolStake = stakePoolStakes.get(stakePoolStakeId)
         assert(basePool)
         assert(stakePool)
-        // stakePool.freeStake = stakePool.freeStake.plus(amount)
+        stakePool.freeStake = stakePool.freeStake.plus(amount)
         basePool.totalShares = basePool.totalShares.plus(shares)
         basePool.totalValue = basePool.totalValue.plus(amount)
         // stakePool.aprBase = stakePool.miningWorkerShare
@@ -455,7 +462,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         assert(worker)
         assert(session?.worker.id === workerId)
         worker.session = null
-        worker.share = null
+        worker.shares = null
         session.isBound = false
         break
       }
@@ -469,18 +476,18 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         assert(session.worker)
         const worker = workerMap.get(session.worker.id)
         assert(worker)
-        assert(worker.share)
+        assert(worker.shares)
         const stakePool = getStakePool(stakePoolMap, session.stakePool)
-        const prevShare = worker.share
-        updateWorkerShare(worker, session)
+        const prevShares = worker.shares
+        updateWorkerShares(worker, session)
         if (session.state === WorkerState.WorkerIdle) {
-          globalState.idleWorkerShare = globalState.idleWorkerShare
-            .minus(prevShare)
-            .plus(worker.share)
-          stakePool.idleWorkerShare = stakePool.idleWorkerShare
-            .minus(prevShare)
-            .plus(worker.share)
-          // stakePool.aprBase = stakePool.idleWorkerShare
+          globalState.idleWorkerShares = globalState.idleWorkerShares
+            .minus(prevShares)
+            .plus(worker.shares)
+          stakePool.idleWorkerShares = stakePool.idleWorkerShares
+            .minus(prevShares)
+            .plus(worker.shares)
+          // stakePool.aprBase = stakePool.idleWorkerShares
           //   .times(BigDecimal(1).minus(stakePool.commission))
           //   .div(stakePool.totalStake)
         }
@@ -500,14 +507,14 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         session.state = WorkerState.WorkerIdle
         const worker = workerMap.get(session.worker.id)
         assert(worker)
-        updateWorkerShare(worker, session)
-        globalState.idleWorkerShare = globalState.idleWorkerShare.plus(
-          worker.share
+        updateWorkerShares(worker, session)
+        globalState.idleWorkerShares = globalState.idleWorkerShares.plus(
+          worker.shares
         )
-        // stakePool.idleWorkerShare = stakePool.idleWorkerShare.plus(
-        //   worker.share
-        // )
-        // stakePool.aprBase = stakePool.idleWorkerShare
+        stakePool.idleWorkerShares = stakePool.idleWorkerShares.plus(
+          worker.shares
+        )
+        // stakePool.aprBase = stakePool.idleWorkerShares
         //   .times(BigDecimal(1).minus(stakePool.commission))
         //   .div(stakePool.totalStake)
         break
@@ -521,22 +528,22 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const stakePool = getStakePool(stakePoolMap, session.stakePool)
         const worker = workerMap.get(session.worker.id)
         assert(worker)
-        assert(worker.share)
+        assert(worker.shares)
         if (session.state === WorkerState.WorkerIdle) {
-          globalState.idleWorkerShare = globalState.idleWorkerShare.minus(
-            worker.share
+          globalState.idleWorkerShares = globalState.idleWorkerShares.minus(
+            worker.shares
           )
-          stakePool.idleWorkerShare = stakePool.idleWorkerShare.minus(
-            worker.share
+          stakePool.idleWorkerShares = stakePool.idleWorkerShares.minus(
+            worker.shares
           )
-          // stakePool.aprBase = stakePool.idleWorkerShare
+          // stakePool.aprBase = stakePool.idleWorkerShares
           //   .times(BigDecimal(1).minus(stakePool.commission))
           //   .div(stakePool.totalStake)
           stakePool.idleWorkerCount--
         }
         session.state = WorkerState.WorkerCoolingDown
         session.coolingDownStartTime = blockTime
-        // stakePool.releasingStake = stakePool.releasingStake.plus(session.stake)
+        stakePool.releasingStake = stakePool.releasingStake.plus(session.stake)
         break
       }
       case 'PhalaComputation.WorkerReclaimed': {
@@ -559,14 +566,14 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         assert(session.worker)
         const worker = workerMap.get(session.worker.id)
         assert(worker)
-        assert(worker.share)
-        globalState.idleWorkerShare = globalState.idleWorkerShare.minus(
-          worker.share
+        assert(worker.shares)
+        globalState.idleWorkerShares = globalState.idleWorkerShares.minus(
+          worker.shares
         )
-        stakePool.idleWorkerShare = stakePool.idleWorkerShare.minus(
-          worker.share
+        stakePool.idleWorkerShares = stakePool.idleWorkerShares.minus(
+          worker.shares
         )
-        // stakePool.aprBase = stakePool.idleWorkerShare
+        // stakePool.aprBase = stakePool.idleWorkerShares
         //   .times(BigDecimal(1).minus(stakePool.commission))
         //   .div(stakePool.totalStake)
         break
@@ -582,12 +589,14 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         assert(session.worker)
         const worker = workerMap.get(session.worker.id)
         assert(worker)
-        assert(worker.share)
-        globalState.idleWorkerShare = globalState.idleWorkerShare.plus(
-          worker.share
+        assert(worker.shares)
+        globalState.idleWorkerShares = globalState.idleWorkerShares.plus(
+          worker.shares
         )
-        stakePool.idleWorkerShare = stakePool.idleWorkerShare.plus(worker.share)
-        // stakePool.aprBase = stakePool.idleWorkerShare
+        stakePool.idleWorkerShares = stakePool.idleWorkerShares.plus(
+          worker.shares
+        )
+        // stakePool.aprBase = stakePool.idleWorkerShares
         //   .times(BigDecimal(1).minus(stakePool.commission))
         //   .div(stakePool.totalStake)
         break
@@ -600,19 +609,19 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         assert(session.worker)
         const worker = workerMap.get(session.worker.id)
         assert(worker)
-        assert(worker.share)
-        const prevShare = worker.share
-        updateWorkerShare(worker, session)
+        assert(worker.shares)
+        const prevShares = worker.shares
+        updateWorkerShares(worker, session)
         if (session.state === WorkerState.WorkerIdle) {
-          globalState.idleWorkerShare = globalState.idleWorkerShare
-            .minus(prevShare)
-            .plus(worker.share)
+          globalState.idleWorkerShares = globalState.idleWorkerShares
+            .minus(prevShares)
+            .plus(worker.shares)
           assert(session.stakePool)
           const stakePool = getStakePool(stakePoolMap, session.stakePool)
-          stakePool.idleWorkerShare = stakePool.idleWorkerShare
-            .minus(prevShare)
-            .plus(worker.share)
-          // stakePool.aprBase = stakePool.idleWorkerShare
+          stakePool.idleWorkerShares = stakePool.idleWorkerShares
+            .minus(prevShares)
+            .plus(worker.shares)
+          // stakePool.aprBase = stakePool.idleWorkerShares
           //   .times(BigDecimal(1).minus(stakePool.commission))
           //   .div(stakePool.totalStake)
         }
@@ -638,7 +647,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         if (worker.session != null) {
           const session = sessionMap.get(worker.session.id)
           assert(session)
-          updateWorkerShare(worker, session)
+          updateWorkerShares(worker, session)
         }
         break
       }
@@ -652,25 +661,46 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'RmrkCore.NftMinted': {
         const {owner, collectionId, nftId} = args
+        const ownerAccount = getAccount(accountMap, owner)
+        const basePool = basePoolCidMap.get(collectionId)
+        // MEMO: not a delegation NFT
+        if (basePool == null) {
+          break
+        }
+        const id = combineIds(collectionId, nftId)
+        const delegationNft = new DelegationNft({
+          id,
+          owner: ownerAccount,
+          basePool,
+          collectionId,
+          nftId,
+          shares: BigDecimal(0),
+        })
+        delegationNftMap.set(id, delegationNft)
+        await ctx.store.insert(delegationNft)
         break
       }
       case 'RmrkCore.PropertySet': {
+        // const {collectionId, nftId, key, value} = args
+        // const id = combineIds(collectionId, nftId)
+        // const delegationNft = delegationNftMap.get(id)
         break
       }
       case 'RmrkCore.NFTBurned': {
-        break
-      }
-      case 'Identity.IdentitySet': {
-        break
-      }
-      case 'Identity.IdentityCleared': {
-        break
-      }
-      case 'Identity.JudgementGiven': {
+        const {collectionId, nftId} = args
+        const id = combineIds(collectionId, nftId)
+        const delegationNft = delegationNftMap.get(id)
+        if (delegationNft != null) {
+          delegationNftMap.delete(id)
+          await ctx.store.remove(delegationNft)
+        }
         break
       }
     }
   }
+
+  // MEMO: identity events don't provide specific args, so query it directly
+  await queryIdentities(ctx, [...identityUpdatedAccountIdSet], accountMap)
 
   for (const x of [
     globalState,
@@ -680,7 +710,13 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     vaultMap,
     sessionMap,
     workerMap,
+    delegationNftMap,
+    stakePoolWhitelistMap,
   ]) {
-    await ctx.store.save(x instanceof Map ? [...x.values()] : x)
+    if (x instanceof Map) {
+      await ctx.store.save([...x.values()])
+    } else {
+      await ctx.store.save(x)
+    }
   }
 })

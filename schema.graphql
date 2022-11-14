@@ -10,7 +10,7 @@ type GlobalState @entity {
   "in milliseconds during last 500 blocks"
   averageBlockTime: Int!
   "for apr calculation"
-  idleWorkerShare: BigDecimal!
+  idleWorkerShares: BigDecimal!
 }
 
 type TokenomicParameters @entity {
@@ -71,6 +71,7 @@ type Vault @entity {
   basePool: BasePool! @unique
   "decimal percentage, 1 means 100%"
   commission: BigDecimal!
+  accountId: String!
 }
 
 type StakePool @entity {
@@ -83,9 +84,11 @@ type StakePool @entity {
   capacity: BigDecimal
   "null means infinite"
   delegable: BigDecimal
+  freeStake: BigDecimal!
+  releasingStake: BigDecimal!
   workerCount: Int!
   idleWorkerCount: Int!
-  idleWorkerShare: BigDecimal!
+  idleWorkerShares: BigDecimal!
   whitelistEnabled: Boolean!
 }
 
@@ -95,7 +98,8 @@ type DelegationNft @entity {
   owner: Account!
   collectionId: Int!
   nftId: Int!
-  value: BigDecimal!
+  basePool: BasePool!
+  shares: BigDecimal!
 }
 
 type StakePoolWhitelist @entity {
@@ -115,7 +119,7 @@ type Worker @entity {
   initialScore: Int
   sMin: BigDecimal
   sMax: BigDecimal
-  share: BigDecimal
+  shares: BigDecimal
 }
 
 enum WorkerState {

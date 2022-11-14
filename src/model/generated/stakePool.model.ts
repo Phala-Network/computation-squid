@@ -38,6 +38,12 @@ export class StakePool {
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: true})
   delegable!: BigDecimal | undefined | null
 
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  freeStake!: BigDecimal
+
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  releasingStake!: BigDecimal
+
   @Column_("int4", {nullable: false})
   workerCount!: number
 
@@ -45,7 +51,7 @@ export class StakePool {
   idleWorkerCount!: number
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  idleWorkerShare!: BigDecimal
+  idleWorkerShares!: BigDecimal
 
   @Column_("bool", {nullable: false})
   whitelistEnabled!: boolean

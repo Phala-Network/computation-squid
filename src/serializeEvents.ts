@@ -42,7 +42,7 @@ import {
   RmrkCoreNftMintedEvent,
   RmrkCorePropertySetEvent,
 } from './types/events'
-import {encodeAddress, fromBits, toBalance} from './utils/converters'
+import {encodeAddress, fromBits, toBalance} from './utils/converter'
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const serializeEvent = (

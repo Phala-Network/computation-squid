@@ -37,5 +37,5 @@ export class Worker {
   sMax!: BigDecimal | undefined | null
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: true})
-  share!: BigDecimal | undefined | null
+  shares!: BigDecimal | undefined | null
 }

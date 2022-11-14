@@ -25,4 +25,7 @@ export class Vault {
    */
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
   commission!: BigDecimal
+
+  @Column_("text", {nullable: false})
+  accountId!: string
 }

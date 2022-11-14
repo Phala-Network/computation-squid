@@ -42,5 +42,5 @@ export class GlobalState {
    * for apr calculation
    */
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  idleWorkerShare!: BigDecimal
+  idleWorkerShares!: BigDecimal
 }
