@@ -1,7 +1,56 @@
 {
   "outDir": "src/types",
   "specVersions": "http://51.210.116.29:4444/graphql",
-  "events": [],
+  "events": [
+    "PhalaStakePoolv2.PoolCreated",
+    "PhalaStakePoolv2.PoolCommissionSet",
+    "PhalaStakePoolv2.PoolCapacitySet",
+    "PhalaStakePoolv2.PoolWorkerAdded",
+    "PhalaStakePoolv2.PoolWorkerRemoved",
+    "PhalaStakePoolv2.WorkingStarted",
+    "PhalaStakePoolv2.RewardReceived",
+    "PhalaStakePoolv2.Contribution",
+    "PhalaStakePoolv2.Withdrawal",
+    "PhalaStakePoolv2.WithdrawalQueued",
+    "PhalaStakePoolv2.WorkerReclaimed",
+    "PhalaStakePoolv2.PoolWhitelistCreated",
+    "PhalaStakePoolv2.PoolWhitelistDeleted",
+    "PhalaStakePoolv2.PoolWhitelistStakerAdded",
+    "PhalaStakePoolv2.PoolWhitelistStakerRemoved",
+
+    "PhalaVault.PoolCreated",
+    "PhalaVault.VaultCommissionSet",
+    "PhalaVault.OwnerSharesClaimed",
+    "PhalaVault.OwnerSharesGained",
+    "PhalaVault.Contribution",
+
+    "PhalaBasePool.WithdrawalQueued",
+    "PhalaBasePool.Withdrawal",
+
+    "PhalaComputation.WorkerStarted",
+    "PhalaComputation.WorkerStopped",
+    "PhalaComputation.WorkerReclaimed",
+    "PhalaComputation.SessionBound",
+    "PhalaComputation.SessionUnbound",
+    "PhalaComputation.WorkerEnterUnresponsive",
+    "PhalaComputation.WorkerExitUnresponsive",
+    "PhalaComputation.SessionSettled",
+    "PhalaComputation.BenchmarkUpdated",
+    "PhalaComputation.TokenomicParametersChanged",
+
+    "PhalaRegistry.WorkerAdded",
+    "PhalaRegistry.WorkerUpdated",
+    "PhalaRegistry.InitialScoreSet",
+
+    "RmrkCore.CollectionCreated",
+    "RmrkCore.NftMinted",
+    "RmrkCore.PropertySet",
+    "RmrkCore.NFTBurned",
+
+    "Identity.IdentitySet",
+    "Identity.IdentityCleared",
+    "Identity.JudgementGiven"
+  ],
   "calls": [],
-  "storage": []
+  "storage": ["Identity.IdentityOf", "PhalaComputation.TokenomicParameters"]
 }

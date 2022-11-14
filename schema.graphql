@@ -1,4 +1,142 @@
-type Account @entity {
-  "Account address"
+type GlobalState @entity {
+  "constant 0"
   id: ID!
+  height: Int!
+  totalStake: BigDecimal!
+  "for average block time calculation"
+  lastRecordedBlockHeight: Int!
+  "for average block time calculation"
+  lastRecordedBlockTime: DateTime!
+  "in milliseconds during last 500 blocks"
+  averageBlockTime: Int!
+  "for apr calculation"
+  idleWorkerShare: BigDecimal!
+}
+
+type TokenomicParameters @entity {
+  "constant 0"
+  id: ID!
+  phaRate: BigDecimal!
+  budgetPerBlock: BigDecimal!
+  vMax: BigDecimal!
+  treasuryRatio: BigDecimal!
+  re: BigDecimal!
+  k: BigDecimal!
+}
+
+enum IdentityLevel {
+  Unknown
+  FeePaid
+  Reasonable
+  KnownGood
+  OutOfDate
+  LowQuality
+  Erroneous
+}
+
+type Account @entity {
+  "account address"
+  id: ID!
+  identityDisplay: String
+  identityLevel: IdentityLevel!
+  totalStakePoolValue: BigDecimal!
+}
+
+enum BasePoolKind {
+  Vault
+  StakePool
+}
+
+type BasePool @entity {
+  "pid"
+  id: ID!
+  "numeric pid for sorting"
+  pid: BigInt!
+  "NFT collection id"
+  cid: Int!
+  owner: Account!
+  kind: BasePoolKind!
+  vault: Vault @derivedFrom(field: "basePool")
+  stakePool: StakePool @derivedFrom(field: "basePool")
+  totalShares: BigDecimal!
+  totalValue: BigDecimal!
+  totalWithdrawalValue: BigDecimal!
+  "any string, usually a stringified json"
+  description: String
+}
+
+type Vault @entity {
+  "pid"
+  id: ID!
+  basePool: BasePool! @unique
+  "decimal percentage, 1 means 100%"
+  commission: BigDecimal!
+}
+
+type StakePool @entity {
+  "pid"
+  id: ID!
+  basePool: BasePool! @unique
+  "decimal percentage, 1 means 100%"
+  commission: BigDecimal!
+  "null means infinite"
+  capacity: BigDecimal
+  "null means infinite"
+  delegable: BigDecimal
+  workerCount: Int!
+  idleWorkerCount: Int!
+  idleWorkerShare: BigDecimal!
+  whitelistEnabled: Boolean!
+}
+
+type DelegationNft @entity {
+  "${collectionId}-${nftId}"
+  id: ID!
+  owner: Account!
+  collectionId: Int!
+  nftId: Int!
+  value: BigDecimal!
+}
+
+type StakePoolWhitelist @entity {
+  "${stakePoolId}-${accountId}"
+  id: ID!
+  account: Account!
+  stakePool: StakePool!
+  createTime: DateTime!
+}
+
+type Worker @entity {
+  "worker public key"
+  id: ID!
+  stakePool: StakePool
+  session: Session
+  confidenceLevel: Int!
+  initialScore: Int
+  sMin: BigDecimal
+  sMax: BigDecimal
+  share: BigDecimal
+}
+
+enum WorkerState {
+  Ready
+  WorkerIdle
+  WorkerUnresponsive
+  WorkerCoolingDown
+}
+
+type Session @entity {
+  "session account address"
+  id: ID!
+  isBound: Boolean!
+  stakePool: StakePool!
+  worker: Worker!
+  stake: BigDecimal!
+  state: WorkerState!
+  v: BigDecimal!
+  ve: BigDecimal!
+  pInit: Int!
+  pInstant: Int!
+  totalReward: BigDecimal!
+  coolingDownStartTime: DateTime
 }
