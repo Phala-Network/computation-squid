@@ -1,5 +1,5 @@
 import {BigDecimal} from '@subsquid/big-decimal'
-import {toHex} from '@subsquid/substrate-processor'
+import {SubstrateBlock, toHex} from '@subsquid/substrate-processor'
 import {Ctx} from './processor'
 import {
   IdentityIdentityClearedEvent,
@@ -54,10 +54,7 @@ const serializeEvent = (
     case 'PhalaStakePoolv2.PoolCreated': {
       const e = new PhalaStakePoolv2PoolCreatedEvent(ctx, item.event)
       const {owner, pid, cid} = e.asV1192
-      return {
-        name,
-        args: {pid: String(pid), owner: encodeAddress(owner), cid},
-      }
+      return {name, args: {pid: String(pid), owner: encodeAddress(owner), cid}}
     }
     case 'PhalaStakePoolv2.PoolCommissionSet': {
       const e = new PhalaStakePoolv2PoolCommissionSetEvent(ctx, item.event)
@@ -401,14 +398,18 @@ const serializeEvent = (
 
 const serializeEvents = (
   ctx: Ctx
-): Array<Exclude<ReturnType<typeof serializeEvent>, undefined>> => {
+): Array<
+  Exclude<ReturnType<typeof serializeEvent>, undefined> & {
+    block: SubstrateBlock
+  }
+> => {
   const serializedEvents = []
 
   for (const block of ctx.blocks) {
     for (const item of block.items) {
       const serialized = serializeEvent(ctx, item)
       if (serialized != null) {
-        serializedEvents.push(serialized)
+        serializedEvents.push({...serialized, block: block.header})
       }
     }
   }

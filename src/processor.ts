@@ -14,6 +14,7 @@ import {
   GlobalState,
   Session,
   StakePool,
+  StakePoolWhitelist,
   TokenomicParameters,
   Vault,
   Worker,
@@ -90,13 +91,14 @@ export type Ctx = BatchContext<Store, Item>
 processor.run(new TypeormDatabase(), async (ctx) => {
   const events = serializeEvents(ctx)
 
-  const identityUpdatedAccountIds = new Set<string>()
-  const basePoolIds = new Set<string>()
-  const stakePoolIds = new Set<string>()
-  const vaultIds = new Set<string>()
-  const workerIds = new Set<string>()
-  const sessionIds = new Set<string>()
-  const stakePoolWhitelistIds = new Set<string>()
+  const identityUpdatedAccountIdSet = new Set<string>()
+  const basePoolIdSet = new Set<string>()
+  const basePoolCIdSet = new Set<number>()
+  const stakePoolIdSet = new Set<string>()
+  const vaultIdSet = new Set<string>()
+  const workerIdSet = new Set<string>()
+  const sessionIdSet = new Set<string>()
+  const stakePoolWhitelistIdSet = new Set<string>()
 
   for (const {name, args} of events) {
     if (
@@ -114,7 +116,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       name === 'PhalaStakePoolv2.PoolWhitelistStakerAdded' ||
       name === 'PhalaStakePoolv2.PoolWhitelistStakerRemoved'
     ) {
-      stakePoolIds.add(args.pid)
+      stakePoolIdSet.add(args.pid)
     }
 
     if (
@@ -125,7 +127,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       name === 'PhalaBasePool.Withdrawal' ||
       name === 'PhalaBasePool.WithdrawalQueued'
     ) {
-      vaultIds.add(args.pid)
+      vaultIdSet.add(args.pid)
     }
 
     if (
@@ -137,7 +139,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       name === 'PhalaRegistry.InitialScoreSet' ||
       name === 'PhalaRegistry.WorkerUpdated'
     ) {
-      workerIds.add(args.workerId)
+      workerIdSet.add(args.workerId)
     }
 
     if (
@@ -151,11 +153,15 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       name === 'PhalaComputation.WorkerExitUnresponsive' ||
       name === 'PhalaComputation.BenchmarkUpdated'
     ) {
-      sessionIds.add(args.sessionId)
+      sessionIdSet.add(args.sessionId)
     }
 
     if (name === 'PhalaStakePoolv2.PoolWhitelistStakerRemoved') {
-      stakePoolWhitelistIds.add(combineIds(args.pid, args.accountId))
+      stakePoolWhitelistIdSet.add(combineIds(args.pid, args.accountId))
+    }
+
+    if (name === 'RmrkCore.NftMinted') {
+      basePoolCIdSet.add(args.collectionId)
     }
 
     if (
@@ -163,7 +169,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       name === 'Identity.IdentityCleared' ||
       name === 'Identity.JudgementGiven'
     ) {
-      identityUpdatedAccountIds.add(args.accountId)
+      identityUpdatedAccountIdSet.add(args.accountId)
     }
   }
   const globalState = await ctx.store.findOneOrFail(GlobalState, {
@@ -171,55 +177,60 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   })
   const tokenomicParameters = await ctx.store.findOneOrFail(
     TokenomicParameters,
-    {
-      where: {id: '0'},
-    }
+    {where: {id: '0'}}
   )
-  const accounts: Map<string, Account> = await ctx.store
+  const accountMap: Map<string, Account> = await ctx.store
     .find(Account)
     .then(toMap)
-  const basePools: Map<string, BasePool> = await ctx.store
+  const basePoolMap: Map<string, BasePool> = await ctx.store
     .find(BasePool, {
-      where: {id: In([...basePoolIds])},
+      where: [{id: In([...basePoolIdSet])}, {cid: In([...basePoolCIdSet])}],
     })
     .then(toMap)
-  const stakePools: Map<string, StakePool> = await ctx.store
+  const stakePoolMap: Map<string, StakePool> = await ctx.store
     .find(StakePool, {
-      where: {id: In([...stakePoolIds])},
+      where: {id: In([...stakePoolIdSet])},
       relations: {basePool: true},
     })
     .then(toMap)
-  const vaults: Map<string, Vault> = await ctx.store
+  const vaultMap: Map<string, Vault> = await ctx.store
     .find(Vault, {
-      where: {id: In([...vaultIds])},
+      where: {id: In([...vaultIdSet])},
       relations: {basePool: true},
     })
     .then(toMap)
-  const workers: Map<string, Worker> = await ctx.store
+  const workerMap: Map<string, Worker> = await ctx.store
     .find(Worker, {
-      where: {id: In([...workerIds])},
+      where: {id: In([...workerIdSet])},
       relations: {stakePool: true, session: true},
     })
     .then(toMap)
-  const sessions: Map<string, Session> = await ctx.store
+  const sessionMap: Map<string, Session> = await ctx.store
     .find(Session, {
-      where: {id: In([...sessionIds])},
+      where: {id: In([...sessionIdSet])},
       relations: {stakePool: true, worker: true},
     })
     .then(toMap)
+  const stakePoolWhitelistMap: Map<string, StakePoolWhitelist> = await ctx.store
+    .find(StakePoolWhitelist, {
+      where: {id: In([...stakePoolWhitelistIdSet])},
+      relations: {stakePool: true, account: true},
+    })
+    .then(toMap)
 
-  for (const {name, args} of events) {
+  for (const {name, args, block} of events) {
+    const blockTime = new Date(block.timestamp)
     switch (name) {
       case 'PhalaStakePoolv2.PoolCreated': {
         const {pid, owner} = args
-        const ownerAccount = getAccount(accounts, owner)
+        const ownerAccount = getAccount(accountMap, owner)
         const {stakePool, basePool} = createPool(BasePoolKind.StakePool, {
           pid,
           cid: 1,
           owner: ownerAccount,
         })
-        basePools.set(pid, basePool)
-        stakePools.set(pid, stakePool)
+        basePoolMap.set(pid, basePool)
+        stakePoolMap.set(pid, stakePool)
         await ctx.store.save(ownerAccount)
         await ctx.store.insert(basePool)
         await ctx.store.insert(stakePool)
@@ -227,15 +238,15 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaStakePoolv2.PoolCommissionSet': {
         const {pid, commission} = args
-        const stakePool = stakePools.get(pid)
+        const stakePool = stakePoolMap.get(pid)
         assert(stakePool)
         stakePool.commission = commission
         break
       }
       case 'PhalaStakePoolv2.PoolCapacitySet': {
         const {pid, cap} = args
-        const stakePool = stakePools.get(pid)
-        const basePool = basePools.get(pid)
+        const stakePool = stakePoolMap.get(pid)
+        const basePool = basePoolMap.get(pid)
         assert(stakePool)
         assert(basePool)
         stakePool.capacity = cap
@@ -246,11 +257,11 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaStakePoolv2.PoolWorkerAdded': {
         const {pid, workerId} = args
-        const stakePool = stakePools.get(pid)
+        const stakePool = stakePoolMap.get(pid)
         assert(stakePool)
-        const worker = workers.get(workerId)
+        const worker = workerMap.get(workerId)
         assert(worker?.session) // MEMO: SessionBound happens before PoolWorkerAdded
-        const session = sessions.get(worker.session.id)
+        const session = sessionMap.get(worker.session.id)
         assert(session)
         stakePool.workerCount++
         worker.stakePool = stakePool
@@ -259,8 +270,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaStakePoolv2.PoolWorkerRemoved': {
         const {pid, workerId} = args
-        const worker = workers.get(workerId)
-        const stakePool = stakePools.get(pid)
+        const worker = workerMap.get(workerId)
+        const stakePool = stakePoolMap.get(pid)
         assert(stakePool)
         assert(worker?.stakePool?.id === pid)
         worker.stakePool = null
@@ -269,12 +280,12 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaStakePoolv2.WorkingStarted': {
         const {pid, workerId, amount} = args
-        const stakePool = stakePools.get(pid)
+        const stakePool = stakePoolMap.get(pid)
         assert(stakePool)
-        const worker = workers.get(workerId)
+        const worker = workerMap.get(workerId)
         assert(worker)
         assert(worker.session)
-        const session = sessions.get(worker.session.id)
+        const session = sessionMap.get(worker.session.id)
         assert(session)
         session.stake = amount
         // stakePool.freeStake = stakePool.freeStake.minus(amount)
@@ -285,10 +296,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaStakePoolv2.Contribution': {
         const {pid, accountId, amount, shares} = args
-        const account = getAccount(accounts, accountId)
-        const basePool = basePools.get(pid)
-        const stakePool = stakePools.get(pid)
-        // const stakePoolStakeId = combineIds(stakePoolId, accountId)
+        const account = getAccount(accountMap, accountId)
+        const basePool = basePoolMap.get(pid)
+        const stakePool = stakePoolMap.get(pid)
+        // const stakePoolStakeId = combineIdSet(stakePoolId, accountId)
         // const stakePoolStake = stakePoolStakes.get(stakePoolStakeId)
         assert(basePool)
         assert(stakePool)
@@ -299,7 +310,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         //   .times(BigDecimal(1).minus(stakePool.commission))
         //   .div(stakePool.totalStake)
         account.totalStakePoolValue = account.totalStakePoolValue.plus(amount)
-        // globalState.totalStake = globalState.totalStake.plus(amount)
+        globalState.totalStake = globalState.totalStake.plus(amount)
         if (stakePool.delegable != null) {
           stakePool.delegable = stakePool.delegable.minus(amount)
         }
@@ -338,35 +349,53 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaStakePoolv2.PoolWhitelistCreated': {
         const {pid} = args
-        const stakePool = stakePools.get(pid)
+        const stakePool = stakePoolMap.get(pid)
         assert(stakePool)
         stakePool.whitelistEnabled = true
         break
       }
       case 'PhalaStakePoolv2.PoolWhitelistDeleted': {
         const {pid} = args
-        const stakePool = stakePools.get(pid)
+        const stakePool = stakePoolMap.get(pid)
         assert(stakePool)
         stakePool.whitelistEnabled = false
         break
       }
       case 'PhalaStakePoolv2.PoolWhitelistStakerAdded': {
+        const {pid, accountId} = args
+        const account = getAccount(accountMap, accountId)
+        const stakePool = stakePoolMap.get(pid)
+        assert(stakePool)
+        const id = combineIds(pid, accountId)
+        const stakePoolWhitelist = new StakePoolWhitelist({
+          id,
+          stakePool,
+          account,
+          createTime: blockTime,
+        })
+        stakePoolWhitelistMap.set(id, stakePoolWhitelist)
         break
       }
       case 'PhalaStakePoolv2.PoolWhitelistStakerRemoved': {
+        const {pid, accountId} = args
+        const id = combineIds(pid, accountId)
+        const stakePoolWhitelist = stakePoolWhitelistMap.get(id)
+        assert(stakePoolWhitelist)
+        stakePoolWhitelistMap.delete(id)
+        await ctx.store.remove(stakePoolWhitelist)
         break
       }
       case 'PhalaVault.PoolCreated': {
         const {pid, owner, cid, poolAccountId} = args
-        const ownerAccount = getAccount(accounts, owner)
+        const ownerAccount = getAccount(accountMap, owner)
         const {vault, basePool} = createPool(BasePoolKind.Vault, {
           pid,
           cid,
           owner: ownerAccount,
           poolAccountId,
         })
-        basePools.set(pid, basePool)
-        vaults.set(pid, vault)
+        basePoolMap.set(pid, basePool)
+        vaultMap.set(pid, vault)
         await ctx.store.save(ownerAccount)
         await ctx.store.insert(basePool)
         await ctx.store.insert(vault)
@@ -374,7 +403,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaVault.VaultCommissionSet': {
         const {pid, commission} = args
-        const vault = vaults.get(pid)
+        const vault = vaultMap.get(pid)
         assert(vault)
         vault.commission = commission
         break
@@ -397,8 +426,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       case 'PhalaComputation.SessionBound': {
         // Memo: SessionBound happens before PoolWorkerAdded
         const {sessionId, workerId} = args
-        let session = sessions.get(sessionId)
-        const worker = workers.get(workerId)
+        let session = sessionMap.get(sessionId)
+        const worker = workerMap.get(workerId)
         assert(worker)
         if (session == null) {
           session = new Session({
@@ -412,7 +441,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
             totalReward: BigDecimal(0),
             stake: BigDecimal(0),
           })
-          sessions.set(sessionId, session)
+          sessionMap.set(sessionId, session)
         }
         session.isBound = true
         session.worker = worker
@@ -421,8 +450,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaComputation.SessionUnbound': {
         const {sessionId, workerId} = args
-        const session = sessions.get(sessionId)
-        const worker = workers.get(workerId)
+        const session = sessionMap.get(sessionId)
+        const worker = workerMap.get(workerId)
         assert(worker)
         assert(session?.worker.id === workerId)
         worker.session = null
@@ -432,16 +461,16 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaComputation.SessionSettled': {
         const {sessionId, v, payout} = args
-        const session = sessions.get(sessionId)
+        const session = sessionMap.get(sessionId)
         assert(session)
         assert(session.stakePool)
         session.totalReward = session.totalReward.plus(payout)
         session.v = v
         assert(session.worker)
-        const worker = workers.get(session.worker.id)
+        const worker = workerMap.get(session.worker.id)
         assert(worker)
         assert(worker.share)
-        const stakePool = getStakePool(stakePools, session.stakePool)
+        const stakePool = getStakePool(stakePoolMap, session.stakePool)
         const prevShare = worker.share
         updateWorkerShare(worker, session)
         if (session.state === WorkerState.WorkerIdle) {
@@ -459,17 +488,17 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaComputation.WorkerStarted': {
         const {sessionId, initP, initV} = args
-        const session = sessions.get(sessionId)
+        const session = sessionMap.get(sessionId)
         assert(session)
         assert(session.stakePool)
         assert(session.worker)
-        const stakePool = getStakePool(stakePools, session.stakePool)
+        const stakePool = getStakePool(stakePoolMap, session.stakePool)
         stakePool.idleWorkerCount++
         session.pInit = initP
         session.ve = initV
         session.v = initV
         session.state = WorkerState.WorkerIdle
-        const worker = workers.get(session.worker.id)
+        const worker = workerMap.get(session.worker.id)
         assert(worker)
         updateWorkerShare(worker, session)
         globalState.idleWorkerShare = globalState.idleWorkerShare.plus(
@@ -485,12 +514,12 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaComputation.WorkerStopped': {
         const {sessionId} = args
-        const session = sessions.get(sessionId)
+        const session = sessionMap.get(sessionId)
         assert(session)
         assert(session.worker)
         assert(session.stakePool)
-        const stakePool = getStakePool(stakePools, session.stakePool)
-        const worker = workers.get(session.worker.id)
+        const stakePool = getStakePool(stakePoolMap, session.stakePool)
+        const worker = workerMap.get(session.worker.id)
         assert(worker)
         assert(worker.share)
         if (session.state === WorkerState.WorkerIdle) {
@@ -506,13 +535,13 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           stakePool.idleWorkerCount--
         }
         session.state = WorkerState.WorkerCoolingDown
-        // session.coolingDownStartTime = blockTime
+        session.coolingDownStartTime = blockTime
         // stakePool.releasingStake = stakePool.releasingStake.plus(session.stake)
         break
       }
       case 'PhalaComputation.WorkerReclaimed': {
         const {sessionId} = args
-        const session = sessions.get(sessionId)
+        const session = sessionMap.get(sessionId)
         assert(session)
         session.state = WorkerState.Ready
         session.coolingDownStartTime = null
@@ -521,14 +550,14 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaComputation.WorkerEnterUnresponsive': {
         const {sessionId} = args
-        const session = sessions.get(sessionId)
+        const session = sessionMap.get(sessionId)
         assert(session)
         session.state = WorkerState.WorkerUnresponsive
         assert(session.stakePool)
-        const stakePool = getStakePool(stakePools, session.stakePool)
+        const stakePool = getStakePool(stakePoolMap, session.stakePool)
         stakePool.idleWorkerCount--
         assert(session.worker)
-        const worker = workers.get(session.worker.id)
+        const worker = workerMap.get(session.worker.id)
         assert(worker)
         assert(worker.share)
         globalState.idleWorkerShare = globalState.idleWorkerShare.minus(
@@ -544,14 +573,14 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaComputation.WorkerExitUnresponsive': {
         const {sessionId} = args
-        const session = sessions.get(sessionId)
+        const session = sessionMap.get(sessionId)
         assert(session)
         session.state = WorkerState.WorkerIdle
         assert(session.stakePool)
-        const stakePool = getStakePool(stakePools, session.stakePool)
+        const stakePool = getStakePool(stakePoolMap, session.stakePool)
         stakePool.idleWorkerCount++
         assert(session.worker)
-        const worker = workers.get(session.worker.id)
+        const worker = workerMap.get(session.worker.id)
         assert(worker)
         assert(worker.share)
         globalState.idleWorkerShare = globalState.idleWorkerShare.plus(
@@ -565,11 +594,11 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaComputation.BenchmarkUpdated': {
         const {sessionId, pInstant} = args
-        const session = sessions.get(sessionId)
+        const session = sessionMap.get(sessionId)
         assert(session)
         session.pInstant = pInstant
         assert(session.worker)
-        const worker = workers.get(session.worker.id)
+        const worker = workerMap.get(session.worker.id)
         assert(worker)
         assert(worker.share)
         const prevShare = worker.share
@@ -579,7 +608,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
             .minus(prevShare)
             .plus(worker.share)
           assert(session.stakePool)
-          const stakePool = getStakePool(stakePools, session.stakePool)
+          const stakePool = getStakePool(stakePoolMap, session.stakePool)
           stakePool.idleWorkerShare = stakePool.idleWorkerShare
             .minus(prevShare)
             .plus(worker.share)
@@ -596,18 +625,18 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {workerId, confidenceLevel} = args
         const worker = new Worker({id: workerId, confidenceLevel})
         updateWorkerSMinAndSMax(worker, tokenomicParameters)
-        workers.set(workerId, worker)
+        workerMap.set(workerId, worker)
         await ctx.store.insert(worker)
         break
       }
       case 'PhalaRegistry.WorkerUpdated': {
         const {workerId, confidenceLevel} = args
-        const worker = workers.get(workerId)
+        const worker = workerMap.get(workerId)
         assert(worker)
         worker.confidenceLevel = confidenceLevel
         updateWorkerSMinAndSMax(worker, tokenomicParameters)
         if (worker.session != null) {
-          const session = sessions.get(worker.session.id)
+          const session = sessionMap.get(worker.session.id)
           assert(session)
           updateWorkerShare(worker, session)
         }
@@ -615,13 +644,14 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaRegistry.InitialScoreSet': {
         const {workerId, initialScore} = args
-        const worker = workers.get(workerId)
+        const worker = workerMap.get(workerId)
         assert(worker)
         worker.initialScore = initialScore
         updateWorkerSMinAndSMax(worker, tokenomicParameters)
         break
       }
       case 'RmrkCore.NftMinted': {
+        const {owner, collectionId, nftId} = args
         break
       }
       case 'RmrkCore.PropertySet': {
@@ -644,12 +674,12 @@ processor.run(new TypeormDatabase(), async (ctx) => {
 
   for (const x of [
     globalState,
-    accounts,
-    basePools,
-    stakePools,
-    vaults,
-    sessions,
-    workers,
+    accountMap,
+    basePoolMap,
+    stakePoolMap,
+    vaultMap,
+    sessionMap,
+    workerMap,
   ]) {
     await ctx.store.save(x instanceof Map ? [...x.values()] : x)
   }
