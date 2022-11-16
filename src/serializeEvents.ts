@@ -202,6 +202,11 @@ const serializeEvent = (
         args: {pid: String(pid), commission: BigDecimal(commission).div(1e6)},
       }
     }
+    case 'PhalaVault.OwnerSharesGained': {
+      const e = new PhalaVaultOwnerSharesGainedEvent(ctx, item.event)
+      const {pid, shares} = e.asV1191
+      return {name, args: {pid: String(pid), shares: toBalance(shares)}}
+    }
     case 'PhalaVault.OwnerSharesClaimed': {
       const e = new PhalaVaultOwnerSharesClaimedEvent(ctx, item.event)
       const {pid, user, shares} = e.asV1191
@@ -213,11 +218,6 @@ const serializeEvent = (
           shares: toBalance(shares),
         },
       }
-    }
-    case 'PhalaVault.OwnerSharesGained': {
-      const e = new PhalaVaultOwnerSharesGainedEvent(ctx, item.event)
-      const {pid, shares} = e.asV1191
-      return {name, args: {pid: String(pid), shares: toBalance(shares)}}
     }
     case 'PhalaVault.Contribution': {
       const e = new PhalaVaultContributionEvent(ctx, item.event)
@@ -305,8 +305,15 @@ const serializeEvent = (
     }
     case 'PhalaComputation.WorkerReclaimed': {
       const e = new PhalaComputationWorkerReclaimedEvent(ctx, item.event)
-      const {session} = e.asV1191
-      return {name, args: {sessionId: encodeAddress(session)}}
+      const {session, originalStake, slashed} = e.asV1191
+      return {
+        name,
+        args: {
+          sessionId: encodeAddress(session),
+          originalStake: toBalance(originalStake),
+          slashed: toBalance(slashed),
+        },
+      }
     }
     case 'PhalaComputation.WorkerEnterUnresponsive': {
       const e = new PhalaComputationWorkerEnterUnresponsiveEvent(

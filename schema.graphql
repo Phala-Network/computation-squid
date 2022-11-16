@@ -2,7 +2,10 @@ type GlobalState @entity {
   "constant 0"
   id: ID!
   height: Int!
-  totalStake: BigDecimal!
+  stakePoolValue: BigDecimal!
+  vaultValue: BigDecimal!
+  "excluded value vaults delegated to stake pools"
+  totalValue: BigDecimal!
   "for average block time calculation"
   lastRecordedBlockHeight: Int!
   "for average block time calculation"
@@ -37,9 +40,13 @@ enum IdentityLevel {
 type Account @entity {
   "account address"
   id: ID!
+  vault: Vault @derivedFrom(field: "account")
   identityDisplay: String
   identityLevel: IdentityLevel!
-  totalStakePoolValue: BigDecimal!
+  stakePoolValue: BigDecimal!
+  stakePoolNftCount: Int!
+  vaultValue: BigDecimal!
+  vaultNftCount: Int!
 }
 
 enum BasePoolKind {
@@ -56,40 +63,60 @@ type BasePool @entity {
   cid: Int!
   owner: Account!
   kind: BasePoolKind!
+  "decimal percentage, 1 means 100%"
+  commission: BigDecimal!
+  "any string, usually a stringified json"
+  description: String
   vault: Vault @derivedFrom(field: "basePool")
   stakePool: StakePool @derivedFrom(field: "basePool")
   totalShares: BigDecimal!
   totalValue: BigDecimal!
-  totalWithdrawalValue: BigDecimal!
-  "any string, usually a stringified json"
-  description: String
+  sharePrice: BigDecimal!
+  freeValue: BigDecimal!
+  releasingValue: BigDecimal!
+  withdrawalValue: BigDecimal!
+  delegatorCount: Int!
 }
 
 type Vault @entity {
   "pid"
   id: ID!
   basePool: BasePool! @unique
-  "decimal percentage, 1 means 100%"
-  commission: BigDecimal!
-  accountId: String!
+  account: Account! @unique
+  apr: BigDecimal!
+  "share price of owner's last gain"
+  lastSharePriceCheckpoint: BigDecimal!
+  claimableOwnerShares: BigDecimal!
 }
 
 type StakePool @entity {
   "pid"
   id: ID!
   basePool: BasePool! @unique
-  "decimal percentage, 1 means 100%"
-  commission: BigDecimal!
   "null means infinite"
   capacity: BigDecimal
   "null means infinite"
   delegable: BigDecimal
-  freeStake: BigDecimal!
-  releasingStake: BigDecimal!
+  aprMultiplier: BigDecimal!
+  ownerReward: BigDecimal!
   workerCount: Int!
   idleWorkerCount: Int!
   idleWorkerShares: BigDecimal!
   whitelistEnabled: Boolean!
+}
+
+type Delegation @entity {
+  "${pid}-${accountId}"
+  id: ID!
+  account: Account!
+  basePool: BasePool!
+  # value: BigDecimal!
+  shares: BigDecimal!
+  # withdrawalValue: BigDecimal!
+  withdrawalShares: BigDecimal!
+  withdrawalStartTime: DateTime
+  delegationNft: DelegationNft
+  withdrawalNft: DelegationNft
 }
 
 type DelegationNft @entity {
@@ -98,12 +125,10 @@ type DelegationNft @entity {
   owner: Account!
   collectionId: Int!
   nftId: Int!
-  basePool: BasePool!
-  shares: BigDecimal!
 }
 
 type StakePoolWhitelist @entity {
-  "${stakePoolId}-${accountId}"
+  "${pid}-${accountId}"
   id: ID!
   account: Account!
   stakePool: StakePool!

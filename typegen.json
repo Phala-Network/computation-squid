@@ -9,6 +9,7 @@
     "PhalaStakePoolv2.PoolWorkerRemoved",
     "PhalaStakePoolv2.WorkingStarted",
     "PhalaStakePoolv2.RewardReceived",
+    "PhalaStakePoolv2.OwnerRewardsWithdrawn",
     "PhalaStakePoolv2.Contribution",
     "PhalaStakePoolv2.Withdrawal",
     "PhalaStakePoolv2.WithdrawalQueued",
@@ -20,8 +21,8 @@
 
     "PhalaVault.PoolCreated",
     "PhalaVault.VaultCommissionSet",
-    "PhalaVault.OwnerSharesClaimed",
     "PhalaVault.OwnerSharesGained",
+    "PhalaVault.OwnerSharesClaimed",
     "PhalaVault.Contribution",
 
     "PhalaBasePool.WithdrawalQueued",

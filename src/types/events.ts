@@ -635,6 +635,43 @@ export class PhalaStakePoolv2ContributionEvent {
   }
 }
 
+export class PhalaStakePoolv2OwnerRewardsWithdrawnEvent {
+  private readonly _chain: Chain
+  private readonly event: Event
+
+  constructor(ctx: EventContext)
+  constructor(ctx: ChainContext, event: Event)
+  constructor(ctx: EventContext, event?: Event) {
+    event = event || ctx.event
+    assert(event.name === 'PhalaStakePoolv2.OwnerRewardsWithdrawn')
+    this._chain = ctx._chain
+    this.event = event
+  }
+
+  /**
+   * Owner rewards were withdrawn by pool owner
+   * 
+   * Affected states:
+   * - the stake related fields in [`Pools`]
+   * - the owner asset account
+   */
+  get isV1191(): boolean {
+    return this._chain.getEventHash('PhalaStakePoolv2.OwnerRewardsWithdrawn') === 'c74e602209144c7d8c0d4ba393b82daa25b4a92ec11c714c522c63ef7965071d'
+  }
+
+  /**
+   * Owner rewards were withdrawn by pool owner
+   * 
+   * Affected states:
+   * - the stake related fields in [`Pools`]
+   * - the owner asset account
+   */
+  get asV1191(): {pid: bigint, user: Uint8Array, amount: bigint} {
+    assert(this.isV1191)
+    return this._chain.decodeEvent(this.event)
+  }
+}
+
 export class PhalaStakePoolv2PoolCapacitySetEvent {
   private readonly _chain: Chain
   private readonly event: Event

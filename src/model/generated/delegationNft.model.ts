@@ -1,8 +1,5 @@
-import {BigDecimal} from "@subsquid/big-decimal"
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
-import * as marshal from "./marshal"
 import {Account} from "./account.model"
-import {BasePool} from "./basePool.model"
 
 @Entity_()
 export class DelegationNft {
@@ -25,11 +22,4 @@ export class DelegationNft {
 
   @Column_("int4", {nullable: false})
   nftId!: number
-
-  @Index_()
-  @ManyToOne_(() => BasePool, {nullable: true})
-  basePool!: BasePool
-
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  shares!: BigDecimal
 }

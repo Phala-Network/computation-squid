@@ -37,6 +37,18 @@ export class BasePool {
   @Column_("varchar", {length: 9, nullable: false})
   kind!: BasePoolKind
 
+  /**
+   * decimal percentage, 1 means 100%
+   */
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  commission!: BigDecimal
+
+  /**
+   * any string, usually a stringified json
+   */
+  @Column_("text", {nullable: true})
+  description!: string | undefined | null
+
   @OneToOne_(() => Vault)
   vault!: Vault | undefined | null
 
@@ -50,11 +62,17 @@ export class BasePool {
   totalValue!: BigDecimal
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  totalWithdrawalValue!: BigDecimal
+  sharePrice!: BigDecimal
 
-  /**
-   * any string, usually a stringified json
-   */
-  @Column_("text", {nullable: true})
-  description!: string | undefined | null
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  freeValue!: BigDecimal
+
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  releasingValue!: BigDecimal
+
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  withdrawalValue!: BigDecimal
+
+  @Column_("int4", {nullable: false})
+  delegatorCount!: number
 }

@@ -2,6 +2,7 @@ import {BigDecimal} from "@subsquid/big-decimal"
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, Index as Index_, JoinColumn as JoinColumn_} from "typeorm"
 import * as marshal from "./marshal"
 import {BasePool} from "./basePool.model"
+import {Account} from "./account.model"
 
 @Entity_()
 export class Vault {
@@ -20,12 +21,20 @@ export class Vault {
   @JoinColumn_()
   basePool!: BasePool
 
+  @Index_({unique: true})
+  @OneToOne_(() => Account, {nullable: false})
+  @JoinColumn_()
+  account!: Account
+
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  apr!: BigDecimal
+
   /**
-   * decimal percentage, 1 means 100%
+   * share price of owner's last gain
    */
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  commission!: BigDecimal
+  lastSharePriceCheckpoint!: BigDecimal
 
-  @Column_("text", {nullable: false})
-  accountId!: string
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  claimableOwnerShares!: BigDecimal
 }

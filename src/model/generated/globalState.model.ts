@@ -18,7 +18,16 @@ export class GlobalState {
   height!: number
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  totalStake!: BigDecimal
+  stakePoolValue!: BigDecimal
+
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  vaultValue!: BigDecimal
+
+  /**
+   * excluded value vaults delegated to stake pools
+   */
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  totalValue!: BigDecimal
 
   /**
    * for average block time calculation

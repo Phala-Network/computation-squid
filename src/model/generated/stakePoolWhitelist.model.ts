@@ -9,7 +9,7 @@ export class StakePoolWhitelist {
   }
 
   /**
-   * ${stakePoolId}-${accountId}
+   * ${pid}-${accountId}
    */
   @PrimaryColumn_()
   id!: string

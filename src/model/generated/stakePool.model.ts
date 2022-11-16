@@ -21,12 +21,6 @@ export class StakePool {
   basePool!: BasePool
 
   /**
-   * decimal percentage, 1 means 100%
-   */
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  commission!: BigDecimal
-
-  /**
    * null means infinite
    */
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: true})
@@ -39,10 +33,10 @@ export class StakePool {
   delegable!: BigDecimal | undefined | null
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  freeStake!: BigDecimal
+  aprMultiplier!: BigDecimal
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  releasingStake!: BigDecimal
+  ownerReward!: BigDecimal
 
   @Column_("int4", {nullable: false})
   workerCount!: number
