@@ -76,6 +76,8 @@ type BasePool @entity {
   releasingValue: BigDecimal!
   withdrawalValue: BigDecimal!
   delegatorCount: Int!
+  whitelistEnabled: Boolean!
+  whitelists: [BasePoolWhitelist!] @derivedFrom(field: "basePool")
 }
 
 type Vault @entity {
@@ -102,7 +104,6 @@ type StakePool @entity {
   workerCount: Int!
   idleWorkerCount: Int!
   idleWorkerShares: BigDecimal!
-  whitelistEnabled: Boolean!
 }
 
 type Delegation @entity {
@@ -127,11 +128,11 @@ type DelegationNft @entity {
   nftId: Int!
 }
 
-type StakePoolWhitelist @entity {
+type BasePoolWhitelist @entity {
   "${pid}-${accountId}"
   id: ID!
   account: Account!
-  stakePool: StakePool!
+  basePool: BasePool!
   createTime: DateTime!
 }
 

@@ -46,7 +46,4 @@ export class StakePool {
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
   idleWorkerShares!: BigDecimal
-
-  @Column_("bool", {nullable: false})
-  whitelistEnabled!: boolean
 }

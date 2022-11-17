@@ -1,10 +1,11 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToOne as OneToOne_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToOne as OneToOne_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
 import {Account} from "./account.model"
 import {BasePoolKind} from "./_basePoolKind"
 import {Vault} from "./vault.model"
 import {StakePool} from "./stakePool.model"
+import {BasePoolWhitelist} from "./basePoolWhitelist.model"
 
 @Entity_()
 export class BasePool {
@@ -75,4 +76,10 @@ export class BasePool {
 
   @Column_("int4", {nullable: false})
   delegatorCount!: number
+
+  @Column_("bool", {nullable: false})
+  whitelistEnabled!: boolean
+
+  @OneToMany_(() => BasePoolWhitelist, e => e.basePool)
+  whitelists!: BasePoolWhitelist[]
 }

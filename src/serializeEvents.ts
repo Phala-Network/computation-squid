@@ -5,6 +5,10 @@ import {
   IdentityIdentityClearedEvent,
   IdentityIdentitySetEvent,
   IdentityJudgementGivenEvent,
+  PhalaBasePoolPoolWhitelistCreatedEvent,
+  PhalaBasePoolPoolWhitelistDeletedEvent,
+  PhalaBasePoolPoolWhitelistStakerAddedEvent,
+  PhalaBasePoolPoolWhitelistStakerRemovedEvent,
   PhalaBasePoolWithdrawalEvent,
   PhalaComputationBenchmarkUpdatedEvent,
   PhalaComputationSessionBoundEvent,
@@ -22,10 +26,6 @@ import {
   PhalaStakePoolv2PoolCapacitySetEvent,
   PhalaStakePoolv2PoolCommissionSetEvent,
   PhalaStakePoolv2PoolCreatedEvent,
-  PhalaStakePoolv2PoolWhitelistCreatedEvent,
-  PhalaStakePoolv2PoolWhitelistDeletedEvent,
-  PhalaStakePoolv2PoolWhitelistStakerAddedEvent,
-  PhalaStakePoolv2PoolWhitelistStakerRemovedEvent,
   PhalaStakePoolv2PoolWorkerAddedEvent,
   PhalaStakePoolv2PoolWorkerRemovedEvent,
   PhalaStakePoolv2RewardReceivedEvent,
@@ -58,7 +58,7 @@ const serializeEvent = (
     }
     case 'PhalaStakePoolv2.PoolCommissionSet': {
       const e = new PhalaStakePoolv2PoolCommissionSetEvent(ctx, item.event)
-      const {pid, commission} = e.asV1191
+      const {pid, commission} = e.asV1192
       return {
         name,
         args: {pid: String(pid), commission: BigDecimal(commission).div(1e6)},
@@ -66,12 +66,12 @@ const serializeEvent = (
     }
     case 'PhalaStakePoolv2.PoolCapacitySet': {
       const e = new PhalaStakePoolv2PoolCapacitySetEvent(ctx, item.event)
-      const {pid, cap} = e.asV1191
+      const {pid, cap} = e.asV1192
       return {name, args: {pid: String(pid), cap: toBalance(cap)}}
     }
     case 'PhalaStakePoolv2.PoolWorkerAdded': {
       const e = new PhalaStakePoolv2PoolWorkerAddedEvent(ctx, item.event)
-      const {pid, worker} = e.asV1191
+      const {pid, worker} = e.asV1192
       return {
         name,
         args: {pid: String(pid), workerId: toHex(worker)},
@@ -79,7 +79,7 @@ const serializeEvent = (
     }
     case 'PhalaStakePoolv2.PoolWorkerRemoved': {
       const e = new PhalaStakePoolv2PoolWorkerRemovedEvent(ctx, item.event)
-      const {pid, worker} = e.asV1191
+      const {pid, worker} = e.asV1192
       return {
         name,
         args: {pid: String(pid), workerId: toHex(worker)},
@@ -87,7 +87,7 @@ const serializeEvent = (
     }
     case 'PhalaStakePoolv2.WorkingStarted': {
       const e = new PhalaStakePoolv2WorkingStartedEvent(ctx, item.event)
-      const {pid, worker, amount} = e.asV1191
+      const {pid, worker, amount} = e.asV1192
       return {
         name,
         args: {
@@ -99,7 +99,7 @@ const serializeEvent = (
     }
     case 'PhalaStakePoolv2.RewardReceived': {
       const e = new PhalaStakePoolv2RewardReceivedEvent(ctx, item.event)
-      const {pid, toOwner, toStakers} = e.asV1191
+      const {pid, toOwner, toStakers} = e.asV1192
       return {
         name,
         args: {
@@ -111,7 +111,7 @@ const serializeEvent = (
     }
     case 'PhalaStakePoolv2.Contribution': {
       const e = new PhalaStakePoolv2ContributionEvent(ctx, item.event)
-      const {pid, user, amount, shares} = e.asV1191
+      const {pid, user, amount, shares} = e.asV1192
       return {
         name,
         args: {
@@ -124,7 +124,7 @@ const serializeEvent = (
     }
     case 'PhalaStakePoolv2.Withdrawal': {
       const e = new PhalaStakePoolv2WithdrawalEvent(ctx, item.event)
-      const {pid, user, amount, shares} = e.asV1191
+      const {pid, user, amount, shares} = e.asV1192
       return {
         name,
         args: {
@@ -137,7 +137,7 @@ const serializeEvent = (
     }
     case 'PhalaStakePoolv2.WithdrawalQueued': {
       const e = new PhalaStakePoolv2WithdrawalQueuedEvent(ctx, item.event)
-      const {pid, user, shares} = e.asV1191
+      const {pid, user, shares} = e.asV1192
       return {
         name,
         args: {
@@ -149,37 +149,11 @@ const serializeEvent = (
     }
     case 'PhalaStakePoolv2.WorkerReclaimed': {
       const e = new PhalaStakePoolv2WorkerReclaimedEvent(ctx, item.event)
-      const {pid, worker} = e.asV1191
+      const {pid, worker} = e.asV1192
       return {
         name,
         args: {pid: String(pid), workerId: toHex(worker)},
       }
-    }
-    case 'PhalaStakePoolv2.PoolWhitelistCreated': {
-      const e = new PhalaStakePoolv2PoolWhitelistCreatedEvent(ctx, item.event)
-      const {pid} = e.asV1191
-      return {name, args: {pid: String(pid)}}
-    }
-    case 'PhalaStakePoolv2.PoolWhitelistDeleted': {
-      const e = new PhalaStakePoolv2PoolWhitelistDeletedEvent(ctx, item.event)
-      const {pid} = e.asV1191
-      return {name, args: {pid: String(pid)}}
-    }
-    case 'PhalaStakePoolv2.PoolWhitelistStakerAdded': {
-      const e = new PhalaStakePoolv2PoolWhitelistStakerAddedEvent(
-        ctx,
-        item.event
-      )
-      const {pid, staker} = e.asV1191
-      return {name, args: {pid: String(pid), accountId: encodeAddress(staker)}}
-    }
-    case 'PhalaStakePoolv2.PoolWhitelistStakerRemoved': {
-      const e = new PhalaStakePoolv2PoolWhitelistStakerRemovedEvent(
-        ctx,
-        item.event
-      )
-      const {pid, staker} = e.asV1191
-      return {name, args: {pid: String(pid), accountId: encodeAddress(staker)}}
     }
     case 'PhalaVault.PoolCreated': {
       const e = new PhalaVaultPoolCreatedEvent(ctx, item.event)
@@ -196,7 +170,7 @@ const serializeEvent = (
     }
     case 'PhalaVault.VaultCommissionSet': {
       const e = new PhalaVaultVaultCommissionSetEvent(ctx, item.event)
-      const {pid, commission} = e.asV1191
+      const {pid, commission} = e.asV1192
       return {
         name,
         args: {pid: String(pid), commission: BigDecimal(commission).div(1e6)},
@@ -204,12 +178,12 @@ const serializeEvent = (
     }
     case 'PhalaVault.OwnerSharesGained': {
       const e = new PhalaVaultOwnerSharesGainedEvent(ctx, item.event)
-      const {pid, shares} = e.asV1191
+      const {pid, shares} = e.asV1192
       return {name, args: {pid: String(pid), shares: toBalance(shares)}}
     }
     case 'PhalaVault.OwnerSharesClaimed': {
       const e = new PhalaVaultOwnerSharesClaimedEvent(ctx, item.event)
-      const {pid, user, shares} = e.asV1191
+      const {pid, user, shares} = e.asV1192
       return {
         name,
         args: {
@@ -221,7 +195,7 @@ const serializeEvent = (
     }
     case 'PhalaVault.Contribution': {
       const e = new PhalaVaultContributionEvent(ctx, item.event)
-      const {pid, user, amount, shares} = e.asV1191
+      const {pid, user, amount, shares} = e.asV1192
       return {
         name,
         args: {
@@ -234,7 +208,7 @@ const serializeEvent = (
     }
     case 'PhalaBasePool.Withdrawal': {
       const e = new PhalaBasePoolWithdrawalEvent(ctx, item.event)
-      const {pid, user, amount, shares} = e.asV1191
+      const {pid, user, amount, shares} = e.asV1192
       return {
         name,
         args: {
@@ -247,7 +221,7 @@ const serializeEvent = (
     }
     case 'PhalaBasePool.WithdrawalQueued': {
       const e = new PhalaBasePoolWithdrawalEvent(ctx, item.event)
-      const {pid, user, amount, shares} = e.asV1191
+      const {pid, user, amount, shares} = e.asV1192
       return {
         name,
         args: {
@@ -258,9 +232,32 @@ const serializeEvent = (
         },
       }
     }
+    case 'PhalaBasePool.PoolWhitelistCreated': {
+      const e = new PhalaBasePoolPoolWhitelistCreatedEvent(ctx, item.event)
+      const {pid} = e.asV1192
+      return {name, args: {pid: String(pid)}}
+    }
+    case 'PhalaBasePool.PoolWhitelistDeleted': {
+      const e = new PhalaBasePoolPoolWhitelistDeletedEvent(ctx, item.event)
+      const {pid} = e.asV1192
+      return {name, args: {pid: String(pid)}}
+    }
+    case 'PhalaBasePool.PoolWhitelistStakerAdded': {
+      const e = new PhalaBasePoolPoolWhitelistStakerAddedEvent(ctx, item.event)
+      const {pid, staker} = e.asV1192
+      return {name, args: {pid: String(pid), accountId: encodeAddress(staker)}}
+    }
+    case 'PhalaBasePool.PoolWhitelistStakerRemoved': {
+      const e = new PhalaBasePoolPoolWhitelistStakerRemovedEvent(
+        ctx,
+        item.event
+      )
+      const {pid, staker} = e.asV1192
+      return {name, args: {pid: String(pid), accountId: encodeAddress(staker)}}
+    }
     case 'PhalaComputation.SessionBound': {
       const e = new PhalaComputationSessionBoundEvent(ctx, item.event)
-      const {session, worker} = e.asV1191
+      const {session, worker} = e.asV1192
       return {
         name,
         args: {sessionId: encodeAddress(session), workerId: toHex(worker)},
@@ -268,7 +265,7 @@ const serializeEvent = (
     }
     case 'PhalaComputation.SessionUnbound': {
       const e = new PhalaComputationSessionUnboundEvent(ctx, item.event)
-      const {session, worker} = e.asV1191
+      const {session, worker} = e.asV1192
       return {
         name,
         args: {sessionId: encodeAddress(session), workerId: toHex(worker)},
@@ -276,7 +273,7 @@ const serializeEvent = (
     }
     case 'PhalaComputation.SessionSettled': {
       const e = new PhalaComputationSessionSettledEvent(ctx, item.event)
-      const {session, vBits, payoutBits} = e.asV1191
+      const {session, vBits, payoutBits} = e.asV1192
       return {
         name,
         args: {
@@ -288,7 +285,7 @@ const serializeEvent = (
     }
     case 'PhalaComputation.WorkerStarted': {
       const e = new PhalaComputationWorkerStartedEvent(ctx, item.event)
-      const {session, initV, initP} = e.asV1191
+      const {session, initV, initP} = e.asV1192
       return {
         name,
         args: {
@@ -300,12 +297,12 @@ const serializeEvent = (
     }
     case 'PhalaComputation.WorkerStopped': {
       const e = new PhalaComputationWorkerStoppedEvent(ctx, item.event)
-      const {session} = e.asV1191
+      const {session} = e.asV1192
       return {name, args: {sessionId: encodeAddress(session)}}
     }
     case 'PhalaComputation.WorkerReclaimed': {
       const e = new PhalaComputationWorkerReclaimedEvent(ctx, item.event)
-      const {session, originalStake, slashed} = e.asV1191
+      const {session, originalStake, slashed} = e.asV1192
       return {
         name,
         args: {
@@ -320,24 +317,24 @@ const serializeEvent = (
         ctx,
         item.event
       )
-      const {session} = e.asV1191
+      const {session} = e.asV1192
       return {name, args: {sessionId: encodeAddress(session)}}
     }
     case 'PhalaComputation.WorkerExitUnresponsive': {
       const e = new PhalaComputationWorkerExitUnresponsiveEvent(ctx, item.event)
-      const {session} = e.asV1191
+      const {session} = e.asV1192
       return {name, args: {sessionId: encodeAddress(session)}}
     }
     case 'PhalaComputation.BenchmarkUpdated': {
       const e = new PhalaComputationBenchmarkUpdatedEvent(ctx, item.event)
-      const {session, pInstant} = e.asV1191
+      const {session, pInstant} = e.asV1192
       return {name, args: {sessionId: encodeAddress(session), pInstant}}
     }
     case 'PhalaComputation.TokenomicParametersChanged':
       return {name, args: {}}
     case 'PhalaRegistry.WorkerAdded': {
       const e = new PhalaRegistryWorkerAddedEvent(ctx, item.event)
-      const {pubkey, confidenceLevel} = e.asV1191
+      const {pubkey, confidenceLevel} = e.asV1192
       return {
         name,
         args: {workerId: toHex(pubkey), confidenceLevel},
@@ -345,7 +342,7 @@ const serializeEvent = (
     }
     case 'PhalaRegistry.WorkerUpdated': {
       const e = new PhalaRegistryWorkerUpdatedEvent(ctx, item.event)
-      const {pubkey, confidenceLevel} = e.asV1191
+      const {pubkey, confidenceLevel} = e.asV1192
       return {
         name,
         args: {workerId: toHex(pubkey), confidenceLevel},
@@ -353,7 +350,7 @@ const serializeEvent = (
     }
     case 'PhalaRegistry.InitialScoreSet': {
       const e = new PhalaRegistryInitialScoreSetEvent(ctx, item.event)
-      const {pubkey, initScore} = e.asV1191
+      const {pubkey, initScore} = e.asV1192
       return {
         name,
         args: {workerId: toHex(pubkey), initialScore: initScore},
@@ -361,7 +358,7 @@ const serializeEvent = (
     }
     case 'RmrkCore.NftMinted': {
       const e = new RmrkCoreNftMintedEvent(ctx, item.event)
-      const {owner, collectionId, nftId} = e.asV1191
+      const {owner, collectionId, nftId} = e.asV1192
       if (owner.__kind !== 'AccountId') return
       return {
         name,
@@ -370,7 +367,7 @@ const serializeEvent = (
     }
     case 'RmrkCore.PropertySet': {
       const e = new RmrkCorePropertySetEvent(ctx, item.event)
-      const {collectionId, maybeNftId, key, value} = e.asV1191
+      const {collectionId, maybeNftId, key, value} = e.asV1192
       if (maybeNftId === undefined) return
       return {
         name,
@@ -379,7 +376,7 @@ const serializeEvent = (
     }
     case 'RmrkCore.NFTBurned': {
       const e = new RmrkCoreNftBurnedEvent(ctx, item.event)
-      const {owner, collectionId, nftId} = e.asV1191
+      const {owner, collectionId, nftId} = e.asV1192
       return {
         name,
         args: {owner: encodeAddress(owner), collectionId, nftId},
@@ -387,17 +384,17 @@ const serializeEvent = (
     }
     case 'Identity.IdentitySet': {
       const e = new IdentityIdentitySetEvent(ctx, item.event)
-      const {who} = e.asV1191
+      const {who} = e.asV1192
       return {name, args: {accountId: encodeAddress(who)}}
     }
     case 'Identity.IdentityCleared': {
       const e = new IdentityIdentityClearedEvent(ctx, item.event)
-      const {who} = e.asV1191
+      const {who} = e.asV1192
       return {name, args: {accountId: encodeAddress(who)}}
     }
     case 'Identity.JudgementGiven': {
       const e = new IdentityJudgementGivenEvent(ctx, item.event)
-      const {target} = e.asV1191
+      const {target} = e.asV1192
       return {name, args: {accountId: encodeAddress(target)}}
     }
   }

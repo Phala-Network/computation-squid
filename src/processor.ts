@@ -16,7 +16,7 @@ import {
   GlobalState,
   Session,
   StakePool,
-  StakePoolWhitelist,
+  BasePoolWhitelist,
   TokenomicParameters,
   Vault,
   Worker,
@@ -30,8 +30,8 @@ import {updateWorkerShares, updateWorkerSMinAndSMax} from './utils/worker'
 
 const processor = new SubstrateBatchProcessor()
   .setDataSource({
-    archive: 'http://51.210.116.29:4444/graphql',
-    chain: 'wss://pc-test-3.phala.network/khala/ws',
+    archive: 'http://localhost:4444/graphql',
+    chain: 'ws://localhost:49944',
   })
   .addEvent('PhalaStakePoolv2.PoolCreated')
   .addEvent('PhalaStakePoolv2.PoolCommissionSet')
@@ -44,10 +44,6 @@ const processor = new SubstrateBatchProcessor()
   .addEvent('PhalaStakePoolv2.Withdrawal')
   .addEvent('PhalaStakePoolv2.WithdrawalQueued')
   .addEvent('PhalaStakePoolv2.WorkerReclaimed')
-  .addEvent('PhalaStakePoolv2.PoolWhitelistCreated')
-  .addEvent('PhalaStakePoolv2.PoolWhitelistDeleted')
-  .addEvent('PhalaStakePoolv2.PoolWhitelistStakerAdded')
-  .addEvent('PhalaStakePoolv2.PoolWhitelistStakerRemoved')
 
   .addEvent('PhalaVault.PoolCreated')
   .addEvent('PhalaVault.VaultCommissionSet')
@@ -57,6 +53,10 @@ const processor = new SubstrateBatchProcessor()
 
   .addEvent('PhalaBasePool.Withdrawal')
   .addEvent('PhalaBasePool.WithdrawalQueued')
+  .addEvent('PhalaBasePool.PoolWhitelistCreated')
+  .addEvent('PhalaBasePool.PoolWhitelistDeleted')
+  .addEvent('PhalaBasePool.PoolWhitelistStakerAdded')
+  .addEvent('PhalaBasePool.PoolWhitelistStakerRemoved')
 
   .addEvent('PhalaComputation.SessionBound')
   .addEvent('PhalaComputation.SessionUnbound')
@@ -73,7 +73,6 @@ const processor = new SubstrateBatchProcessor()
   .addEvent('PhalaRegistry.WorkerUpdated')
   .addEvent('PhalaRegistry.InitialScoreSet')
 
-  // .addEvent('RmrkCore.CollectionCreated')
   .addEvent('RmrkCore.NftMinted')
   .addEvent('RmrkCore.PropertySet')
   .addEvent('RmrkCore.NFTBurned')
@@ -97,7 +96,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   const sessionIdSet = new Set<string>()
   const delegationIdSet = new Set<string>()
   const delegationNftIdSet = new Set<string>()
-  const stakePoolWhitelistIdSet = new Set<string>()
+  const basePoolWhitelistIdSet = new Set<string>()
 
   for (const {name, args} of events) {
     if (
@@ -109,11 +108,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       name === 'PhalaStakePoolv2.Contribution' ||
       name === 'PhalaStakePoolv2.Withdrawal' ||
       name === 'PhalaStakePoolv2.WithdrawalQueued' ||
-      name === 'PhalaStakePoolv2.WorkerReclaimed' ||
-      name === 'PhalaStakePoolv2.PoolWhitelistCreated' ||
-      name === 'PhalaStakePoolv2.PoolWhitelistDeleted' ||
-      name === 'PhalaStakePoolv2.PoolWhitelistStakerAdded' ||
-      name === 'PhalaStakePoolv2.PoolWhitelistStakerRemoved'
+      name === 'PhalaStakePoolv2.WorkerReclaimed'
     ) {
       basePoolIdSet.add(args.pid)
       stakePoolIdSet.add(args.pid)
@@ -129,6 +124,15 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     ) {
       basePoolIdSet.add(args.pid)
       vaultIdSet.add(args.pid)
+    }
+
+    if (
+      name === 'PhalaBasePool.PoolWhitelistCreated' ||
+      name === 'PhalaBasePool.PoolWhitelistDeleted' ||
+      name === 'PhalaBasePool.PoolWhitelistStakerAdded' ||
+      name === 'PhalaBasePool.PoolWhitelistStakerRemoved'
+    ) {
+      basePoolIdSet.add(args.pid)
     }
 
     if (
@@ -168,8 +172,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       sessionIdSet.add(args.sessionId)
     }
 
-    if (name === 'PhalaStakePoolv2.PoolWhitelistStakerRemoved') {
-      stakePoolWhitelistIdSet.add(combineIds(args.pid, args.accountId))
+    if (name === 'PhalaBasePool.PoolWhitelistStakerRemoved') {
+      basePoolWhitelistIdSet.add(combineIds(args.pid, args.accountId))
     }
 
     if (name === 'RmrkCore.NftMinted') {
@@ -248,10 +252,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       relations: {owner: true},
     })
     .then(toMap)
-  const stakePoolWhitelistMap = await ctx.store
-    .find(StakePoolWhitelist, {
-      where: {id: In([...stakePoolWhitelistIdSet])},
-      relations: {stakePool: {basePool: true}, account: true},
+  const basePoolWhitelistMap = await ctx.store
+    .find(BasePoolWhitelist, {
+      where: {id: In([...basePoolWhitelistIdSet])},
     })
     .then(toMap)
 
@@ -446,38 +449,38 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         // stakePool.freeValue = stakePool.freeValue.plus(amount)
         break
       }
-      case 'PhalaStakePoolv2.PoolWhitelistCreated': {
+      case 'PhalaBasePool.PoolWhitelistCreated': {
         const {pid} = args
-        const stakePool = assertGet(stakePoolMap, pid)
-        stakePool.whitelistEnabled = true
+        const basePool = assertGet(basePoolMap, pid)
+        basePool.whitelistEnabled = true
         break
       }
-      case 'PhalaStakePoolv2.PoolWhitelistDeleted': {
+      case 'PhalaBasePool.PoolWhitelistDeleted': {
         const {pid} = args
-        const stakePool = assertGet(stakePoolMap, pid)
-        stakePool.whitelistEnabled = false
+        const basePool = assertGet(basePoolMap, pid)
+        basePool.whitelistEnabled = false
         break
       }
-      case 'PhalaStakePoolv2.PoolWhitelistStakerAdded': {
+      case 'PhalaBasePool.PoolWhitelistStakerAdded': {
         const {pid, accountId} = args
         const account = getAccount(accountMap, accountId)
-        const stakePool = assertGet(stakePoolMap, pid)
+        const basePool = assertGet(basePoolMap, pid)
         const id = combineIds(pid, accountId)
-        const stakePoolWhitelist = new StakePoolWhitelist({
+        const basePoolWhitelist = new BasePoolWhitelist({
           id,
-          stakePool,
+          basePool,
           account,
           createTime: blockTime,
         })
-        stakePoolWhitelistMap.set(id, stakePoolWhitelist)
+        basePoolWhitelistMap.set(id, basePoolWhitelist)
         break
       }
-      case 'PhalaStakePoolv2.PoolWhitelistStakerRemoved': {
+      case 'PhalaBasePool.PoolWhitelistStakerRemoved': {
         const {pid, accountId} = args
         const id = combineIds(pid, accountId)
-        const stakePoolWhitelist = assertGet(stakePoolWhitelistMap, id)
-        stakePoolWhitelistMap.delete(id)
-        await ctx.store.remove(stakePoolWhitelist)
+        const basePoolWhitelist = assertGet(basePoolWhitelistMap, id)
+        basePoolWhitelistMap.delete(id)
+        await ctx.store.remove(basePoolWhitelist)
         break
       }
       case 'PhalaVault.PoolCreated': {
@@ -809,6 +812,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         })
         delegationNftMap.set(id, delegationNft)
         await ctx.store.insert(delegationNft)
+        const delegationId = combineIds(basePool.id, owner)
+        const delegation = assertGet(delegationMap, delegationId)
+        delegation.delegationNft = delegationNft
         if (basePool.kind === BasePoolKind.StakePool) {
           ownerAccount.stakePoolNftCount++
         }
@@ -829,6 +835,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           await ctx.store.remove(delegationNft)
           const ownerAccount = getAccount(accountMap, owner)
           const basePool = assertGet(basePoolCidMap, collectionId)
+          const delegationId = combineIds(basePool.id, owner)
+          const delegation = assertGet(delegationMap, delegationId)
+          delegation.delegationNft = null
           if (basePool.kind === BasePoolKind.StakePool) {
             ownerAccount.stakePoolNftCount--
           }
@@ -853,7 +862,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     sessionMap,
     workerMap,
     delegationNftMap,
-    stakePoolWhitelistMap,
+    basePoolWhitelistMap,
   ]) {
     if (x instanceof Map) {
       await ctx.store.save([...x.values()])

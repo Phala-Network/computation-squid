@@ -1,10 +1,10 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import {Account} from "./account.model"
-import {StakePool} from "./stakePool.model"
+import {BasePool} from "./basePool.model"
 
 @Entity_()
-export class StakePoolWhitelist {
-  constructor(props?: Partial<StakePoolWhitelist>) {
+export class BasePoolWhitelist {
+  constructor(props?: Partial<BasePoolWhitelist>) {
     Object.assign(this, props)
   }
 
@@ -19,8 +19,8 @@ export class StakePoolWhitelist {
   account!: Account
 
   @Index_()
-  @ManyToOne_(() => StakePool, {nullable: true})
-  stakePool!: StakePool
+  @ManyToOne_(() => BasePool, {nullable: true})
+  basePool!: BasePool
 
   @Column_("timestamp with time zone", {nullable: false})
   createTime!: Date

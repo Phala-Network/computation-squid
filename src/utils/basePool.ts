@@ -38,6 +38,7 @@ export function createPool(
     releasingValue: BigDecimal(0),
     withdrawalValue: BigDecimal(0),
     delegatorCount: 0,
+    whitelistEnabled: false,
   })
 
   if (kind === BasePoolKind.StakePool) {
@@ -47,7 +48,6 @@ export function createPool(
       workerCount: 0,
       idleWorkerCount: 0,
       idleWorkerShares: BigDecimal(0),
-      whitelistEnabled: false,
     })
     return {basePool, stakePool}
   }

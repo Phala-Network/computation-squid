@@ -1,6 +1,6 @@
 {
   "outDir": "src/types",
-  "specVersions": "http://51.210.116.29:4444/graphql",
+  "specVersions": "http://localhost:4444/graphql",
   "events": [
     "PhalaStakePoolv2.PoolCreated",
     "PhalaStakePoolv2.PoolCommissionSet",
@@ -14,10 +14,6 @@
     "PhalaStakePoolv2.Withdrawal",
     "PhalaStakePoolv2.WithdrawalQueued",
     "PhalaStakePoolv2.WorkerReclaimed",
-    "PhalaStakePoolv2.PoolWhitelistCreated",
-    "PhalaStakePoolv2.PoolWhitelistDeleted",
-    "PhalaStakePoolv2.PoolWhitelistStakerAdded",
-    "PhalaStakePoolv2.PoolWhitelistStakerRemoved",
 
     "PhalaVault.PoolCreated",
     "PhalaVault.VaultCommissionSet",
@@ -25,8 +21,12 @@
     "PhalaVault.OwnerSharesClaimed",
     "PhalaVault.Contribution",
 
-    "PhalaBasePool.WithdrawalQueued",
     "PhalaBasePool.Withdrawal",
+    "PhalaBasePool.WithdrawalQueued",
+    "PhalaBasePool.PoolWhitelistCreated",
+    "PhalaBasePool.PoolWhitelistDeleted",
+    "PhalaBasePool.PoolWhitelistStakerAdded",
+    "PhalaBasePool.PoolWhitelistStakerRemoved",
 
     "PhalaComputation.WorkerStarted",
     "PhalaComputation.WorkerStopped",
