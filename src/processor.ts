@@ -11,18 +11,18 @@ import {
   Account,
   BasePool,
   BasePoolKind,
+  BasePoolWhitelist,
   Delegation,
   DelegationNft,
   GlobalState,
   Session,
   StakePool,
-  BasePoolWhitelist,
   TokenomicParameters,
   Vault,
   Worker,
   WorkerState,
 } from './model'
-import serializeEvents from './serializeEvents'
+import decodeEvents from './decodeEvents'
 import {createPool, updateSharePrice} from './utils/basePool'
 import {assertGet, combineIds, getAccount, toMap} from './utils/common'
 import {queryIdentities} from './utils/identity'
@@ -85,7 +85,7 @@ type Item = BatchProcessorItem<typeof processor>
 export type Ctx = BatchContext<Store, Item>
 
 processor.run(new TypeormDatabase(), async (ctx) => {
-  const events = serializeEvents(ctx)
+  const events = decodeEvents(ctx)
 
   const identityUpdatedAccountIdSet = new Set<string>()
   const basePoolIdSet = new Set<string>()
@@ -355,13 +355,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         if (stakePool.delegable != null) {
           stakePool.delegable = stakePool.delegable.minus(amount)
         }
-        if (delegation != null) {
-          if (delegation.shares.eq(0)) {
-            basePool.delegatorCount++
-          }
-          delegation.shares = delegation.shares.plus(shares)
-          // delegation.value = delegation.value.plus(amount)
-        } else {
+        if (delegation == null) {
           delegationMap.set(
             delegationId,
             new Delegation({
@@ -374,6 +368,12 @@ processor.run(new TypeormDatabase(), async (ctx) => {
             })
           )
           basePool.delegatorCount++
+        } else {
+          if (delegation.shares.eq(0)) {
+            basePool.delegatorCount++
+          }
+          delegation.shares = delegation.shares.plus(shares)
+          // delegation.value = delegation.value.plus(amount)
         }
         break
       }
@@ -523,13 +523,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const delegationId = combineIds(pid, accountId)
         const delegation = delegationMap.get(delegationId)
         // account.vaultValue = account.vaultValue.plus(amount)
-        if (delegation != null) {
-          if (delegation.shares.eq(0)) {
-            basePool.delegatorCount++
-          }
-          delegation.shares = delegation.shares.plus(shares)
-          // delegation.value = delegation.value.plus(amount)
-        } else {
+        if (delegation == null) {
           delegationMap.set(
             delegationId,
             new Delegation({
@@ -543,6 +537,12 @@ processor.run(new TypeormDatabase(), async (ctx) => {
             })
           )
           basePool.delegatorCount++
+        } else {
+          if (delegation.shares.eq(0)) {
+            basePool.delegatorCount++
+          }
+          delegation.shares = delegation.shares.plus(shares)
+          // delegation.value = delegation.value.plus(amount)
         }
         break
       }
@@ -561,13 +561,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         account.vaultValue = account.vaultValue.plus(amount)
         globalState.vaultValue = globalState.vaultValue.plus(amount)
         globalState.totalValue = globalState.totalValue.plus(amount)
-        if (delegation != null) {
-          if (delegation.shares.eq(0)) {
-            basePool.delegatorCount++
-          }
-          delegation.shares = delegation.shares.plus(shares)
-          // delegation.value = delegation.value.plus(amount)
-        } else {
+        if (delegation == null) {
           delegationMap.set(
             delegationId,
             new Delegation({
@@ -581,6 +575,12 @@ processor.run(new TypeormDatabase(), async (ctx) => {
             })
           )
           basePool.delegatorCount++
+        } else {
+          if (delegation.shares.eq(0)) {
+            basePool.delegatorCount++
+          }
+          delegation.shares = delegation.shares.plus(shares)
+          // delegation.value = delegation.value.plus(amount)
         }
         break
       }

@@ -45,7 +45,7 @@ import {
 import {encodeAddress, fromBits, toBalance} from './utils/converter'
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-const serializeEvent = (
+const decodeEvent = (
   ctx: Ctx,
   item: Ctx['blocks'][number]['items'][number]
 ) => {
@@ -400,25 +400,25 @@ const serializeEvent = (
   }
 }
 
-const serializeEvents = (
+const decodeEvents = (
   ctx: Ctx
 ): Array<
-  Exclude<ReturnType<typeof serializeEvent>, undefined> & {
+  Exclude<ReturnType<typeof decodeEvent>, undefined> & {
     block: SubstrateBlock
   }
 > => {
-  const serializedEvents = []
+  const decodedEvents = []
 
   for (const block of ctx.blocks) {
     for (const item of block.items) {
-      const serialized = serializeEvent(ctx, item)
-      if (serialized != null) {
-        serializedEvents.push({...serialized, block: block.header})
+      const decoded = decodeEvent(ctx, item)
+      if (decoded != null) {
+        decodedEvents.push({...decoded, block: block.header})
       }
     }
   }
 
-  return serializedEvents
+  return decodedEvents
 }
 
-export default serializeEvents
+export default decodeEvents

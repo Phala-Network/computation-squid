@@ -65,8 +65,8 @@ type BasePool @entity {
   kind: BasePoolKind!
   "decimal percentage, 1 means 100%"
   commission: BigDecimal!
-  "any string, usually a stringified json"
-  description: String
+  # "any string, usually a stringified json"
+  # description: String
   vault: Vault @derivedFrom(field: "basePool")
   stakePool: StakePool @derivedFrom(field: "basePool")
   totalShares: BigDecimal!

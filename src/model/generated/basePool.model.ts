@@ -44,12 +44,6 @@ export class BasePool {
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
   commission!: BigDecimal
 
-  /**
-   * any string, usually a stringified json
-   */
-  @Column_("text", {nullable: true})
-  description!: string | undefined | null
-
   @OneToOne_(() => Vault)
   vault!: Vault | undefined | null
 
