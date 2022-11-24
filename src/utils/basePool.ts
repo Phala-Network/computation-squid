@@ -36,6 +36,7 @@ export function createPool(
     sharePrice: BigDecimal(1),
     freeValue: BigDecimal(0),
     releasingValue: BigDecimal(0),
+    withdrawalShares: BigDecimal(0),
     withdrawalValue: BigDecimal(0),
     delegatorCount: 0,
     whitelistEnabled: false,

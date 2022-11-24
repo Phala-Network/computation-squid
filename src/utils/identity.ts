@@ -28,11 +28,9 @@ export const queryIdentities = async (
       if (registration.judgements.length > 0) {
         account.identityLevel =
           IdentityLevel[registration.judgements[0][1].__kind]
-      } else {
-        account.identityLevel = IdentityLevel.Unknown
       }
     } else {
-      account.identityLevel = IdentityLevel.Unknown
+      account.identityLevel = null
       account.identityDisplay = null
     }
   }

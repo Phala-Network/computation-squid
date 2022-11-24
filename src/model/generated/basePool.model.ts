@@ -68,6 +68,9 @@ export class BasePool {
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
   withdrawalValue!: BigDecimal
 
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  withdrawalShares!: BigDecimal
+
   @Column_("int4", {nullable: false})
   delegatorCount!: number
 

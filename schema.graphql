@@ -42,7 +42,7 @@ type Account @entity {
   id: ID!
   vault: Vault @derivedFrom(field: "account")
   identityDisplay: String
-  identityLevel: IdentityLevel!
+  identityLevel: IdentityLevel
   stakePoolValue: BigDecimal!
   stakePoolNftCount: Int!
   vaultValue: BigDecimal!
@@ -75,6 +75,7 @@ type BasePool @entity {
   freeValue: BigDecimal!
   releasingValue: BigDecimal!
   withdrawalValue: BigDecimal!
+  withdrawalShares: BigDecimal!
   delegatorCount: Int!
   whitelistEnabled: Boolean!
   whitelists: [BasePoolWhitelist!] @derivedFrom(field: "basePool")

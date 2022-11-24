@@ -22,8 +22,8 @@ export class Account {
   @Column_("text", {nullable: true})
   identityDisplay!: string | undefined | null
 
-  @Column_("varchar", {length: 10, nullable: false})
-  identityLevel!: IdentityLevel
+  @Column_("varchar", {length: 10, nullable: true})
+  identityLevel!: IdentityLevel | undefined | null
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
   stakePoolValue!: BigDecimal

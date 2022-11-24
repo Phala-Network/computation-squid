@@ -1,13 +1,12 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import assert from 'assert'
-import {Account, IdentityLevel} from '../model'
+import {Account} from '../model'
 
 export const getAccount = (m: Map<string, Account>, id: string): Account => {
   let acc = m.get(id)
   if (acc == null) {
     acc = new Account({
       id,
-      identityLevel: IdentityLevel.Unknown,
       stakePoolValue: BigDecimal(0),
       stakePoolNftCount: 0,
       vaultValue: BigDecimal(0),

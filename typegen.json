@@ -1,6 +1,6 @@
 {
   "outDir": "src/types",
-  "specVersions": "http://localhost:4444/graphql",
+  "specVersions": "http://51.210.116.29:4444/graphql",
   "events": [
     "PhalaStakePoolv2.PoolCreated",
     "PhalaStakePoolv2.PoolCommissionSet",
@@ -11,8 +11,6 @@
     "PhalaStakePoolv2.RewardReceived",
     "PhalaStakePoolv2.OwnerRewardsWithdrawn",
     "PhalaStakePoolv2.Contribution",
-    "PhalaStakePoolv2.Withdrawal",
-    "PhalaStakePoolv2.WithdrawalQueued",
     "PhalaStakePoolv2.WorkerReclaimed",
 
     "PhalaVault.PoolCreated",

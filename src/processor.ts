@@ -30,8 +30,8 @@ import {updateWorkerShares, updateWorkerSMinAndSMax} from './utils/worker'
 
 const processor = new SubstrateBatchProcessor()
   .setDataSource({
-    archive: 'http://localhost:4444/graphql',
-    chain: 'ws://localhost:49944',
+    archive: 'http://51.210.116.29:4444/graphql',
+    chain: 'wss://pc-test-3.phala.network/khala/ws',
   })
   .addEvent('PhalaStakePoolv2.PoolCreated')
   .addEvent('PhalaStakePoolv2.PoolCommissionSet')
@@ -41,8 +41,6 @@ const processor = new SubstrateBatchProcessor()
   .addEvent('PhalaStakePoolv2.WorkingStarted')
   .addEvent('PhalaStakePoolv2.RewardReceived')
   .addEvent('PhalaStakePoolv2.Contribution')
-  .addEvent('PhalaStakePoolv2.Withdrawal')
-  .addEvent('PhalaStakePoolv2.WithdrawalQueued')
   .addEvent('PhalaStakePoolv2.WorkerReclaimed')
 
   .addEvent('PhalaVault.PoolCreated')
@@ -106,8 +104,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       name === 'PhalaStakePoolv2.WorkingStarted' ||
       name === 'PhalaStakePoolv2.RewardReceived' ||
       name === 'PhalaStakePoolv2.Contribution' ||
-      name === 'PhalaStakePoolv2.Withdrawal' ||
-      name === 'PhalaStakePoolv2.WithdrawalQueued' ||
       name === 'PhalaStakePoolv2.WorkerReclaimed'
     ) {
       basePoolIdSet.add(args.pid)
@@ -118,27 +114,27 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       name === 'PhalaVault.VaultCommissionSet' ||
       name === 'PhalaVault.OwnerSharesClaimed' ||
       name === 'PhalaVault.OwnerSharesGained' ||
-      name === 'PhalaVault.Contribution' ||
-      name === 'PhalaBasePool.Withdrawal' ||
-      name === 'PhalaBasePool.WithdrawalQueued'
+      name === 'PhalaVault.Contribution'
     ) {
       basePoolIdSet.add(args.pid)
       vaultIdSet.add(args.pid)
     }
 
     if (
+      name === 'PhalaBasePool.Withdrawal' ||
+      name === 'PhalaBasePool.WithdrawalQueued' ||
       name === 'PhalaBasePool.PoolWhitelistCreated' ||
       name === 'PhalaBasePool.PoolWhitelistDeleted' ||
       name === 'PhalaBasePool.PoolWhitelistStakerAdded' ||
       name === 'PhalaBasePool.PoolWhitelistStakerRemoved'
     ) {
       basePoolIdSet.add(args.pid)
+      stakePoolIdSet.add(args.pid)
+      vaultIdSet.add(args.pid)
     }
 
     if (
       name === 'PhalaStakePoolv2.Contribution' ||
-      name === 'PhalaStakePoolv2.Withdrawal' ||
-      name === 'PhalaStakePoolv2.WithdrawalQueued' ||
       name === 'PhalaVault.Contribution' ||
       name === 'PhalaBasePool.Withdrawal' ||
       name === 'PhalaBasePool.WithdrawalQueued'
@@ -377,76 +373,14 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         }
         break
       }
-      case 'PhalaStakePoolv2.Withdrawal': {
-        const {pid, accountId, amount, shares} = args
-        const account = getAccount(accountMap, accountId)
-        const basePool = assertGet(basePoolMap, pid)
-        const stakePool = assertGet(stakePoolMap, pid)
-        const delegationId = combineIds(pid, accountId)
-        const delegation = assertGet(delegationMap, delegationId)
-        account.stakePoolValue = account.stakePoolValue.minus(amount)
-        globalState.stakePoolValue = globalState.stakePoolValue.minus(amount)
-        basePool.totalShares = basePool.totalShares.minus(shares)
-        basePool.totalValue = basePool.totalValue.minus(amount)
-        updateSharePrice(basePool)
-        stakePool.aprMultiplier = basePool.totalValue.eq(0)
-          ? BigDecimal(0)
-          : stakePool.idleWorkerShares
-              .times(BigDecimal(1).minus(basePool.commission))
-              .div(basePool.totalValue)
-        basePool.freeValue = basePool.freeValue.minus(amount)
-        delegation.shares = delegation.shares.minus(shares)
-        // delegation.value = delegation.value.minus(amount)
-        if (delegation.shares.eq(0)) {
-          basePool.delegatorCount--
-        }
-        if (basePool.withdrawalValue.gt(0)) {
-          basePool.withdrawalValue = basePool.withdrawalValue.minus(amount)
-        }
-        if (stakePool.capacity != null) {
-          stakePool.delegable = stakePool.capacity
-            .minus(basePool.totalValue)
-            .plus(basePool.withdrawalValue)
-        }
-        if (delegation.withdrawalShares.gt(0)) {
-          delegation.withdrawalShares =
-            delegation.withdrawalShares.minus(shares)
-        }
-        // if (delegation.withdrawalValue.gt(0)) {
-        //   delegation.withdrawalValue = delegation.withdrawalValue.minus(amount)
-        // }
-        break
-      }
-      case 'PhalaStakePoolv2.WithdrawalQueued': {
-        const {pid, accountId, shares} = args
-        const delegationId = combineIds(pid, accountId)
-        // const basePool = assertGet(basePoolMap, pid)
-        // const stakePool = assertGet(stakePoolMap, pid)
-        const delegation = assertGet(delegationMap, delegationId)
-        // const {totalShares, totalValue} = basePool
-        // const amount = shares.div(totalShares).times(totalValue).round(12, 0)
-        // Replace previous withdrawal
-        // stakePool.withdrawalValue = stakePool.withdrawalValue.minus(
-        //   delegation.withdrawalValue
-        // )
-        delegation.withdrawalShares = shares
-        // delegation.withdrawalValue = amount
-        delegation.withdrawalStartTime = blockTime
-        // stakePool.withdrawalValue = stakePool.withdrawalValue.plus(amount)
-        // if (stakePool.capacity != null) {
-        //   stakePool.delegable = stakePool.capacity
-        //     .minus(stakePool.totalValue)
-        //     .plus(stakePool.withdrawalValue)
-        // }
-        break
-      }
       case 'PhalaStakePoolv2.WorkerReclaimed': {
-        // const {pid, workerId} = args
-        // const stakePool = stakePoolMap.get(pid)
-        // const worker = workerMap.get(workerId)
-        // assert(worker)
-        // basePool.releasingValue = basePool.releasingValue.minus(worker.session.s)
-        // stakePool.freeValue = stakePool.freeValue.plus(amount)
+        const {pid, workerId} = args
+        const basePool = assertGet(basePoolMap, pid)
+        const worker = assertGet(workerMap, workerId)
+        assert(worker.session)
+        const session = assertGet(sessionMap, worker.session.id)
+        basePool.releasingValue = basePool.releasingValue.minus(session.stake)
+        basePool.freeValue = basePool.freeValue.plus(session.stake)
         break
       }
       case 'PhalaBasePool.PoolWhitelistCreated': {
@@ -585,9 +519,75 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         break
       }
       case 'PhalaBasePool.Withdrawal': {
+        const {pid, accountId, amount, shares} = args
+        const account = getAccount(accountMap, accountId)
+        const basePool = assertGet(basePoolMap, pid)
+        const delegationId = combineIds(pid, accountId)
+        const delegation = assertGet(delegationMap, delegationId)
+        basePool.totalShares = basePool.totalShares.minus(shares)
+        basePool.totalValue = basePool.totalValue.minus(amount)
+        updateSharePrice(basePool)
+        basePool.freeValue = basePool.freeValue.minus(amount)
+        delegation.shares = delegation.shares.minus(shares)
+        // delegation.value = delegation.value.minus(amount)
+        if (delegation.shares.eq(0)) {
+          basePool.delegatorCount--
+        }
+        if (basePool.withdrawalValue.gt(0)) {
+          basePool.withdrawalValue = basePool.withdrawalValue.minus(amount)
+        }
+        if (delegation.withdrawalShares.gt(0)) {
+          delegation.withdrawalShares =
+            delegation.withdrawalShares.minus(shares)
+        }
+        // if (delegation.withdrawalValue.gt(0)) {
+        //   delegation.withdrawalValue = delegation.withdrawalValue.minus(amount)
+        // }
+        if (basePool.stakePool != null) {
+          const stakePool = assertGet(stakePoolMap, pid)
+          stakePool.aprMultiplier = basePool.totalValue.eq(0)
+            ? BigDecimal(0)
+            : stakePool.idleWorkerShares
+                .times(BigDecimal(1).minus(basePool.commission))
+                .div(basePool.totalValue)
+          if (stakePool.capacity != null) {
+            stakePool.delegable = stakePool.capacity
+              .minus(basePool.totalValue)
+              .plus(basePool.withdrawalValue)
+          }
+          account.stakePoolValue = account.stakePoolValue.minus(amount)
+          globalState.stakePoolValue = globalState.stakePoolValue.minus(amount)
+        }
+
+        if (basePool.vault != null) {
+          // const vault = assertGet(vaultMap, pid)
+          account.vaultValue = account.vaultValue.minus(amount)
+          globalState.vaultValue = globalState.vaultValue.minus(amount)
+        }
         break
       }
       case 'PhalaBasePool.WithdrawalQueued': {
+        const {pid, accountId, shares} = args
+        const delegationId = combineIds(pid, accountId)
+        const basePool = assertGet(basePoolMap, pid)
+        const delegation = assertGet(delegationMap, delegationId)
+        const prevWithdrawalShares = delegation.withdrawalShares
+        basePool.withdrawalShares = basePool.withdrawalShares
+          .minus(prevWithdrawalShares)
+          .add(shares)
+        // const {totalShares, totalValue} = basePool
+        // basePool.withdrawalValue = basePool.withdrawalValue.minus(
+        //   delegation.withdrawalValue
+        // )
+        // Replace previous withdrawal
+        delegation.withdrawalShares = shares
+        // delegation.withdrawalValue = amount
+        delegation.withdrawalStartTime = blockTime
+        // if (stakePool.capacity != null) {
+        //   stakePool.delegable = stakePool.capacity
+        //     .minus(stakePool.totalValue)
+        //     .plus(stakePool.withdrawalValue)
+        // }
         break
       }
       case 'PhalaComputation.SessionBound': {
