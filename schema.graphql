@@ -40,9 +40,11 @@ enum IdentityLevel {
 type Account @entity {
   "account address"
   id: ID!
-  vault: Vault @derivedFrom(field: "account")
+  basePool: BasePool @derivedFrom(field: "account")
   identityDisplay: String
   identityLevel: IdentityLevel
+  # subIdentity: String
+  # super: Account
   stakePoolValue: BigDecimal!
   stakePoolNftCount: Int!
   vaultValue: BigDecimal!
@@ -62,6 +64,7 @@ type BasePool @entity {
   "NFT collection id"
   cid: Int!
   owner: Account!
+  account: Account! @unique
   kind: BasePoolKind!
   "decimal percentage, 1 means 100%"
   commission: BigDecimal!
@@ -85,7 +88,6 @@ type Vault @entity {
   "pid"
   id: ID!
   basePool: BasePool! @unique
-  account: Account! @unique
   apr: BigDecimal!
   "share price of owner's last gain"
   lastSharePriceCheckpoint: BigDecimal!
@@ -160,8 +162,8 @@ type Session @entity {
   "session account address"
   id: ID!
   isBound: Boolean!
-  stakePool: StakePool!
-  worker: Worker!
+  stakePool: StakePool
+  worker: Worker
   stake: BigDecimal!
   state: WorkerState!
   v: BigDecimal!

@@ -5,6 +5,7 @@
     "node": ">=16"
   },
   "scripts": {
+    "postinstall": "patch-package",
     "build": "rm -rf lib && tsc",
     "db:migrate": "npx squid-typeorm-migration apply",
     "processor:start": "node lib/processor.js",
@@ -27,15 +28,16 @@
     "@subsquid/substrate-typegen": "1.5.0",
     "@subsquid/typeorm-codegen": "0.2.3",
     "@types/node": "16.11.56",
-    "@typescript-eslint/eslint-plugin": "^5.43.0",
-    "eslint": "^8.27.0",
+    "@typescript-eslint/eslint-plugin": "^5.44.0",
+    "eslint": "^8.28.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-config-standard-with-typescript": "^23.0.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-n": "^15.5.1",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-promise": "^6.1.1",
-    "prettier": "2.7.1",
+    "patch-package": "^6.5.0",
+    "prettier": "2.8.0",
     "typescript": "4.9.3"
   }
 }

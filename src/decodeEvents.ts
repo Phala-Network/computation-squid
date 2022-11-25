@@ -10,6 +10,7 @@ import {
   PhalaBasePoolPoolWhitelistStakerAddedEvent,
   PhalaBasePoolPoolWhitelistStakerRemovedEvent,
   PhalaBasePoolWithdrawalEvent,
+  PhalaBasePoolWithdrawalQueuedEvent,
   PhalaComputationBenchmarkUpdatedEvent,
   PhalaComputationSessionBoundEvent,
   PhalaComputationSessionSettledEvent,
@@ -51,8 +52,16 @@ const decodeEvent = (
   switch (name) {
     case 'PhalaStakePoolv2.PoolCreated': {
       const e = new PhalaStakePoolv2PoolCreatedEvent(ctx, item.event)
-      const {owner, pid, cid} = e.asV1191
-      return {name, args: {pid: String(pid), owner: encodeAddress(owner), cid}}
+      const {owner, pid, cid, poolAccountId} = e.asV1191
+      return {
+        name,
+        args: {
+          pid: String(pid),
+          owner: encodeAddress(owner),
+          cid,
+          poolAccountId: encodeAddress(poolAccountId),
+        },
+      }
     }
     case 'PhalaStakePoolv2.PoolCommissionSet': {
       const e = new PhalaStakePoolv2PoolCommissionSetEvent(ctx, item.event)
@@ -193,15 +202,16 @@ const decodeEvent = (
       }
     }
     case 'PhalaBasePool.WithdrawalQueued': {
-      const e = new PhalaBasePoolWithdrawalEvent(ctx, item.event)
-      const {pid, user, amount, shares} = e.asV1191
+      const e = new PhalaBasePoolWithdrawalQueuedEvent(ctx, item.event)
+      const {pid, user, shares, nftId, asVault} = e.asV1191
       return {
         name,
         args: {
           pid: String(pid),
           accountId: encodeAddress(user),
-          amount: toBalance(amount),
           shares: toBalance(shares),
+          nftId,
+          asVault: asVault?.toString(),
         },
       }
     }

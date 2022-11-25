@@ -1,6 +1,6 @@
 {
   "outDir": "src/types",
-  "specVersions": "http://51.210.116.29:4444/graphql",
+  "specVersions": "http://10.86.1.5:8888/graphql",
   "events": [
     "PhalaStakePoolv2.PoolCreated",
     "PhalaStakePoolv2.PoolCommissionSet",

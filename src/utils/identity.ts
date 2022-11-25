@@ -9,11 +9,11 @@ export const queryIdentities = async (
   accountIds: string[],
   accountMap: Map<string, Account>
 ): Promise<void> => {
-  const storage = new IdentityIdentityOfStorage(
+  const identityOf = new IdentityIdentityOfStorage(
     ctx,
     ctx.blocks[ctx.blocks.length - 1].header
   )
-  const res = await storage.getManyAsV1192(accountIds.map(decodeAddress))
+  const res = await identityOf.getManyAsV1191(accountIds.map(decodeAddress))
   for (let i = 0; i < res.length; i++) {
     const account = getAccount(accountMap, accountIds[i])
     const registration = res[i]

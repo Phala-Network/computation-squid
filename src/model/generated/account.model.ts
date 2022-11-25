@@ -1,7 +1,7 @@
 import {BigDecimal} from "@subsquid/big-decimal"
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_} from "typeorm"
 import * as marshal from "./marshal"
-import {Vault} from "./vault.model"
+import {BasePool} from "./basePool.model"
 import {IdentityLevel} from "./_identityLevel"
 
 @Entity_()
@@ -16,8 +16,8 @@ export class Account {
   @PrimaryColumn_()
   id!: string
 
-  @OneToOne_(() => Vault)
-  vault!: Vault | undefined | null
+  @OneToOne_(() => BasePool)
+  basePool!: BasePool | undefined | null
 
   @Column_("text", {nullable: true})
   identityDisplay!: string | undefined | null

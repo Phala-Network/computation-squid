@@ -22,11 +22,11 @@ export class Session {
 
   @Index_()
   @ManyToOne_(() => StakePool, {nullable: true})
-  stakePool!: StakePool
+  stakePool!: StakePool | undefined | null
 
   @Index_()
   @ManyToOne_(() => Worker, {nullable: true})
-  worker!: Worker
+  worker!: Worker | undefined | null
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
   stake!: BigDecimal

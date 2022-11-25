@@ -1,5 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToOne as OneToOne_, OneToMany as OneToMany_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToOne as OneToOne_, JoinColumn as JoinColumn_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
 import {Account} from "./account.model"
 import {BasePoolKind} from "./_basePoolKind"
@@ -34,6 +34,11 @@ export class BasePool {
   @Index_()
   @ManyToOne_(() => Account, {nullable: true})
   owner!: Account
+
+  @Index_({unique: true})
+  @OneToOne_(() => Account, {nullable: false})
+  @JoinColumn_()
+  account!: Account
 
   @Column_("varchar", {length: 9, nullable: false})
   kind!: BasePoolKind

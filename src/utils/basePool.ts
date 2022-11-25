@@ -3,14 +3,14 @@ import {BasePoolKind, Account, BasePool, StakePool, Vault} from '../model'
 
 export function createPool(
   kind: BasePoolKind.StakePool,
-  props: {pid: string; cid: number; owner: Account}
+  props: {pid: string; cid: number; ownerAccount: Account; poolAccount: Account}
 ): {
   basePool: BasePool
   stakePool: StakePool
 }
 export function createPool(
   kind: BasePoolKind.Vault,
-  props: {pid: string; cid: number; owner: Account; poolAccount: Account}
+  props: {pid: string; cid: number; ownerAccount: Account; poolAccount: Account}
 ): {
   basePool: BasePool
   vault: Vault
@@ -20,15 +20,16 @@ export function createPool(
   {
     pid,
     cid,
-    owner,
+    ownerAccount,
     poolAccount,
-  }: {pid: string; cid: number; owner: Account; poolAccount?: Account}
+  }: {pid: string; cid: number; ownerAccount: Account; poolAccount: Account}
 ): {basePool: BasePool; stakePool?: StakePool; vault?: Vault} {
   const basePool = new BasePool({
     id: pid,
     pid: BigInt(pid),
     cid,
-    owner,
+    owner: ownerAccount,
+    account: poolAccount,
     kind,
     commission: BigDecimal(0),
     totalShares: BigDecimal(0),
@@ -46,6 +47,8 @@ export function createPool(
     const stakePool = new StakePool({
       id: pid,
       basePool,
+      aprMultiplier: BigDecimal(0),
+      ownerReward: BigDecimal(0),
       workerCount: 0,
       idleWorkerCount: 0,
       idleWorkerShares: BigDecimal(0),
@@ -56,7 +59,6 @@ export function createPool(
   const vault = new Vault({
     id: pid,
     basePool,
-    account: poolAccount,
     apr: BigDecimal(0),
     lastSharePriceCheckpoint: BigDecimal(1),
     claimableOwnerShares: BigDecimal(0),
