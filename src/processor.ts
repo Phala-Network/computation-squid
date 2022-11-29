@@ -41,6 +41,7 @@ const processor = new SubstrateBatchProcessor()
   .addEvent('PhalaStakePoolv2.PoolWorkerRemoved')
   .addEvent('PhalaStakePoolv2.WorkingStarted')
   .addEvent('PhalaStakePoolv2.RewardReceived')
+  .addEvent('PhalaStakePoolv2.OwnerRewardsWithdrawn')
   .addEvent('PhalaStakePoolv2.Contribution')
   .addEvent('PhalaStakePoolv2.WorkerReclaimed')
 
@@ -110,6 +111,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       name === 'PhalaStakePoolv2.PoolWorkerAdded' ||
       name === 'PhalaStakePoolv2.WorkingStarted' ||
       name === 'PhalaStakePoolv2.RewardReceived' ||
+      name === 'PhalaStakePoolv2.OwnerRewardsWithdrawn' ||
       name === 'PhalaStakePoolv2.Contribution' ||
       name === 'PhalaStakePoolv2.WorkerReclaimed'
     ) {
@@ -339,11 +341,23 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {pid, toOwner, toStakers} = args
         const basePool = assertGet(basePoolMap, pid)
         const stakePool = assertGet(stakePoolMap, pid)
+        const ownerAccount = assertGet(accountMap, basePool.owner.id)
         stakePool.ownerReward = stakePool.ownerReward.plus(toOwner)
+        ownerAccount.stakePoolOwnerReward =
+          ownerAccount.stakePoolOwnerReward.plus(toOwner)
         basePool.totalValue = basePool.totalValue.plus(toStakers)
         globalState.stakePoolValue = globalState.stakePoolValue.plus(toStakers)
         globalState.totalValue = globalState.totalValue.plus(toStakers)
         updateSharePrice(basePool)
+        break
+      }
+      case 'PhalaStakePoolv2.OwnerRewardsWithdrawn': {
+        const {pid, accountId, amount} = args
+        const stakePool = assertGet(stakePoolMap, pid)
+        const ownerAccount = assertGet(accountMap, accountId)
+        stakePool.ownerReward = BigDecimal(0)
+        ownerAccount.stakePoolOwnerReward =
+          ownerAccount.stakePoolOwnerReward.minus(amount)
         break
       }
       case 'PhalaStakePoolv2.Contribution': {
@@ -375,8 +389,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
               id: delegationId,
               basePool,
               account: getAccount(accountMap, accountId),
-              // value: amount,
+              value: amount,
               shares,
+              withdrawalValue: BigDecimal(0),
               withdrawalShares: BigDecimal(0),
             })
           )
@@ -481,9 +496,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
               id: delegationId,
               basePool,
               account: getAccount(accountMap, accountId),
-              // value: amount,
+              value: BigDecimal(0),
               shares,
-              // withdrawalValue: BigDecimal(0),
+              withdrawalValue: BigDecimal(0),
               withdrawalShares: BigDecimal(0),
             })
           )
@@ -519,9 +534,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
               id: delegationId,
               basePool,
               account: getAccount(accountMap, accountId),
-              // value: amount,
+              value: amount,
               shares,
-              // withdrawalValue: BigDecimal(0),
+              withdrawalValue: BigDecimal(0),
               withdrawalShares: BigDecimal(0),
             })
           )
@@ -584,7 +599,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         break
       }
       case 'PhalaBasePool.WithdrawalQueued': {
-        const {pid, accountId, shares} = args
+        const {pid, accountId, shares, nftId} = args
         const delegationId = combineIds(pid, accountId)
         const basePool = assertGet(basePoolMap, pid)
         const delegation = assertGet(delegationMap, delegationId)
@@ -600,6 +615,11 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         delegation.withdrawalShares = shares
         // delegation.withdrawalValue = amount
         delegation.withdrawalStartTime = blockTime
+        const withdrawalNft = assertGet(
+          delegationNftMap,
+          combineIds(basePool.cid, nftId)
+        )
+        delegation.withdrawalNft = withdrawalNft
         // if (stakePool.capacity != null) {
         //   stakePool.delegable = stakePool.capacity
         //     .minus(stakePool.totalValue)
@@ -857,24 +877,24 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         break
       }
       case 'RmrkCore.NFTBurned': {
-        const {collectionId, nftId, owner} = args
-        const id = combineIds(collectionId, nftId)
-        const delegationNft = delegationNftMap.get(id)
-        if (delegationNft != null) {
-          delegationNftMap.delete(id)
-          // await ctx.store.remove(delegationNft)
-          const ownerAccount = getAccount(accountMap, owner)
-          const basePool = assertGet(basePoolCidMap, collectionId)
-          const delegationId = combineIds(basePool.id, owner)
-          const delegation = assertGet(delegationMap, delegationId)
-          delegation.delegationNft = null
-          if (basePool.kind === BasePoolKind.StakePool) {
-            ownerAccount.stakePoolNftCount--
-          }
-          if (basePool.kind === BasePoolKind.Vault) {
-            ownerAccount.vaultNftCount--
-          }
-        }
+        // const {collectionId, nftId, owner} = args
+        // const id = combineIds(collectionId, nftId)
+        // const delegationNft = delegationNftMap.get(id)
+        // if (delegationNft != null) {
+        //   delegationNftMap.delete(id)
+        //   // await ctx.store.remove(delegationNft)
+        //   const ownerAccount = getAccount(accountMap, owner)
+        //   const basePool = assertGet(basePoolCidMap, collectionId)
+        //   const delegationId = combineIds(basePool.id, owner)
+        //   const delegation = assertGet(delegationMap, delegationId)
+        //   delegation.delegationNft = null
+        //   if (basePool.kind === BasePoolKind.StakePool) {
+        //     ownerAccount.stakePoolNftCount--
+        //   }
+        //   if (basePool.kind === BasePoolKind.Vault) {
+        //     ownerAccount.vaultNftCount--
+        //   }
+        // }
         break
       }
     }

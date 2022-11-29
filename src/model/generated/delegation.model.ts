@@ -26,7 +26,13 @@ export class Delegation {
   basePool!: BasePool
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  value!: BigDecimal
+
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
   shares!: BigDecimal
+
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  withdrawalValue!: BigDecimal
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
   withdrawalShares!: BigDecimal

@@ -41,6 +41,7 @@ type Account @entity {
   "account address"
   id: ID!
   basePool: BasePool @derivedFrom(field: "account")
+  ownedPools: [BasePool!]! @derivedFrom(field: "owner")
   identityDisplay: String
   identityLevel: IdentityLevel
   # subIdentity: String
@@ -49,6 +50,7 @@ type Account @entity {
   stakePoolNftCount: Int!
   vaultValue: BigDecimal!
   vaultNftCount: Int!
+  stakePoolOwnerReward: BigDecimal!
 }
 
 enum BasePoolKind {
@@ -68,8 +70,6 @@ type BasePool @entity {
   kind: BasePoolKind!
   "decimal percentage, 1 means 100%"
   commission: BigDecimal!
-  # "any string, usually a stringified json"
-  # description: String
   vault: Vault @derivedFrom(field: "basePool")
   stakePool: StakePool @derivedFrom(field: "basePool")
   totalShares: BigDecimal!
@@ -82,6 +82,7 @@ type BasePool @entity {
   delegatorCount: Int!
   whitelistEnabled: Boolean!
   whitelists: [BasePoolWhitelist!] @derivedFrom(field: "basePool")
+  delegations: [Delegation!] @derivedFrom(field: "basePool")
 }
 
 type Vault @entity {
@@ -114,9 +115,9 @@ type Delegation @entity {
   id: ID!
   account: Account!
   basePool: BasePool!
-  # value: BigDecimal!
+  value: BigDecimal!
   shares: BigDecimal!
-  # withdrawalValue: BigDecimal!
+  withdrawalValue: BigDecimal!
   withdrawalShares: BigDecimal!
   withdrawalStartTime: DateTime
   delegationNft: DelegationNft

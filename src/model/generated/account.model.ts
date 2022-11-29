@@ -1,5 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
 import {BasePool} from "./basePool.model"
 import {IdentityLevel} from "./_identityLevel"
@@ -19,6 +19,9 @@ export class Account {
   @OneToOne_(() => BasePool)
   basePool!: BasePool | undefined | null
 
+  @OneToMany_(() => BasePool, e => e.owner)
+  ownedPools!: BasePool[]
+
   @Column_("text", {nullable: true})
   identityDisplay!: string | undefined | null
 
@@ -36,4 +39,7 @@ export class Account {
 
   @Column_("int4", {nullable: false})
   vaultNftCount!: number
+
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  stakePoolOwnerReward!: BigDecimal
 }

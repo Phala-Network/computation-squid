@@ -9,6 +9,7 @@ export const getAccount = (m: Map<string, Account>, id: string): Account => {
       id,
       stakePoolValue: BigDecimal(0),
       stakePoolNftCount: 0,
+      stakePoolOwnerReward: BigDecimal(0),
       vaultValue: BigDecimal(0),
       vaultNftCount: 0,
     })

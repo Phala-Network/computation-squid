@@ -24,6 +24,7 @@ import {
   PhalaRegistryWorkerAddedEvent,
   PhalaRegistryWorkerUpdatedEvent,
   PhalaStakePoolv2ContributionEvent,
+  PhalaStakePoolv2OwnerRewardsWithdrawnEvent,
   PhalaStakePoolv2PoolCapacitySetEvent,
   PhalaStakePoolv2PoolCommissionSetEvent,
   PhalaStakePoolv2PoolCreatedEvent,
@@ -113,6 +114,18 @@ const decodeEvent = (
           pid: String(pid),
           toOwner: toBalance(toOwner),
           toStakers: toBalance(toStakers),
+        },
+      }
+    }
+    case 'PhalaStakePoolv2.OwnerRewardsWithdrawn': {
+      const e = new PhalaStakePoolv2OwnerRewardsWithdrawnEvent(ctx, item.event)
+      const {pid, user, amount} = e.asV1191
+      return {
+        name,
+        args: {
+          pid: String(pid),
+          accountId: encodeAddress(user),
+          amount: toBalance(amount),
         },
       }
     }

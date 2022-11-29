@@ -6,6 +6,7 @@ import {BasePoolKind} from "./_basePoolKind"
 import {Vault} from "./vault.model"
 import {StakePool} from "./stakePool.model"
 import {BasePoolWhitelist} from "./basePoolWhitelist.model"
+import {Delegation} from "./delegation.model"
 
 @Entity_()
 export class BasePool {
@@ -84,4 +85,7 @@ export class BasePool {
 
   @OneToMany_(() => BasePoolWhitelist, e => e.basePool)
   whitelists!: BasePoolWhitelist[]
+
+  @OneToMany_(() => Delegation, e => e.basePool)
+  delegations!: Delegation[]
 }

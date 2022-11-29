@@ -67,5 +67,7 @@ export function createPool(
 }
 
 export function updateSharePrice(pool: BasePool): void {
-  pool.sharePrice = pool.totalValue.div(pool.totalShares)
+  pool.sharePrice = pool.totalShares.eq(0)
+    ? BigDecimal(1)
+    : pool.totalValue.div(pool.totalShares)
 }

@@ -19,7 +19,7 @@ import {
   WorkerState,
 } from './model'
 import {Ctx} from './processor'
-import {createPool} from './utils/basePool'
+import {createPool, updateSharePrice} from './utils/basePool'
 import {assertGet, combineIds, getAccount, max} from './utils/common'
 import {updateTokenomicParameters} from './utils/tokenomicParameters'
 import {updateWorkerShares, updateWorkerSMinAndSMax} from './utils/worker'
@@ -181,7 +181,14 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
     if (b.stakePool != null) {
       const pool = createPool(BasePoolKind.StakePool, props)
       basePool = pool.basePool
+      basePool.commission = BigDecimal(b.commission).div(1e6)
+      basePool.freeValue = toBalance(b.freeValue)
+      basePool.totalShares = toBalance(b.totalShares)
+      basePool.totalValue = toBalance(b.totalValue)
+      updateSharePrice(basePool)
+
       const {stakePool} = pool
+
       if (b.stakePool.capacity != null) {
         stakePool.capacity = BigDecimal(b.stakePool.capacity)
         stakePool.delegable = max(
@@ -217,16 +224,11 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
       const pool = createPool(BasePoolKind.Vault, props)
       basePool = pool.basePool
       const {vault} = pool
-      vault.lastSharePriceCheckpoint = BigDecimal(
+      vault.lastSharePriceCheckpoint = toBalance(
         b.vault.lastSharePriceCheckpoint
       )
       vaultMap.set(b.pid, vault)
     }
-
-    basePool.commission = BigDecimal(b.commission).div(1e6)
-    basePool.freeValue = toBalance(b.freeValue)
-    basePool.totalShares = toBalance(b.totalShares)
-    basePool.totalValue = toBalance(b.totalValue)
 
     for (const withdrawal of b.withdrawQueue) {
       const withdrawalNft = new DelegationNft({
@@ -240,6 +242,7 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
         account: getAccount(accountMap, withdrawal.user),
         basePool,
         shares: BigDecimal(0),
+        value: BigDecimal(0),
         withdrawalStartTime: new Date(withdrawal.startTime * 1000),
         withdrawalNft,
       })
@@ -262,6 +265,7 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
       const delegationId = combineIds(basePool.id, user)
       const delegation = assertGet(delegationMap, delegationId)
       delegation.withdrawalShares = shares
+      delegation.withdrawalValue = BigDecimal(0)
     } else {
       const delegationId = combineIds(basePool.id, d.owner)
       const delegationNft = new DelegationNft({
@@ -279,9 +283,11 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
           basePool,
           delegationNft,
           withdrawalShares: BigDecimal(0),
+          withdrawalValue: BigDecimal(0),
         })
 
       delegation.shares = shares
+      delegation.value = BigDecimal(0)
       delegation.delegationNft = delegationNft
 
       delegationNftMap.set(delegationNft.id, delegationNft)
