@@ -1,5 +1,5 @@
 import {BigDecimal} from '@subsquid/big-decimal'
-import {TokenomicParameters, Session, Worker} from '../model'
+import {Session, Worker} from '../model'
 
 type ConfidenceLevel = 1 | 2 | 3 | 4 | 5
 const validateConfidenceLevel = (n: number): n is ConfidenceLevel =>
@@ -11,24 +11,6 @@ const confidenceScoreMap: Record<ConfidenceLevel, string> = {
   3: '1',
   4: '0.8',
   5: '0.7',
-}
-
-export const updateWorkerSMinAndSMax = (
-  worker: Worker,
-  tokenomicParameters: TokenomicParameters
-): void => {
-  const {vMax, phaRate, re, k} = tokenomicParameters
-  const {initialScore, confidenceLevel} = worker
-  if (typeof initialScore === 'number') {
-    worker.sMin = k.times(BigDecimal(initialScore).sqrt()).round(12, 0)
-    if (validateConfidenceLevel(confidenceLevel)) {
-      const confidenceScore = confidenceScoreMap[confidenceLevel]
-      worker.sMax = vMax
-        .div(re.minus(1).times(confidenceScore).add(1))
-        .minus(BigDecimal(initialScore).mul('0.3').div(phaRate))
-        .round(12, 0)
-    }
-  }
 }
 
 export function updateWorkerShares(

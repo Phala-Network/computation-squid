@@ -7,7 +7,7 @@ const config: {
 } = {
   blockRange: {from: 48001},
   dataSource: {
-    archive: 'http://10.86.1.5:8888/graphql',
+    archive: 'http://51.210.116.29:8888/graphql',
     chain: 'wss://pc-test-3.phala.network/khala/ws',
   },
 }

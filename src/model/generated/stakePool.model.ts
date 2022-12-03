@@ -1,7 +1,8 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, Index as Index_, JoinColumn as JoinColumn_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, Index as Index_, JoinColumn as JoinColumn_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
 import {BasePool} from "./basePool.model"
+import {Worker} from "./worker.model"
 
 @Entity_()
 export class StakePool {
@@ -33,9 +34,6 @@ export class StakePool {
   delegable!: BigDecimal | undefined | null
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  aprMultiplier!: BigDecimal
-
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
   ownerReward!: BigDecimal
 
   @Column_("int4", {nullable: false})
@@ -46,4 +44,7 @@ export class StakePool {
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
   idleWorkerShares!: BigDecimal
+
+  @OneToMany_(() => Worker, e => e.stakePool)
+  workers!: Worker[]
 }

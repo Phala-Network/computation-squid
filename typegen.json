@@ -19,6 +19,7 @@
     "PhalaVault.OwnerSharesClaimed",
     "PhalaVault.Contribution",
 
+    "PhalaBasePool.NftCreated",
     "PhalaBasePool.Withdrawal",
     "PhalaBasePool.WithdrawalQueued",
     "PhalaBasePool.PoolWhitelistCreated",
@@ -35,14 +36,12 @@
     "PhalaComputation.WorkerExitUnresponsive",
     "PhalaComputation.SessionSettled",
     "PhalaComputation.BenchmarkUpdated",
-    "PhalaComputation.TokenomicParametersChanged",
 
     "PhalaRegistry.WorkerAdded",
     "PhalaRegistry.WorkerUpdated",
     "PhalaRegistry.InitialScoreSet",
 
     "RmrkCore.CollectionCreated",
-    "RmrkCore.NftMinted",
     "RmrkCore.PropertySet",
     "RmrkCore.NFTBurned",
 
@@ -51,5 +50,5 @@
     "Identity.JudgementGiven"
   ],
   "calls": [],
-  "storage": ["Identity.IdentityOf", "PhalaComputation.TokenomicParameters"]
+  "storage": ["Identity.IdentityOf"]
 }

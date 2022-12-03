@@ -8,7 +8,7 @@ export class DelegationNft {
   }
 
   /**
-   * ${collectionId}-${nftId}
+   * ${cid}-${nftId}
    */
   @PrimaryColumn_()
   id!: string
@@ -18,7 +18,7 @@ export class DelegationNft {
   owner!: Account
 
   @Column_("int4", {nullable: false})
-  collectionId!: number
+  cid!: number
 
   @Column_("int4", {nullable: false})
   nftId!: number

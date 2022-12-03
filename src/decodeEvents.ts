@@ -5,6 +5,7 @@ import {
   IdentityIdentityClearedEvent,
   IdentityIdentitySetEvent,
   IdentityJudgementGivenEvent,
+  PhalaBasePoolNftCreatedEvent,
   PhalaBasePoolPoolWhitelistCreatedEvent,
   PhalaBasePoolPoolWhitelistDeletedEvent,
   PhalaBasePoolPoolWhitelistStakerAddedEvent,
@@ -39,7 +40,6 @@ import {
   PhalaVaultPoolCreatedEvent,
   PhalaVaultVaultCommissionSetEvent,
   RmrkCoreNftBurnedEvent,
-  RmrkCoreNftMintedEvent,
   RmrkCorePropertySetEvent,
 } from './types/events'
 import {encodeAddress, fromBits, toBalance} from './utils/converter'
@@ -201,6 +201,19 @@ const decodeEvent = (
         },
       }
     }
+    case 'PhalaBasePool.NftCreated': {
+      const e = new PhalaBasePoolNftCreatedEvent(ctx, item.event)
+      const {cid, nftId, owner, shares} = e.asV1191
+      return {
+        name,
+        args: {
+          cid,
+          nftId,
+          owner: encodeAddress(owner),
+          shares: toBalance(shares),
+        },
+      }
+    }
     case 'PhalaBasePool.Withdrawal': {
       const e = new PhalaBasePoolWithdrawalEvent(ctx, item.event)
       const {pid, user, amount, shares} = e.asV1191
@@ -326,8 +339,6 @@ const decodeEvent = (
       const {session, pInstant} = e.asV1191
       return {name, args: {sessionId: encodeAddress(session), pInstant}}
     }
-    case 'PhalaComputation.TokenomicParametersChanged':
-      return {name, args: {}}
     case 'PhalaRegistry.WorkerAdded': {
       const e = new PhalaRegistryWorkerAddedEvent(ctx, item.event)
       const {pubkey, confidenceLevel} = e.asV1191
@@ -352,22 +363,13 @@ const decodeEvent = (
         args: {workerId: toHex(pubkey), initialScore: initScore},
       }
     }
-    case 'RmrkCore.NftMinted': {
-      const e = new RmrkCoreNftMintedEvent(ctx, item.event)
-      const {owner, collectionId, nftId} = e.asV1191
-      if (owner.__kind !== 'AccountId') return
-      return {
-        name,
-        args: {owner: encodeAddress(owner.value), collectionId, nftId},
-      }
-    }
     case 'RmrkCore.PropertySet': {
       const e = new RmrkCorePropertySetEvent(ctx, item.event)
       const {collectionId, maybeNftId, key, value} = e.asV1191
       if (maybeNftId === undefined) return
       return {
         name,
-        args: {collectionId, nftId: maybeNftId, key, value},
+        args: {cid: collectionId, nftId: maybeNftId, key, value},
       }
     }
     case 'RmrkCore.NFTBurned': {
@@ -375,7 +377,7 @@ const decodeEvent = (
       const {owner, collectionId, nftId} = e.asV1191
       return {
         name,
-        args: {owner: encodeAddress(owner), collectionId, nftId},
+        args: {owner: encodeAddress(owner), cid: collectionId, nftId},
       }
     }
     case 'Identity.IdentitySet': {

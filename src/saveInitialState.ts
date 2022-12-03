@@ -19,38 +19,53 @@ import {
   WorkerState,
 } from './model'
 import {Ctx} from './processor'
-import {createPool, updateSharePrice} from './utils/basePool'
+import {
+  createPool,
+  updateSharePrice,
+  updateStakePoolAprMultiplier,
+} from './utils/basePool'
 import {assertGet, combineIds, getAccount, max} from './utils/common'
-import {updateTokenomicParameters} from './utils/tokenomicParameters'
-import {updateWorkerShares, updateWorkerSMinAndSMax} from './utils/worker'
+import {updateWorkerShares} from './utils/worker'
 import {fromBits, toBalance} from './utils/converter'
+import {updateDelegationValue} from './utils/delegation'
+
+interface IBasePool {
+  pid: string
+  cid: number
+  owner: string
+  commission: string
+  totalShares: string
+  totalValue: string
+  freeValue: string
+  poolAccountId: string
+  whitelists: string[]
+  withdrawQueue: Array<{
+    user: string
+    startTime: number
+    nftId: number
+  }>
+}
+
+interface BasePoolWithVault extends IBasePool {
+  vault: {
+    lastSharePriceCheckpoint: string
+    ownerShares: string
+  }
+  stakePool?: never
+}
+
+interface BasePoolWithStakePool extends IBasePool {
+  vault?: never
+  stakePool: {
+    capacity: string | null
+    workers: string[]
+    ownerReward: string
+  }
+}
 
 interface Dump {
   timestamp: number
-  basePools: Array<{
-    pid: string
-    cid: number
-    owner: string
-    commission: string
-    totalShares: string
-    totalValue: string
-    freeValue: string
-    poolAccountId: string
-    vault?: {
-      lastSharePriceCheckpoint: string
-    }
-    stakePool?: {
-      capacity: string | null
-      workers: string[]
-      ownerReward: string
-    }
-    whitelists: string[]
-    withdrawQueue: Array<{
-      user: string
-      startTime: number
-      nftId: number
-    }>
-  }>
+  basePools: Array<BasePoolWithVault | BasePoolWithStakePool>
   workers: Array<{
     id: string
     confidenceLevel: number
@@ -84,7 +99,6 @@ interface Dump {
 }
 
 const saveInitialState = async (ctx: Ctx): Promise<void> => {
-  const startBlock = ctx.blocks[0].header
   const fromHeight = config.blockRange.from
   const dumpFile = await readFile(
     path.join(__dirname, `../assets/dump_${fromHeight - 1}.json`),
@@ -102,7 +116,6 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
     averageBlockTime: 12000,
     idleWorkerShares: BigDecimal(0),
   })
-  const tokenomicParameters = await updateTokenomicParameters(ctx, startBlock)
   const accountMap = new Map<string, Account>()
   const workerMap = new Map<string, Worker>()
   const basePoolMap = new Map<string, BasePool>()
@@ -132,7 +145,6 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
       confidenceLevel: w.confidenceLevel,
       initialScore: w.initialScore,
     })
-    updateWorkerSMinAndSMax(worker, tokenomicParameters)
     workerMap.set(worker.id, worker)
   }
 
@@ -171,22 +183,32 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
   }
 
   for (const b of dump.basePools) {
-    let basePool: BasePool
+    const isVault = b.vault !== undefined
     const props = {
       pid: b.pid,
       cid: b.cid,
       ownerAccount: getAccount(accountMap, b.owner),
       poolAccount: getAccount(accountMap, b.poolAccountId),
     }
-    if (b.stakePool != null) {
-      const pool = createPool(BasePoolKind.StakePool, props)
-      basePool = pool.basePool
-      basePool.commission = BigDecimal(b.commission).div(1e6)
-      basePool.freeValue = toBalance(b.freeValue)
-      basePool.totalShares = toBalance(b.totalShares)
-      basePool.totalValue = toBalance(b.totalValue)
-      updateSharePrice(basePool)
-
+    const pool = isVault
+      ? createPool(BasePoolKind.Vault, props)
+      : createPool(BasePoolKind.StakePool, props)
+    const basePool = pool.basePool
+    basePool.commission = BigDecimal(b.commission).div(1e6)
+    basePool.freeValue = toBalance(b.freeValue)
+    basePool.totalShares = toBalance(b.totalShares)
+    basePool.totalValue = toBalance(b.totalValue)
+    updateSharePrice(basePool)
+    if (isVault) {
+      assert('vault' in pool)
+      const {vault} = pool
+      vault.lastSharePriceCheckpoint = toBalance(
+        b.vault.lastSharePriceCheckpoint
+      )
+      vault.claimableOwnerShares = toBalance(b.vault.ownerShares)
+      vaultMap.set(b.pid, vault)
+    } else {
+      assert('stakePool' in pool)
       const {stakePool} = pool
 
       if (b.stakePool.capacity != null) {
@@ -214,27 +236,14 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
         }
       }
 
-      stakePool.aprMultiplier = basePool.totalValue.eq(0)
-        ? BigDecimal(0)
-        : stakePool.idleWorkerShares
-            .times(BigDecimal(1).minus(basePool.commission))
-            .div(basePool.totalValue)
-    } else {
-      assert(b.vault)
-      const pool = createPool(BasePoolKind.Vault, props)
-      basePool = pool.basePool
-      const {vault} = pool
-      vault.lastSharePriceCheckpoint = toBalance(
-        b.vault.lastSharePriceCheckpoint
-      )
-      vaultMap.set(b.pid, vault)
+      updateStakePoolAprMultiplier(basePool, stakePool)
     }
 
     for (const withdrawal of b.withdrawQueue) {
       const withdrawalNft = new DelegationNft({
         id: combineIds(b.cid, withdrawal.nftId),
         owner: getAccount(accountMap, b.poolAccountId),
-        collectionId: b.cid,
+        cid: b.cid,
         nftId: withdrawal.nftId,
       })
       const delegation = new Delegation({
@@ -243,6 +252,7 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
         basePool,
         shares: BigDecimal(0),
         value: BigDecimal(0),
+        withdrawalShares: BigDecimal(0),
         withdrawalStartTime: new Date(withdrawal.startTime * 1000),
         withdrawalNft,
       })
@@ -260,18 +270,18 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
     const shares = toBalance(d.shares)
     const delegationNftId = combineIds(d.cid, d.nftId)
     if (delegationNftMap.has(delegationNftId)) {
-      // MEMO: delegation nft is a withdrawal nft
+      // MEMO: is a withdrawal nft
       const user = assertGet(nftUserMap, delegationNftId)
       const delegationId = combineIds(basePool.id, user)
       const delegation = assertGet(delegationMap, delegationId)
       delegation.withdrawalShares = shares
-      delegation.withdrawalValue = BigDecimal(0)
+      updateDelegationValue(delegation, basePool)
     } else {
       const delegationId = combineIds(basePool.id, d.owner)
       const delegationNft = new DelegationNft({
         id: delegationNftId,
         owner,
-        collectionId: d.cid,
+        cid: d.cid,
         nftId: d.nftId,
       })
 
@@ -287,11 +297,19 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
         })
 
       delegation.shares = shares
-      delegation.value = BigDecimal(0)
+      updateDelegationValue(delegation, basePool)
       delegation.delegationNft = delegationNft
 
       delegationNftMap.set(delegationNft.id, delegationNft)
       delegationMap.set(delegation.id, delegation)
+      if (shares.gt(0)) {
+        basePool.delegatorCount++
+        if (basePool.kind === BasePoolKind.StakePool) {
+          owner.stakePoolNftCount++
+        } else {
+          owner.vaultNftCount++
+        }
+      }
     }
   }
 

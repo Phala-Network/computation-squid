@@ -57,6 +57,9 @@ export class BasePool {
   stakePool!: StakePool | undefined | null
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  aprMultiplier!: BigDecimal
+
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
   totalShares!: BigDecimal
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})

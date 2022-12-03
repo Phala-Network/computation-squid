@@ -16,17 +16,6 @@ type GlobalState @entity {
   idleWorkerShares: BigDecimal!
 }
 
-type TokenomicParameters @entity {
-  "constant 0"
-  id: ID!
-  phaRate: BigDecimal!
-  budgetPerBlock: BigDecimal!
-  vMax: BigDecimal!
-  treasuryRatio: BigDecimal!
-  re: BigDecimal!
-  k: BigDecimal!
-}
-
 enum IdentityLevel {
   Unknown
   FeePaid
@@ -48,9 +37,12 @@ type Account @entity {
   # super: Account
   stakePoolValue: BigDecimal!
   stakePoolNftCount: Int!
+  stakePoolAvgAprMultiplier: BigDecimal!
   vaultValue: BigDecimal!
   vaultNftCount: Int!
+  vaultAvgAprMultiplier: BigDecimal!
   stakePoolOwnerReward: BigDecimal!
+  delegations: [Delegation!]! @derivedFrom(field: "account")
 }
 
 enum BasePoolKind {
@@ -72,6 +64,7 @@ type BasePool @entity {
   commission: BigDecimal!
   vault: Vault @derivedFrom(field: "basePool")
   stakePool: StakePool @derivedFrom(field: "basePool")
+  aprMultiplier: BigDecimal!
   totalShares: BigDecimal!
   totalValue: BigDecimal!
   sharePrice: BigDecimal!
@@ -89,7 +82,6 @@ type Vault @entity {
   "pid"
   id: ID!
   basePool: BasePool! @unique
-  apr: BigDecimal!
   "share price of owner's last gain"
   lastSharePriceCheckpoint: BigDecimal!
   claimableOwnerShares: BigDecimal!
@@ -103,11 +95,11 @@ type StakePool @entity {
   capacity: BigDecimal
   "null means infinite"
   delegable: BigDecimal
-  aprMultiplier: BigDecimal!
   ownerReward: BigDecimal!
   workerCount: Int!
   idleWorkerCount: Int!
   idleWorkerShares: BigDecimal!
+  workers: [Worker!]! @derivedFrom(field: "stakePool")
 }
 
 type Delegation @entity {
@@ -125,10 +117,10 @@ type Delegation @entity {
 }
 
 type DelegationNft @entity {
-  "${collectionId}-${nftId}"
+  "${cid}-${nftId}"
   id: ID!
   owner: Account!
-  collectionId: Int!
+  cid: Int!
   nftId: Int!
 }
 
@@ -147,8 +139,6 @@ type Worker @entity {
   session: Session
   confidenceLevel: Int!
   initialScore: Int
-  sMin: BigDecimal
-  sMax: BigDecimal
   shares: BigDecimal
 }
 

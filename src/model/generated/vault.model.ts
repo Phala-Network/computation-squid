@@ -20,9 +20,6 @@ export class Vault {
   @JoinColumn_()
   basePool!: BasePool
 
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  apr!: BigDecimal
-
   /**
    * share price of owner's last gain
    */

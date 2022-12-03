@@ -1,5 +1,4 @@
 export * from "./globalState.model"
-export * from "./tokenomicParameters.model"
 export * from "./account.model"
 export * from "./_identityLevel"
 export * from "./basePool.model"

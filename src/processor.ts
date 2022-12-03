@@ -19,17 +19,22 @@ import {
   GlobalState,
   Session,
   StakePool,
-  TokenomicParameters,
   Vault,
   Worker,
   WorkerState,
 } from './model'
 import saveInitialState from './saveInitialState'
-import {createPool, updateSharePrice} from './utils/basePool'
-import {assertGet, combineIds, getAccount, toMap} from './utils/common'
+import {
+  createPool,
+  updateSharePrice,
+  updateStakePoolAprMultiplier,
+  updateStakePoolDelegable,
+} from './utils/basePool'
+import {assertGet, combineIds, getAccount, max, toMap} from './utils/common'
 import {updateBlockState} from './utils/globalState'
+import handlePriceChange from './utils/handleSharePriceChange'
 import {queryIdentities} from './utils/identity'
-import {updateWorkerShares, updateWorkerSMinAndSMax} from './utils/worker'
+import {updateWorkerShares} from './utils/worker'
 
 const processor = new SubstrateBatchProcessor()
   .setDataSource(config.dataSource)
@@ -51,6 +56,7 @@ const processor = new SubstrateBatchProcessor()
   .addEvent('PhalaVault.OwnerSharesClaimed')
   .addEvent('PhalaVault.Contribution')
 
+  .addEvent('PhalaBasePool.NftCreated')
   .addEvent('PhalaBasePool.Withdrawal')
   .addEvent('PhalaBasePool.WithdrawalQueued')
   .addEvent('PhalaBasePool.PoolWhitelistCreated')
@@ -67,7 +73,6 @@ const processor = new SubstrateBatchProcessor()
   .addEvent('PhalaComputation.WorkerEnterUnresponsive')
   .addEvent('PhalaComputation.WorkerExitUnresponsive')
   .addEvent('PhalaComputation.BenchmarkUpdated')
-  .addEvent('PhalaComputation.TokenomicParametersChanged')
 
   .addEvent('PhalaRegistry.WorkerAdded')
   .addEvent('PhalaRegistry.WorkerUpdated')
@@ -96,13 +101,13 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   const identityUpdatedAccountIdSet = new Set<string>()
   const basePoolIdSet = new Set<string>()
   const basePoolCidSet = new Set<number>()
-  const stakePoolIdSet = new Set<string>()
-  const vaultIdSet = new Set<string>()
   const workerIdSet = new Set<string>()
   const sessionIdSet = new Set<string>()
   const delegationIdSet = new Set<string>()
+  const delegationCidSet = new Set<string>()
   const delegationNftIdSet = new Set<string>()
   const basePoolWhitelistIdSet = new Set<string>()
+  const sharePriceChangedBasePoolIdSet = new Set<string>()
 
   for (const {name, args} of events) {
     if (
@@ -113,23 +118,11 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       name === 'PhalaStakePoolv2.RewardReceived' ||
       name === 'PhalaStakePoolv2.OwnerRewardsWithdrawn' ||
       name === 'PhalaStakePoolv2.Contribution' ||
-      name === 'PhalaStakePoolv2.WorkerReclaimed'
-    ) {
-      basePoolIdSet.add(args.pid)
-      stakePoolIdSet.add(args.pid)
-    }
-
-    if (
+      name === 'PhalaStakePoolv2.WorkerReclaimed' ||
       name === 'PhalaVault.VaultCommissionSet' ||
       name === 'PhalaVault.OwnerSharesClaimed' ||
       name === 'PhalaVault.OwnerSharesGained' ||
-      name === 'PhalaVault.Contribution'
-    ) {
-      basePoolIdSet.add(args.pid)
-      vaultIdSet.add(args.pid)
-    }
-
-    if (
+      name === 'PhalaVault.Contribution' ||
       name === 'PhalaBasePool.Withdrawal' ||
       name === 'PhalaBasePool.WithdrawalQueued' ||
       name === 'PhalaBasePool.PoolWhitelistCreated' ||
@@ -138,13 +131,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       name === 'PhalaBasePool.PoolWhitelistStakerRemoved'
     ) {
       basePoolIdSet.add(args.pid)
-      stakePoolIdSet.add(args.pid)
-      vaultIdSet.add(args.pid)
     }
 
     if (
-      name === 'PhalaStakePoolv2.Contribution' ||
-      name === 'PhalaVault.Contribution' ||
       name === 'PhalaBasePool.Withdrawal' ||
       name === 'PhalaBasePool.WithdrawalQueued'
     ) {
@@ -181,12 +170,13 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       basePoolWhitelistIdSet.add(combineIds(args.pid, args.accountId))
     }
 
-    if (name === 'RmrkCore.NftMinted') {
-      basePoolCidSet.add(args.collectionId)
+    if (name === 'PhalaBasePool.NftCreated') {
+      basePoolCidSet.add(args.cid)
+      delegationCidSet.add(combineIds(args.cid, args.owner))
     }
 
     if (name === 'RmrkCore.NFTBurned' || name === 'RmrkCore.PropertySet') {
-      delegationNftIdSet.add(combineIds(args.collectionId, args.nftId))
+      delegationNftIdSet.add(combineIds(args.cid, args.nftId))
     }
 
     if (
@@ -198,10 +188,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     }
   }
   const globalState = await ctx.store.findOneByOrFail(GlobalState, {id: '0'})
-  const tokenomicParameters = await ctx.store.findOneByOrFail(
-    TokenomicParameters,
-    {id: '0'}
-  )
   const accountMap: Map<string, Account> = await ctx.store
     .find(Account)
     .then(toMap)
@@ -217,24 +203,24 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   for (const {stakePool} of sessionMap.values()) {
     if (stakePool != null) {
       basePoolIdSet.add(stakePool.id)
-      stakePoolIdSet.add(stakePool.id)
     }
   }
   const basePools = await ctx.store.find(BasePool, {
     where: [{id: In([...basePoolIdSet])}, {cid: In([...basePoolCidSet])}],
     relations: {owner: true, account: true},
   })
+
   const basePoolMap = toMap(basePools)
   const basePoolCidMap = toMap(basePools, 'cid')
   const stakePoolMap = await ctx.store
     .find(StakePool, {
-      where: {id: In([...stakePoolIdSet])},
+      where: {id: In([...basePoolIdSet])},
       relations: {basePool: true},
     })
     .then(toMap)
   const vaultMap = await ctx.store
     .find(Vault, {
-      where: {id: In([...vaultIdSet])},
+      where: {id: In([...basePoolIdSet])},
       relations: {basePool: true},
     })
     .then(toMap)
@@ -247,9 +233,16 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       relations: {stakePool: true, session: true},
     })
     .then(toMap)
+  // MEMO: get all delegations in updated pools for value update
   const delegationMap = await ctx.store
     .find(Delegation, {
-      where: {id: In([...delegationIdSet])},
+      where: [
+        {id: In([...delegationIdSet])},
+        ...[...delegationCidSet].map((id) => {
+          const [cid, accountId] = id.split('-')
+          return {basePool: {cid: Number(cid)}, account: {id: accountId}}
+        }),
+      ],
       relations: {
         account: true,
         basePool: true,
@@ -284,6 +277,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           poolAccount,
         })
         basePoolMap.set(pid, basePool)
+        basePoolCidMap.set(cid, basePool)
         stakePoolMap.set(pid, stakePool)
         await ctx.store.save(ownerAccount)
         await ctx.store.insert(poolAccount)
@@ -346,9 +340,12 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         ownerAccount.stakePoolOwnerReward =
           ownerAccount.stakePoolOwnerReward.plus(toOwner)
         basePool.totalValue = basePool.totalValue.plus(toStakers)
+        basePool.freeValue = basePool.freeValue.plus(toStakers)
         globalState.stakePoolValue = globalState.stakePoolValue.plus(toStakers)
         globalState.totalValue = globalState.totalValue.plus(toStakers)
         updateSharePrice(basePool)
+        sharePriceChangedBasePoolIdSet.add(pid)
+        updateStakePoolDelegable(basePool, stakePool)
         break
       }
       case 'PhalaStakePoolv2.OwnerRewardsWithdrawn': {
@@ -365,44 +362,19 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const account = getAccount(accountMap, accountId)
         const basePool = assertGet(basePoolMap, pid)
         const stakePool = assertGet(stakePoolMap, pid)
-        const delegationId = combineIds(pid, accountId)
-        const delegation = delegationMap.get(delegationId)
         basePool.freeValue = basePool.freeValue.plus(amount)
         basePool.totalShares = basePool.totalShares.plus(shares)
         basePool.totalValue = basePool.totalValue.plus(amount)
         updateSharePrice(basePool)
-        stakePool.aprMultiplier = stakePool.idleWorkerShares
-          .times(BigDecimal(1).minus(basePool.commission))
-          .div(basePool.totalValue)
+        sharePriceChangedBasePoolIdSet.add(pid)
+        updateStakePoolAprMultiplier(basePool, stakePool)
         account.stakePoolValue = account.stakePoolValue.plus(amount)
         globalState.stakePoolValue = globalState.stakePoolValue.plus(amount)
+        // MEMO: delegator is not a vault
         if (account.basePool == null) {
           globalState.totalValue = globalState.totalValue.plus(amount)
         }
-        if (stakePool.delegable != null) {
-          stakePool.delegable = stakePool.delegable.minus(amount)
-        }
-        if (delegation == null) {
-          delegationMap.set(
-            delegationId,
-            new Delegation({
-              id: delegationId,
-              basePool,
-              account: getAccount(accountMap, accountId),
-              value: amount,
-              shares,
-              withdrawalValue: BigDecimal(0),
-              withdrawalShares: BigDecimal(0),
-            })
-          )
-          basePool.delegatorCount++
-        } else {
-          if (delegation.shares.eq(0)) {
-            basePool.delegatorCount++
-          }
-          delegation.shares = delegation.shares.plus(shares)
-          // delegation.value = delegation.value.plus(amount)
-        }
+        updateStakePoolDelegable(basePool, stakePool)
         break
       }
       case 'PhalaStakePoolv2.WorkerReclaimed': {
@@ -460,6 +432,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           poolAccount,
         })
         basePoolMap.set(pid, basePool)
+        basePoolCidMap.set(cid, basePool)
         vaultMap.set(pid, vault)
         await ctx.store.insert(poolAccount)
         await ctx.store.save(ownerAccount)
@@ -479,121 +452,106 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const vault = assertGet(vaultMap, pid)
         basePool.totalShares = basePool.totalShares.plus(shares)
         updateSharePrice(basePool)
+        sharePriceChangedBasePoolIdSet.add(pid)
         vault.claimableOwnerShares = vault.claimableOwnerShares.plus(shares)
+        vault.lastSharePriceCheckpoint = basePool.sharePrice
         break
       }
       case 'PhalaVault.OwnerSharesClaimed': {
-        const {pid, accountId, shares} = args
-        // const account = getAccount(accountMap, accountId)
-        const basePool = assertGet(basePoolMap, pid)
-        const delegationId = combineIds(pid, accountId)
-        const delegation = delegationMap.get(delegationId)
-        // account.vaultValue = account.vaultValue.plus(amount)
-        if (delegation == null) {
-          delegationMap.set(
-            delegationId,
-            new Delegation({
-              id: delegationId,
-              basePool,
-              account: getAccount(accountMap, accountId),
-              value: BigDecimal(0),
-              shares,
-              withdrawalValue: BigDecimal(0),
-              withdrawalShares: BigDecimal(0),
-            })
-          )
-          basePool.delegatorCount++
-        } else {
-          if (delegation.shares.eq(0)) {
-            basePool.delegatorCount++
-          }
-          delegation.shares = delegation.shares.plus(shares)
-          // delegation.value = delegation.value.plus(amount)
-        }
+        // MEMO: handled in NftCreated event
         break
       }
       case 'PhalaVault.Contribution': {
         const {pid, accountId, amount, shares} = args
         const account = getAccount(accountMap, accountId)
         const basePool = assertGet(basePoolMap, pid)
-        // const vault = assertGet(vaultMap, pid)
-        const delegationId = combineIds(pid, accountId)
-        const delegation = delegationMap.get(delegationId)
         basePool.freeValue = basePool.freeValue.plus(amount)
         basePool.totalShares = basePool.totalShares.plus(shares)
         basePool.totalValue = basePool.totalValue.plus(amount)
         updateSharePrice(basePool)
-        // TODO: update vault apr
+        sharePriceChangedBasePoolIdSet.add(pid)
         account.vaultValue = account.vaultValue.plus(amount)
         globalState.vaultValue = globalState.vaultValue.plus(amount)
         globalState.totalValue = globalState.totalValue.plus(amount)
-        if (delegation == null) {
-          delegationMap.set(
-            delegationId,
+        break
+      }
+      case 'PhalaBasePool.NftCreated': {
+        const {owner, cid, nftId, shares} = args
+        const ownerAccount = getAccount(accountMap, owner)
+        const basePool = assertGet(basePoolCidMap, cid)
+        // MEMO: ignore withdrawal nft
+        if (basePool.account.id !== owner) {
+          const delegationNftId = combineIds(cid, nftId)
+          const delegationNft = new DelegationNft({
+            id: delegationNftId,
+            owner: ownerAccount,
+            cid,
+            nftId,
+          })
+          delegationNftMap.set(delegationNftId, delegationNft)
+          const delegationId = combineIds(basePool.id, owner)
+          const delegation =
+            delegationMap.get(delegationId) ??
             new Delegation({
               id: delegationId,
               basePool,
-              account: getAccount(accountMap, accountId),
-              value: amount,
-              shares,
+              account: ownerAccount,
+              value: BigDecimal(0),
+              shares: BigDecimal(0),
               withdrawalValue: BigDecimal(0),
               withdrawalShares: BigDecimal(0),
             })
-          )
-          basePool.delegatorCount++
-        } else {
-          if (delegation.shares.eq(0)) {
+          const prevShares = delegation.shares
+          delegation.delegationNft = delegationNft
+          delegation.shares = shares
+          delegationMap.set(delegationId, delegation)
+          if (prevShares.eq(0) && shares.gt(0)) {
             basePool.delegatorCount++
+            if (basePool.kind === BasePoolKind.StakePool) {
+              ownerAccount.stakePoolNftCount++
+            }
+            if (basePool.kind === BasePoolKind.Vault) {
+              ownerAccount.vaultNftCount++
+            }
           }
-          delegation.shares = delegation.shares.plus(shares)
-          // delegation.value = delegation.value.plus(amount)
+          if (prevShares.gt(0) && shares.eq(0)) {
+            basePool.delegatorCount--
+            if (basePool.kind === BasePoolKind.StakePool) {
+              ownerAccount.stakePoolNftCount--
+            }
+            if (basePool.kind === BasePoolKind.Vault) {
+              ownerAccount.vaultNftCount--
+            }
+          }
         }
         break
       }
       case 'PhalaBasePool.Withdrawal': {
         const {pid, accountId, amount, shares} = args
-        const account = getAccount(accountMap, accountId)
         const basePool = assertGet(basePoolMap, pid)
         const delegationId = combineIds(pid, accountId)
         const delegation = assertGet(delegationMap, delegationId)
         basePool.totalShares = basePool.totalShares.minus(shares)
         basePool.totalValue = basePool.totalValue.minus(amount)
+        basePool.withdrawalShares = max(
+          basePool.withdrawalShares.minus(shares),
+          BigDecimal(0)
+        )
         updateSharePrice(basePool)
+        sharePriceChangedBasePoolIdSet.add(pid)
         basePool.freeValue = basePool.freeValue.minus(amount)
-        delegation.shares = delegation.shares.minus(shares)
-        // delegation.value = delegation.value.minus(amount)
-        if (delegation.shares.eq(0)) {
-          basePool.delegatorCount--
-        }
-        if (basePool.withdrawalValue.gt(0)) {
-          basePool.withdrawalValue = basePool.withdrawalValue.minus(amount)
-        }
-        if (delegation.withdrawalShares.gt(0)) {
-          delegation.withdrawalShares =
-            delegation.withdrawalShares.minus(shares)
-        }
-        // if (delegation.withdrawalValue.gt(0)) {
-        //   delegation.withdrawalValue = delegation.withdrawalValue.minus(amount)
-        // }
-        if (basePool.stakePool != null) {
+        delegation.withdrawalShares = max(
+          delegation.withdrawalShares.minus(shares),
+          BigDecimal(0)
+        )
+        if (basePool.kind === BasePoolKind.StakePool) {
           const stakePool = assertGet(stakePoolMap, pid)
-          stakePool.aprMultiplier = basePool.totalValue.eq(0)
-            ? BigDecimal(0)
-            : stakePool.idleWorkerShares
-                .times(BigDecimal(1).minus(basePool.commission))
-                .div(basePool.totalValue)
-          if (stakePool.capacity != null) {
-            stakePool.delegable = stakePool.capacity
-              .minus(basePool.totalValue)
-              .plus(basePool.withdrawalValue)
-          }
-          account.stakePoolValue = account.stakePoolValue.minus(amount)
+          updateStakePoolAprMultiplier(basePool, stakePool)
+          updateStakePoolDelegable(basePool, stakePool)
           globalState.stakePoolValue = globalState.stakePoolValue.minus(amount)
         }
 
-        if (basePool.vault != null) {
-          // const vault = assertGet(vaultMap, pid)
-          account.vaultValue = account.vaultValue.minus(amount)
+        if (basePool.kind === BasePoolKind.Vault) {
           globalState.vaultValue = globalState.vaultValue.minus(amount)
         }
         break
@@ -603,28 +561,22 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const delegationId = combineIds(pid, accountId)
         const basePool = assertGet(basePoolMap, pid)
         const delegation = assertGet(delegationMap, delegationId)
+        const stakePool = stakePoolMap.get(pid)
         const prevWithdrawalShares = delegation.withdrawalShares
         basePool.withdrawalShares = basePool.withdrawalShares
           .minus(prevWithdrawalShares)
           .add(shares)
-        // const {totalShares, totalValue} = basePool
-        // basePool.withdrawalValue = basePool.withdrawalValue.minus(
-        //   delegation.withdrawalValue
-        // )
         // Replace previous withdrawal
         delegation.withdrawalShares = shares
-        // delegation.withdrawalValue = amount
         delegation.withdrawalStartTime = blockTime
         const withdrawalNft = assertGet(
           delegationNftMap,
           combineIds(basePool.cid, nftId)
         )
         delegation.withdrawalNft = withdrawalNft
-        // if (stakePool.capacity != null) {
-        //   stakePool.delegable = stakePool.capacity
-        //     .minus(stakePool.totalValue)
-        //     .plus(stakePool.withdrawalValue)
-        // }
+        if (stakePool != null) {
+          updateStakePoolDelegable(basePool, stakePool)
+        }
         break
       }
       case 'PhalaComputation.SessionBound': {
@@ -682,9 +634,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           stakePool.idleWorkerShares = stakePool.idleWorkerShares
             .minus(prevShares)
             .plus(worker.shares)
-          stakePool.aprMultiplier = stakePool.idleWorkerShares
-            .times(BigDecimal(1).minus(basePool.commission))
-            .div(basePool.totalValue)
+          updateStakePoolAprMultiplier(basePool, stakePool)
         }
         break
       }
@@ -708,9 +658,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         stakePool.idleWorkerShares = stakePool.idleWorkerShares.plus(
           worker.shares
         )
-        stakePool.aprMultiplier = stakePool.idleWorkerShares
-          .times(BigDecimal(1).minus(basePool.commission))
-          .div(basePool.totalValue)
+        updateStakePoolAprMultiplier(basePool, stakePool)
         break
       }
       case 'PhalaComputation.WorkerStopped': {
@@ -729,9 +677,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           stakePool.idleWorkerShares = stakePool.idleWorkerShares.minus(
             worker.shares
           )
-          stakePool.aprMultiplier = stakePool.idleWorkerShares
-            .times(BigDecimal(1).minus(basePool.commission))
-            .div(basePool.totalValue)
+          updateStakePoolAprMultiplier(basePool, stakePool)
           stakePool.idleWorkerCount--
         }
         session.state = WorkerState.WorkerCoolingDown
@@ -764,9 +710,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         stakePool.idleWorkerShares = stakePool.idleWorkerShares.minus(
           worker.shares
         )
-        stakePool.aprMultiplier = stakePool.idleWorkerShares
-          .times(BigDecimal(1).minus(basePool.commission))
-          .div(basePool.totalValue)
+        updateStakePoolAprMultiplier(basePool, stakePool)
         break
       }
       case 'PhalaComputation.WorkerExitUnresponsive': {
@@ -786,9 +730,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         stakePool.idleWorkerShares = stakePool.idleWorkerShares.plus(
           worker.shares
         )
-        stakePool.aprMultiplier = stakePool.idleWorkerShares
-          .times(BigDecimal(1).minus(basePool.commission))
-          .div(basePool.totalValue)
+        updateStakePoolAprMultiplier(basePool, stakePool)
         break
       }
       case 'PhalaComputation.BenchmarkUpdated': {
@@ -810,19 +752,13 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           stakePool.idleWorkerShares = stakePool.idleWorkerShares
             .minus(prevShares)
             .plus(worker.shares)
-          stakePool.aprMultiplier = stakePool.idleWorkerShares
-            .times(BigDecimal(1).minus(basePool.commission))
-            .div(basePool.totalValue)
+          updateStakePoolAprMultiplier(basePool, stakePool)
         }
-        break
-      }
-      case 'PhalaComputation.TokenomicParametersChanged': {
         break
       }
       case 'PhalaRegistry.WorkerAdded': {
         const {workerId, confidenceLevel} = args
         const worker = new Worker({id: workerId, confidenceLevel})
-        updateWorkerSMinAndSMax(worker, tokenomicParameters)
         workerMap.set(workerId, worker)
         await ctx.store.insert(worker)
         break
@@ -831,7 +767,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {workerId, confidenceLevel} = args
         const worker = assertGet(workerMap, workerId)
         worker.confidenceLevel = confidenceLevel
-        updateWorkerSMinAndSMax(worker, tokenomicParameters)
         if (worker.session != null) {
           const session = assertGet(sessionMap, worker.session.id)
           updateWorkerShares(worker, session)
@@ -842,59 +777,12 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {workerId, initialScore} = args
         const worker = assertGet(workerMap, workerId)
         worker.initialScore = initialScore
-        updateWorkerSMinAndSMax(worker, tokenomicParameters)
-        break
-      }
-      case 'RmrkCore.NftMinted': {
-        const {owner, collectionId, nftId} = args
-        const ownerAccount = getAccount(accountMap, owner)
-        const basePool = basePoolCidMap.get(collectionId)
-        // MEMO: not a delegation NFT
-        if (basePool == null) {
-          break
-        }
-        const id = combineIds(collectionId, nftId)
-        const delegationNft = new DelegationNft({
-          id,
-          owner: ownerAccount,
-          collectionId,
-          nftId,
-        })
-        delegationNftMap.set(id, delegationNft)
-        await ctx.store.insert(delegationNft)
-        // const delegationId = combineIds(basePool.id, owner)
-        // const delegation = assertGet(delegationMap, delegationId)
-        // delegation.delegationNft = delegationNft
-        if (basePool.kind === BasePoolKind.StakePool) {
-          ownerAccount.stakePoolNftCount++
-        }
-        if (basePool.kind === BasePoolKind.Vault) {
-          ownerAccount.vaultNftCount++
-        }
         break
       }
       case 'RmrkCore.PropertySet': {
         break
       }
       case 'RmrkCore.NFTBurned': {
-        // const {collectionId, nftId, owner} = args
-        // const id = combineIds(collectionId, nftId)
-        // const delegationNft = delegationNftMap.get(id)
-        // if (delegationNft != null) {
-        //   delegationNftMap.delete(id)
-        //   // await ctx.store.remove(delegationNft)
-        //   const ownerAccount = getAccount(accountMap, owner)
-        //   const basePool = assertGet(basePoolCidMap, collectionId)
-        //   const delegationId = combineIds(basePool.id, owner)
-        //   const delegation = assertGet(delegationMap, delegationId)
-        //   delegation.delegationNft = null
-        //   if (basePool.kind === BasePoolKind.StakePool) {
-        //     ownerAccount.stakePoolNftCount--
-        //   }
-        //   if (basePool.kind === BasePoolKind.Vault) {
-        //     ownerAccount.vaultNftCount--
-        //   }
-        // }
         break
       }
     }
@@ -913,8 +801,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     vaultMap,
     sessionMap,
     workerMap,
-    delegationMap,
     delegationNftMap,
+    delegationMap,
     basePoolWhitelistMap,
   ]) {
     if (x instanceof Map) {
@@ -923,4 +811,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       await ctx.store.save(x)
     }
   }
+
+  await handlePriceChange(ctx, [...sharePriceChangedBasePoolIdSet])
 })

@@ -31,11 +31,5 @@ export class Worker {
   initialScore!: number | undefined | null
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: true})
-  sMin!: BigDecimal | undefined | null
-
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: true})
-  sMax!: BigDecimal | undefined | null
-
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: true})
   shares!: BigDecimal | undefined | null
 }

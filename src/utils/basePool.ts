@@ -1,5 +1,6 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import {BasePoolKind, Account, BasePool, StakePool, Vault} from '../model'
+import {max} from './common'
 
 export function createPool(
   kind: BasePoolKind.StakePool,
@@ -31,6 +32,7 @@ export function createPool(
     owner: ownerAccount,
     account: poolAccount,
     kind,
+    aprMultiplier: BigDecimal(0),
     commission: BigDecimal(0),
     totalShares: BigDecimal(0),
     totalValue: BigDecimal(0),
@@ -47,7 +49,6 @@ export function createPool(
     const stakePool = new StakePool({
       id: pid,
       basePool,
-      aprMultiplier: BigDecimal(0),
       ownerReward: BigDecimal(0),
       workerCount: 0,
       idleWorkerCount: 0,
@@ -59,15 +60,43 @@ export function createPool(
   const vault = new Vault({
     id: pid,
     basePool,
-    apr: BigDecimal(0),
     lastSharePriceCheckpoint: BigDecimal(1),
     claimableOwnerShares: BigDecimal(0),
   })
   return {basePool, vault}
 }
 
-export function updateSharePrice(pool: BasePool): void {
-  pool.sharePrice = pool.totalShares.eq(0)
+export function updateSharePrice(basePool: BasePool): void {
+  const sharePrice = basePool.totalShares.eq(0)
     ? BigDecimal(1)
-    : pool.totalValue.div(pool.totalShares)
+    : basePool.totalValue.div(basePool.totalShares)
+  basePool.sharePrice = sharePrice
+  basePool.withdrawalValue = basePool.withdrawalShares.times(sharePrice)
+}
+
+export function updateStakePoolAprMultiplier(
+  basePool: BasePool,
+  stakePool: StakePool
+): void {
+  basePool.aprMultiplier = basePool.totalValue.eq(0)
+    ? BigDecimal(0)
+    : stakePool.idleWorkerShares
+        .times(BigDecimal(1).minus(basePool.commission))
+        .div(basePool.totalValue)
+}
+
+export const updateStakePoolDelegable = (
+  basePool: BasePool,
+  stakePool: StakePool
+): void => {
+  if (stakePool.capacity != null) {
+    stakePool.delegable = max(
+      stakePool.capacity
+        .minus(basePool.totalValue)
+        .plus(basePool.withdrawalValue),
+      BigDecimal(0)
+    )
+  } else {
+    stakePool.delegable = null
+  }
 }
