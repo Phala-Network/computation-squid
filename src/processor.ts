@@ -296,9 +296,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const stakePool = assertGet(stakePoolMap, pid)
         const basePool = assertGet(basePoolMap, pid)
         stakePool.capacity = cap
-        stakePool.delegable = stakePool.capacity
-          .minus(basePool.totalValue)
-          .plus(basePool.withdrawalValue)
+        updateStakePoolDelegable(basePool, stakePool)
         break
       }
       case 'PhalaStakePoolv2.PoolWorkerAdded': {
@@ -458,7 +456,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         break
       }
       case 'PhalaVault.OwnerSharesClaimed': {
-        // MEMO: handled in NftCreated event
+        const {pid, shares} = args
+        const vault = assertGet(vaultMap, pid)
+        vault.claimableOwnerShares = vault.claimableOwnerShares.minus(shares)
         break
       }
       case 'PhalaVault.Contribution': {
