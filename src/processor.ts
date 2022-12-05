@@ -533,7 +533,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         )
         updateSharePrice(basePool)
         sharePriceChangedBasePoolIdSet.add(pid)
-        basePool.freeValue = basePool.freeValue.minus(amount)
+        basePool.freeValue = max(
+          basePool.freeValue.minus(amount),
+          BigDecimal(0)
+        )
         delegation.withdrawalShares = max(
           delegation.withdrawalShares.minus(shares),
           BigDecimal(0)
