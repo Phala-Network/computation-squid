@@ -333,10 +333,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {pid, toOwner, toStakers} = args
         const basePool = assertGet(basePoolMap, pid)
         const stakePool = assertGet(stakePoolMap, pid)
-        const ownerAccount = assertGet(accountMap, basePool.owner.id)
         stakePool.ownerReward = stakePool.ownerReward.plus(toOwner)
-        ownerAccount.stakePoolOwnerReward =
-          ownerAccount.stakePoolOwnerReward.plus(toOwner)
         basePool.totalValue = basePool.totalValue.plus(toStakers)
         basePool.freeValue = basePool.freeValue.plus(toStakers)
         globalState.stakePoolValue = globalState.stakePoolValue.plus(toStakers)
@@ -347,12 +344,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         break
       }
       case 'PhalaStakePoolv2.OwnerRewardsWithdrawn': {
-        const {pid, accountId, amount} = args
+        const {pid} = args
         const stakePool = assertGet(stakePoolMap, pid)
-        const ownerAccount = assertGet(accountMap, accountId)
         stakePool.ownerReward = BigDecimal(0)
-        ownerAccount.stakePoolOwnerReward =
-          ownerAccount.stakePoolOwnerReward.minus(amount)
         break
       }
       case 'PhalaStakePoolv2.Contribution': {

@@ -47,9 +47,6 @@ export class Account {
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
   vaultAvgAprMultiplier!: BigDecimal
 
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  stakePoolOwnerReward!: BigDecimal
-
   @OneToMany_(() => Delegation, e => e.account)
   delegations!: Delegation[]
 }

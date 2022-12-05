@@ -27,7 +27,7 @@ import {
 import {assertGet, combineIds, getAccount, max} from './utils/common'
 import {updateWorkerShares} from './utils/worker'
 import {fromBits, toBalance} from './utils/converter'
-import {updateDelegationValue} from './utils/delegation'
+import {getAvgAprMultiplier, updateDelegationValue} from './utils/delegation'
 
 interface IBasePool {
   pid: string
@@ -305,12 +305,34 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
       if (shares.gt(0)) {
         basePool.delegatorCount++
         if (basePool.kind === BasePoolKind.StakePool) {
+          owner.stakePoolValue = owner.stakePoolValue.plus(delegation.value)
           owner.stakePoolNftCount++
         } else {
+          owner.vaultValue = owner.vaultValue.plus(delegation.value)
           owner.vaultNftCount++
         }
       }
     }
+  }
+
+  for (const account of accountMap.values()) {
+    const delegations = Array.from(delegationMap.values()).filter(
+      (x) => x.basePool.kind === BasePoolKind.StakePool
+    )
+    account.stakePoolAvgAprMultiplier = getAvgAprMultiplier(delegations)
+  }
+
+  for (const basePool of basePoolMap.values()) {
+    if (basePool.kind === BasePoolKind.Vault) {
+      basePool.aprMultiplier = basePool.account.stakePoolAvgAprMultiplier
+    }
+  }
+
+  for (const account of accountMap.values()) {
+    const delegations = Array.from(delegationMap.values()).filter(
+      (x) => x.basePool.kind === BasePoolKind.Vault
+    )
+    account.vaultAvgAprMultiplier = getAvgAprMultiplier(delegations)
   }
 
   for (const x of [

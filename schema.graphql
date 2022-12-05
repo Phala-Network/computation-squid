@@ -41,7 +41,6 @@ type Account @entity {
   vaultValue: BigDecimal!
   vaultNftCount: Int!
   vaultAvgAprMultiplier: BigDecimal!
-  stakePoolOwnerReward: BigDecimal!
   delegations: [Delegation!]! @derivedFrom(field: "account")
 }
 

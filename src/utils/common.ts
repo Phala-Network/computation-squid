@@ -10,7 +10,6 @@ export const getAccount = (m: Map<string, Account>, id: string): Account => {
       stakePoolValue: BigDecimal(0),
       stakePoolNftCount: 0,
       stakePoolAvgAprMultiplier: BigDecimal(0),
-      stakePoolOwnerReward: BigDecimal(0),
       vaultValue: BigDecimal(0),
       vaultNftCount: 0,
       vaultAvgAprMultiplier: BigDecimal(0),
