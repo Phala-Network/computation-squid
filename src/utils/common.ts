@@ -25,7 +25,7 @@ export const assertGet = <T, U>(map: Map<U, T>, key: U): T => {
   return value
 }
 
-export const combineIds = (...args: Array<string | number | bigint>): string =>
+export const join = (...args: Array<string | number | bigint>): string =>
   args.map((x) => x.toString()).join('-')
 
 export const toMap = <T extends {id: string}, U extends keyof T = 'id'>(

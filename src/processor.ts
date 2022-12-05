@@ -30,7 +30,7 @@ import {
   updateStakePoolAprMultiplier,
   updateStakePoolDelegable,
 } from './utils/basePool'
-import {assertGet, combineIds, getAccount, max, toMap} from './utils/common'
+import {assertGet, join, getAccount, max, toMap} from './utils/common'
 import {updateBlockState} from './utils/globalState'
 import handleBasePoolsUpdate from './utils/handleBasePoolsUpdate'
 import {queryIdentities} from './utils/identity'
@@ -107,7 +107,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   const delegationCidSet = new Set<string>()
   const delegationNftIdSet = new Set<string>()
   const basePoolWhitelistIdSet = new Set<string>()
-  // MEMO: base pools with updated share price or apr multiplier
+  // MEMO: base pools with updated share price, apr multiplier or commission
   const updatedBasePoolIdSet = new Set<string>()
 
   for (const {name, args} of events) {
@@ -138,7 +138,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       name === 'PhalaBasePool.Withdrawal' ||
       name === 'PhalaBasePool.WithdrawalQueued'
     ) {
-      delegationIdSet.add(combineIds(args.pid, args.accountId))
+      delegationIdSet.add(join(args.pid, args.accountId))
     }
 
     if (
@@ -168,16 +168,16 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     }
 
     if (name === 'PhalaBasePool.PoolWhitelistStakerRemoved') {
-      basePoolWhitelistIdSet.add(combineIds(args.pid, args.accountId))
+      basePoolWhitelistIdSet.add(join(args.pid, args.accountId))
     }
 
     if (name === 'PhalaBasePool.NftCreated') {
       basePoolCidSet.add(args.cid)
-      delegationCidSet.add(combineIds(args.cid, args.owner))
+      delegationCidSet.add(join(args.cid, args.owner))
     }
 
     if (name === 'RmrkCore.NFTBurned' || name === 'RmrkCore.PropertySet') {
-      delegationNftIdSet.add(combineIds(args.cid, args.nftId))
+      delegationNftIdSet.add(join(args.cid, args.nftId))
     }
 
     if (
@@ -289,7 +289,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       case 'PhalaStakePoolv2.PoolCommissionSet': {
         const {pid, commission} = args
         const basePool = assertGet(basePoolMap, pid)
+        const stakePool = assertGet(stakePoolMap, pid)
         basePool.commission = commission
+        updateStakePoolAprMultiplier(basePool, stakePool)
+        updatedBasePoolIdSet.add(pid)
         break
       }
       case 'PhalaStakePoolv2.PoolCapacitySet': {
@@ -396,7 +399,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {pid, accountId} = args
         const account = getAccount(accountMap, accountId)
         const basePool = assertGet(basePoolMap, pid)
-        const id = combineIds(pid, accountId)
+        const id = join(pid, accountId)
         const basePoolWhitelist = new BasePoolWhitelist({
           id,
           basePool,
@@ -408,7 +411,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaBasePool.PoolWhitelistStakerRemoved': {
         const {pid, accountId} = args
-        const id = combineIds(pid, accountId)
+        const id = join(pid, accountId)
         const basePoolWhitelist = assertGet(basePoolWhitelistMap, id)
         basePoolWhitelistMap.delete(id)
         await ctx.store.remove(basePoolWhitelist)
@@ -437,6 +440,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {pid, commission} = args
         const basePool = assertGet(basePoolMap, pid)
         basePool.commission = commission
+        updatedBasePoolIdSet.add(pid)
         break
       }
       case 'PhalaVault.OwnerSharesGained': {
@@ -474,7 +478,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const basePool = assertGet(basePoolCidMap, cid)
         // MEMO: ignore withdrawal nft
         if (basePool.account.id !== owner) {
-          const delegationNftId = combineIds(cid, nftId)
+          const delegationNftId = join(cid, nftId)
           const delegationNft = new DelegationNft({
             id: delegationNftId,
             owner: ownerAccount,
@@ -482,7 +486,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
             nftId,
           })
           delegationNftMap.set(delegationNftId, delegationNft)
-          const delegationId = combineIds(basePool.id, owner)
+          const delegationId = join(basePool.id, owner)
           const delegation =
             delegationMap.get(delegationId) ??
             new Delegation({
@@ -522,7 +526,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       case 'PhalaBasePool.Withdrawal': {
         const {pid, accountId, amount, shares} = args
         const basePool = assertGet(basePoolMap, pid)
-        const delegationId = combineIds(pid, accountId)
+        const delegationId = join(pid, accountId)
         const delegation = assertGet(delegationMap, delegationId)
         basePool.totalShares = basePool.totalShares.minus(shares)
         basePool.totalValue = basePool.totalValue.minus(amount)
@@ -544,7 +548,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           const stakePool = assertGet(stakePoolMap, pid)
           updateStakePoolAprMultiplier(basePool, stakePool)
           updateStakePoolDelegable(basePool, stakePool)
-          updatedBasePoolIdSet.add(pid)
           globalState.stakePoolValue = globalState.stakePoolValue.minus(amount)
         }
 
@@ -555,7 +558,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       }
       case 'PhalaBasePool.WithdrawalQueued': {
         const {pid, accountId, shares, nftId} = args
-        const delegationId = combineIds(pid, accountId)
+        const delegationId = join(pid, accountId)
         const basePool = assertGet(basePoolMap, pid)
         const delegation = assertGet(delegationMap, delegationId)
         const stakePool = stakePoolMap.get(pid)
@@ -568,7 +571,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         delegation.withdrawalStartTime = blockTime
         const withdrawalNft = assertGet(
           delegationNftMap,
-          combineIds(basePool.cid, nftId)
+          join(basePool.cid, nftId)
         )
         delegation.withdrawalNft = withdrawalNft
         if (stakePool != null) {

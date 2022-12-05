@@ -10,6 +10,7 @@ import {
   BasePoolWhitelist,
   Delegation,
   DelegationNft,
+  DelegationValueRecord,
   GlobalState,
   IdentityLevel,
   Session,
@@ -24,10 +25,11 @@ import {
   updateSharePrice,
   updateStakePoolAprMultiplier,
 } from './utils/basePool'
-import {assertGet, combineIds, getAccount, max} from './utils/common'
+import {assertGet, join, getAccount, max} from './utils/common'
 import {updateWorkerShares} from './utils/worker'
 import {fromBits, toBalance} from './utils/converter'
 import {getAvgAprMultiplier, updateDelegationValue} from './utils/delegation'
+import {createDelegationValueRecord} from './utils/delegationValueRecord'
 
 interface IBasePool {
   pid: string
@@ -127,6 +129,7 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
   const delegationNftMap = new Map<string, DelegationNft>()
   const basePoolWhitelistMap = new Map<string, BasePoolWhitelist>()
   const nftUserMap = new Map<string, string>()
+  const delegationValueRecords: DelegationValueRecord[] = []
 
   for (const i of dump.identities) {
     const account = getAccount(accountMap, i.id)
@@ -241,13 +244,13 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
 
     for (const withdrawal of b.withdrawQueue) {
       const withdrawalNft = new DelegationNft({
-        id: combineIds(b.cid, withdrawal.nftId),
+        id: join(b.cid, withdrawal.nftId),
         owner: getAccount(accountMap, b.poolAccountId),
         cid: b.cid,
         nftId: withdrawal.nftId,
       })
       const delegation = new Delegation({
-        id: combineIds(b.pid, withdrawal.user),
+        id: join(b.pid, withdrawal.user),
         account: getAccount(accountMap, withdrawal.user),
         basePool,
         shares: BigDecimal(0),
@@ -268,16 +271,16 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
     const owner = getAccount(accountMap, d.owner)
     const basePool = assertGet(basePoolCidMap, d.cid.toString())
     const shares = toBalance(d.shares)
-    const delegationNftId = combineIds(d.cid, d.nftId)
+    const delegationNftId = join(d.cid, d.nftId)
     if (delegationNftMap.has(delegationNftId)) {
       // MEMO: is a withdrawal nft
       const user = assertGet(nftUserMap, delegationNftId)
-      const delegationId = combineIds(basePool.id, user)
+      const delegationId = join(basePool.id, user)
       const delegation = assertGet(delegationMap, delegationId)
       delegation.withdrawalShares = shares
       updateDelegationValue(delegation, basePool)
     } else {
-      const delegationId = combineIds(basePool.id, d.owner)
+      const delegationId = join(basePool.id, d.owner)
       const delegationNft = new DelegationNft({
         id: delegationNftId,
         owner,
@@ -317,20 +320,33 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
 
   for (const account of accountMap.values()) {
     const delegations = Array.from(delegationMap.values()).filter(
-      (x) => x.basePool.kind === BasePoolKind.StakePool
+      (x) =>
+        x.basePool.kind === BasePoolKind.StakePool &&
+        x.account.id === account.id
     )
     account.stakePoolAvgAprMultiplier = getAvgAprMultiplier(delegations)
+
+    delegationValueRecords.push(
+      createDelegationValueRecord({
+        account,
+        value: account.stakePoolValue.plus(account.vaultValue),
+        updatedTime: new Date(dump.timestamp),
+      })
+    )
   }
 
   for (const basePool of basePoolMap.values()) {
     if (basePool.kind === BasePoolKind.Vault) {
-      basePool.aprMultiplier = basePool.account.stakePoolAvgAprMultiplier
+      basePool.aprMultiplier = basePool.account.stakePoolAvgAprMultiplier.times(
+        BigDecimal(1).minus(basePool.commission)
+      )
     }
   }
 
   for (const account of accountMap.values()) {
     const delegations = Array.from(delegationMap.values()).filter(
-      (x) => x.basePool.kind === BasePoolKind.Vault
+      (x) =>
+        x.basePool.kind === BasePoolKind.Vault && x.account.id === account.id
     )
     account.vaultAvgAprMultiplier = getAvgAprMultiplier(delegations)
   }
@@ -346,9 +362,13 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
     delegationNftMap,
     delegationMap,
     basePoolWhitelistMap,
+    delegationValueRecords,
   ]) {
     if (x instanceof Map) {
       await ctx.store.save([...x.values()])
+    } else if (Array.isArray(x)) {
+      // pass type check
+      await ctx.store.save(x)
     } else {
       await ctx.store.save(x)
     }

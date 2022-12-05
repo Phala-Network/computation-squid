@@ -1,5 +1,5 @@
-module.exports = class Data1670262778146 {
-    name = 'Data1670262778146'
+module.exports = class Data1670271082269 {
+    name = 'Data1670271082269'
 
     async up(db) {
         await db.query(`CREATE TABLE "global_state" ("id" character varying NOT NULL, "height" integer NOT NULL, "stake_pool_value" numeric NOT NULL, "vault_value" numeric NOT NULL, "total_value" numeric NOT NULL, "last_recorded_block_height" integer NOT NULL, "last_recorded_block_time" TIMESTAMP WITH TIME ZONE NOT NULL, "average_block_time" integer NOT NULL, "idle_worker_shares" numeric NOT NULL, CONSTRAINT "PK_8b4db1150cf49bfd067e2572c74" PRIMARY KEY ("id"))`)
@@ -27,6 +27,8 @@ module.exports = class Data1670262778146 {
         await db.query(`CREATE INDEX "IDX_e20be4204009ad2ad1d17a125d" ON "base_pool" ("owner_id") `)
         await db.query(`CREATE UNIQUE INDEX "IDX_b17f3b9349da680afa1e2e9805" ON "base_pool" ("account_id") `)
         await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, "identity_display" text, "identity_level" character varying(10), "stake_pool_value" numeric NOT NULL, "stake_pool_nft_count" integer NOT NULL, "stake_pool_avg_apr_multiplier" numeric NOT NULL, "vault_value" numeric NOT NULL, "vault_nft_count" integer NOT NULL, "vault_avg_apr_multiplier" numeric NOT NULL, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "delegation_value_record" ("id" character varying NOT NULL, "updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "value" numeric NOT NULL, "account_id" character varying, CONSTRAINT "PK_04d40954ab0809e675a86535d38" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE INDEX "IDX_c437fcb71b7a03f2dd1a99ebc6" ON "delegation_value_record" ("account_id") `)
         await db.query(`ALTER TABLE "vault" ADD CONSTRAINT "FK_79f07f6ce7cca2f1ebfc2c0b117" FOREIGN KEY ("base_pool_id") REFERENCES "base_pool"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "session" ADD CONSTRAINT "FK_84c1c253406ae3adb5ba41ff7db" FOREIGN KEY ("stake_pool_id") REFERENCES "stake_pool"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "session" ADD CONSTRAINT "FK_30db46e58a0ae3fbc408179de88" FOREIGN KEY ("worker_id") REFERENCES "worker"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
@@ -42,6 +44,7 @@ module.exports = class Data1670262778146 {
         await db.query(`ALTER TABLE "delegation" ADD CONSTRAINT "FK_f7f610da28f4e55602c9def52a5" FOREIGN KEY ("withdrawal_nft_id") REFERENCES "delegation_nft"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "base_pool" ADD CONSTRAINT "FK_e20be4204009ad2ad1d17a125de" FOREIGN KEY ("owner_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "base_pool" ADD CONSTRAINT "FK_b17f3b9349da680afa1e2e98055" FOREIGN KEY ("account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+        await db.query(`ALTER TABLE "delegation_value_record" ADD CONSTRAINT "FK_c437fcb71b7a03f2dd1a99ebc67" FOREIGN KEY ("account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     }
 
     async down(db) {
@@ -70,6 +73,8 @@ module.exports = class Data1670262778146 {
         await db.query(`DROP INDEX "public"."IDX_e20be4204009ad2ad1d17a125d"`)
         await db.query(`DROP INDEX "public"."IDX_b17f3b9349da680afa1e2e9805"`)
         await db.query(`DROP TABLE "account"`)
+        await db.query(`DROP TABLE "delegation_value_record"`)
+        await db.query(`DROP INDEX "public"."IDX_c437fcb71b7a03f2dd1a99ebc6"`)
         await db.query(`ALTER TABLE "vault" DROP CONSTRAINT "FK_79f07f6ce7cca2f1ebfc2c0b117"`)
         await db.query(`ALTER TABLE "session" DROP CONSTRAINT "FK_84c1c253406ae3adb5ba41ff7db"`)
         await db.query(`ALTER TABLE "session" DROP CONSTRAINT "FK_30db46e58a0ae3fbc408179de88"`)
@@ -85,5 +90,6 @@ module.exports = class Data1670262778146 {
         await db.query(`ALTER TABLE "delegation" DROP CONSTRAINT "FK_f7f610da28f4e55602c9def52a5"`)
         await db.query(`ALTER TABLE "base_pool" DROP CONSTRAINT "FK_e20be4204009ad2ad1d17a125de"`)
         await db.query(`ALTER TABLE "base_pool" DROP CONSTRAINT "FK_b17f3b9349da680afa1e2e98055"`)
+        await db.query(`ALTER TABLE "delegation_value_record" DROP CONSTRAINT "FK_c437fcb71b7a03f2dd1a99ebc67"`)
     }
 }

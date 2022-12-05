@@ -168,7 +168,7 @@ type DelegationValueRecord @entity {
   "uuid"
   id: ID!
   "block time"
-  time: DateTime!
+  updatedTime: DateTime!
   account: Account!
   value: BigDecimal!
 }
