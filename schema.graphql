@@ -163,3 +163,12 @@ type Session @entity {
   totalReward: BigDecimal!
   coolingDownStartTime: DateTime
 }
+
+type DelegationValueRecord @entity {
+  "uuid"
+  id: ID!
+  "block time"
+  time: DateTime!
+  account: Account!
+  value: BigDecimal!
+}

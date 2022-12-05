@@ -6,7 +6,10 @@ import {updateSharePrice} from './basePool'
 import {assertGet, toMap} from './common'
 import {getAvgAprMultiplier, updateDelegationValue} from './delegation'
 
-const handlePriceChange = async (ctx: Ctx, pids: string[]): Promise<void> => {
+const handleBasePoolsUpdate = async (
+  ctx: Ctx,
+  pids: string[]
+): Promise<void> => {
   const updatedAccounts = await ctx.store.find(Account, {
     where: {delegations: {basePool: {id: In(pids)}}},
     relations: {
@@ -100,4 +103,4 @@ const handlePriceChange = async (ctx: Ctx, pids: string[]): Promise<void> => {
   await ctx.store.save(vaultDelegatedAccounts)
 }
 
-export default handlePriceChange
+export default handleBasePoolsUpdate
