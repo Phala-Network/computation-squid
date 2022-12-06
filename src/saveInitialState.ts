@@ -13,6 +13,7 @@ import {
   DelegationValueRecord,
   GlobalState,
   IdentityLevel,
+  RewardRecord,
   Session,
   StakePool,
   Vault,
@@ -110,11 +111,9 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
   const globalState = new GlobalState({
     id: '0',
     height: fromHeight - 1,
-    stakePoolValue: BigDecimal(0),
-    vaultValue: BigDecimal(0),
     totalValue: BigDecimal(0),
-    lastRecordedBlockHeight: fromHeight - 1,
-    lastRecordedBlockTime: new Date(dump.timestamp),
+    averageBlockTimeUpdatedHeight: fromHeight - 1,
+    averageBlockTimeUpdatedTime: new Date(dump.timestamp),
     averageBlockTime: 12000,
     idleWorkerShares: BigDecimal(0),
   })
@@ -299,7 +298,7 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
           withdrawalValue: BigDecimal(0),
         })
 
-      delegation.shares = shares
+      delegation.shares = shares.add(delegation.withdrawalShares)
       updateDelegationValue(delegation, basePool)
       delegation.delegationNft = delegationNft
 
@@ -351,6 +350,12 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
     account.vaultAvgAprMultiplier = getAvgAprMultiplier(delegations)
   }
 
+  const rewardRecord = new RewardRecord({
+    id: dump.timestamp.toString(),
+    time: new Date(dump.timestamp),
+    value: BigDecimal(0),
+  })
+
   for (const x of [
     globalState,
     accountMap,
@@ -363,13 +368,14 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
     delegationMap,
     basePoolWhitelistMap,
     delegationValueRecords,
+    rewardRecord,
   ]) {
     if (x instanceof Map) {
       await ctx.store.save([...x.values()])
     } else if (Array.isArray(x)) {
-      // pass type check
       await ctx.store.save(x)
     } else {
+      // bypass type check
       await ctx.store.save(x)
     }
   }

@@ -2,15 +2,9 @@ type GlobalState @entity {
   "constant 0"
   id: ID!
   height: Int!
-  stakePoolValue: BigDecimal!
-  vaultValue: BigDecimal!
-  "excluded value vaults delegated to stake pools"
   totalValue: BigDecimal!
-  "for average block time calculation"
-  lastRecordedBlockHeight: Int!
-  "for average block time calculation"
-  lastRecordedBlockTime: DateTime!
-  "in milliseconds during last 500 blocks"
+  averageBlockTimeUpdatedHeight: Int!
+  averageBlockTimeUpdatedTime: DateTime!
   averageBlockTime: Int!
   "for apr calculation"
   idleWorkerShares: BigDecimal!
@@ -165,10 +159,16 @@ type Session @entity {
 }
 
 type DelegationValueRecord @entity {
-  "uuid"
   id: ID!
   "block time"
   updatedTime: DateTime!
   account: Account!
+  value: BigDecimal!
+}
+
+type RewardRecord @entity {
+  id: ID!
+  "block time"
+  time: DateTime!
   value: BigDecimal!
 }

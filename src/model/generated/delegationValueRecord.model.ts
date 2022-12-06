@@ -9,9 +9,6 @@ export class DelegationValueRecord {
     Object.assign(this, props)
   }
 
-  /**
-   * uuid
-   */
   @PrimaryColumn_()
   id!: string
 

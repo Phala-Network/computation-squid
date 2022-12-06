@@ -18,32 +18,14 @@ export class GlobalState {
   height!: number
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  stakePoolValue!: BigDecimal
-
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  vaultValue!: BigDecimal
-
-  /**
-   * excluded value vaults delegated to stake pools
-   */
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
   totalValue!: BigDecimal
 
-  /**
-   * for average block time calculation
-   */
   @Column_("int4", {nullable: false})
-  lastRecordedBlockHeight!: number
+  averageBlockTimeUpdatedHeight!: number
 
-  /**
-   * for average block time calculation
-   */
   @Column_("timestamp with time zone", {nullable: false})
-  lastRecordedBlockTime!: Date
+  averageBlockTimeUpdatedTime!: Date
 
-  /**
-   * in milliseconds during last 500 blocks
-   */
   @Column_("int4", {nullable: false})
   averageBlockTime!: number
 

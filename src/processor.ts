@@ -17,6 +17,7 @@ import {
   Delegation,
   DelegationNft,
   GlobalState,
+  RewardRecord,
   Session,
   StakePool,
   Vault,
@@ -31,7 +32,7 @@ import {
   updateStakePoolDelegable,
 } from './utils/basePool'
 import {assertGet, join, getAccount, max, toMap} from './utils/common'
-import {updateBlockState} from './utils/globalState'
+import {updateAverageBlockTime} from './utils/globalState'
 import handleBasePoolsUpdate from './utils/handleBasePoolsUpdate'
 import {queryIdentities} from './utils/identity'
 import {updateWorkerShares} from './utils/worker'
@@ -95,7 +96,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     await saveInitialState(ctx)
     ctx.log.info('Initial state saved')
   }
-
   const events = decodeEvents(ctx)
 
   const identityUpdatedAccountIdSet = new Set<string>()
@@ -263,6 +263,12 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       where: {id: In([...basePoolWhitelistIdSet])},
     })
     .then(toMap)
+  const rewardRecord = await ctx.store.findOne(RewardRecord, {
+    order: {time: 'DESC'},
+    where: {},
+  })
+  assert(rewardRecord)
+  const rewardRecords = [rewardRecord]
 
   for (const {name, args, block} of events) {
     const blockTime = new Date(block.timestamp)
@@ -341,11 +347,25 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         stakePool.ownerReward = stakePool.ownerReward.plus(toOwner)
         basePool.totalValue = basePool.totalValue.plus(toStakers)
         basePool.freeValue = basePool.freeValue.plus(toStakers)
-        globalState.stakePoolValue = globalState.stakePoolValue.plus(toStakers)
         globalState.totalValue = globalState.totalValue.plus(toStakers)
         updateSharePrice(basePool)
         updateStakePoolDelegable(basePool, stakePool)
         updatedBasePoolIdSet.add(pid)
+
+        const lastRewardRecord = rewardRecords[rewardRecords.length - 1]
+        const ONE_HOUR = 1000 * 60 * 60
+        const total = toStakers.plus(toOwner)
+        if (blockTime.getTime() - lastRewardRecord.time.getTime() < ONE_HOUR) {
+          lastRewardRecord.value = lastRewardRecord.value.plus(total)
+        } else {
+          rewardRecords.push(
+            new RewardRecord({
+              id: blockTime.getTime().toString(),
+              time: blockTime,
+              value: total,
+            })
+          )
+        }
         break
       }
       case 'PhalaStakePoolv2.OwnerRewardsWithdrawn': {
@@ -365,7 +385,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         updateSharePrice(basePool)
         updateStakePoolAprMultiplier(basePool, stakePool)
         updatedBasePoolIdSet.add(pid)
-        globalState.stakePoolValue = globalState.stakePoolValue.plus(amount)
         // MEMO: delegator is not a vault
         if (account.basePool == null) {
           globalState.totalValue = globalState.totalValue.plus(amount)
@@ -468,7 +487,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         basePool.totalValue = basePool.totalValue.plus(amount)
         updateSharePrice(basePool)
         updatedBasePoolIdSet.add(pid)
-        globalState.vaultValue = globalState.vaultValue.plus(amount)
         globalState.totalValue = globalState.totalValue.plus(amount)
         break
       }
@@ -526,6 +544,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       case 'PhalaBasePool.Withdrawal': {
         const {pid, accountId, amount, shares} = args
         const basePool = assertGet(basePoolMap, pid)
+        const account = assertGet(accountMap, accountId)
         const delegationId = join(pid, accountId)
         const delegation = assertGet(delegationMap, delegationId)
         basePool.totalShares = basePool.totalShares.minus(shares)
@@ -548,11 +567,11 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           const stakePool = assertGet(stakePoolMap, pid)
           updateStakePoolAprMultiplier(basePool, stakePool)
           updateStakePoolDelegable(basePool, stakePool)
-          globalState.stakePoolValue = globalState.stakePoolValue.minus(amount)
         }
 
-        if (basePool.kind === BasePoolKind.Vault) {
-          globalState.vaultValue = globalState.vaultValue.minus(amount)
+        // MEMO: exclude vault's withdrawal
+        if (account.basePool != null) {
+          globalState.totalValue = globalState.totalValue.minus(amount)
         }
         break
       }
@@ -792,12 +811,11 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         break
       }
     }
+    updateAverageBlockTime(block, globalState)
   }
 
   // MEMO: identity events don't provide specific args, so query it directly
   await queryIdentities(ctx, [...identityUpdatedAccountIdSet], accountMap)
-
-  updateBlockState(ctx, globalState)
 
   for (const x of [
     globalState,
@@ -810,9 +828,13 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     delegationNftMap,
     delegationMap,
     basePoolWhitelistMap,
+    rewardRecords,
   ]) {
     if (x instanceof Map) {
       await ctx.store.save([...x.values()])
+    } else if (Array.isArray(x)) {
+      // Bypass type check
+      await ctx.store.save(x)
     } else {
       await ctx.store.save(x)
     }

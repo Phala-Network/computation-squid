@@ -1,8 +1,8 @@
-module.exports = class Data1670271082269 {
-    name = 'Data1670271082269'
+module.exports = class Data1670368156082 {
+    name = 'Data1670368156082'
 
     async up(db) {
-        await db.query(`CREATE TABLE "global_state" ("id" character varying NOT NULL, "height" integer NOT NULL, "stake_pool_value" numeric NOT NULL, "vault_value" numeric NOT NULL, "total_value" numeric NOT NULL, "last_recorded_block_height" integer NOT NULL, "last_recorded_block_time" TIMESTAMP WITH TIME ZONE NOT NULL, "average_block_time" integer NOT NULL, "idle_worker_shares" numeric NOT NULL, CONSTRAINT "PK_8b4db1150cf49bfd067e2572c74" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "global_state" ("id" character varying NOT NULL, "height" integer NOT NULL, "total_value" numeric NOT NULL, "average_block_time_updated_height" integer NOT NULL, "average_block_time_updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "average_block_time" integer NOT NULL, "idle_worker_shares" numeric NOT NULL, CONSTRAINT "PK_8b4db1150cf49bfd067e2572c74" PRIMARY KEY ("id"))`)
         await db.query(`CREATE TABLE "vault" ("id" character varying NOT NULL, "last_share_price_checkpoint" numeric NOT NULL, "claimable_owner_shares" numeric NOT NULL, "base_pool_id" character varying NOT NULL, CONSTRAINT "REL_79f07f6ce7cca2f1ebfc2c0b11" UNIQUE ("base_pool_id"), CONSTRAINT "PK_dd0898234c77f9d97585171ac59" PRIMARY KEY ("id"))`)
         await db.query(`CREATE UNIQUE INDEX "IDX_79f07f6ce7cca2f1ebfc2c0b11" ON "vault" ("base_pool_id") `)
         await db.query(`CREATE TABLE "session" ("id" character varying NOT NULL, "is_bound" boolean NOT NULL, "stake" numeric NOT NULL, "state" character varying(18) NOT NULL, "v" numeric NOT NULL, "ve" numeric NOT NULL, "p_init" integer NOT NULL, "p_instant" integer NOT NULL, "total_reward" numeric NOT NULL, "cooling_down_start_time" TIMESTAMP WITH TIME ZONE, "stake_pool_id" character varying, "worker_id" character varying, CONSTRAINT "PK_f55da76ac1c3ac420f444d2ff11" PRIMARY KEY ("id"))`)
@@ -29,6 +29,7 @@ module.exports = class Data1670271082269 {
         await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, "identity_display" text, "identity_level" character varying(10), "stake_pool_value" numeric NOT NULL, "stake_pool_nft_count" integer NOT NULL, "stake_pool_avg_apr_multiplier" numeric NOT NULL, "vault_value" numeric NOT NULL, "vault_nft_count" integer NOT NULL, "vault_avg_apr_multiplier" numeric NOT NULL, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
         await db.query(`CREATE TABLE "delegation_value_record" ("id" character varying NOT NULL, "updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "value" numeric NOT NULL, "account_id" character varying, CONSTRAINT "PK_04d40954ab0809e675a86535d38" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_c437fcb71b7a03f2dd1a99ebc6" ON "delegation_value_record" ("account_id") `)
+        await db.query(`CREATE TABLE "reward_record" ("id" character varying NOT NULL, "time" TIMESTAMP WITH TIME ZONE NOT NULL, "value" numeric NOT NULL, CONSTRAINT "PK_14c183bc814ae3c3b24f2595576" PRIMARY KEY ("id"))`)
         await db.query(`ALTER TABLE "vault" ADD CONSTRAINT "FK_79f07f6ce7cca2f1ebfc2c0b117" FOREIGN KEY ("base_pool_id") REFERENCES "base_pool"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "session" ADD CONSTRAINT "FK_84c1c253406ae3adb5ba41ff7db" FOREIGN KEY ("stake_pool_id") REFERENCES "stake_pool"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "session" ADD CONSTRAINT "FK_30db46e58a0ae3fbc408179de88" FOREIGN KEY ("worker_id") REFERENCES "worker"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
@@ -75,6 +76,7 @@ module.exports = class Data1670271082269 {
         await db.query(`DROP TABLE "account"`)
         await db.query(`DROP TABLE "delegation_value_record"`)
         await db.query(`DROP INDEX "public"."IDX_c437fcb71b7a03f2dd1a99ebc6"`)
+        await db.query(`DROP TABLE "reward_record"`)
         await db.query(`ALTER TABLE "vault" DROP CONSTRAINT "FK_79f07f6ce7cca2f1ebfc2c0b117"`)
         await db.query(`ALTER TABLE "session" DROP CONSTRAINT "FK_84c1c253406ae3adb5ba41ff7db"`)
         await db.query(`ALTER TABLE "session" DROP CONSTRAINT "FK_30db46e58a0ae3fbc408179de88"`)

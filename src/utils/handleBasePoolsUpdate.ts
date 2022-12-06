@@ -4,7 +4,7 @@ import {In} from 'typeorm'
 import {Account, BasePool, BasePoolKind, DelegationValueRecord} from '../model'
 import {Ctx} from '../processor'
 import {updateSharePrice} from './basePool'
-import {assertGet, toMap} from './common'
+import {toMap} from './common'
 import {getAvgAprMultiplier, updateDelegationValue} from './delegation'
 import {createDelegationValueRecord} from './delegationValueRecord'
 
