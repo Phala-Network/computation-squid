@@ -5,7 +5,10 @@ import {Account, BasePool, BasePoolKind, DelegationValueRecord} from '../model'
 import {Ctx} from '../processor'
 import {updateSharePrice} from './basePool'
 import {toMap} from './common'
-import {getAvgAprMultiplier, updateDelegationValue} from './delegation'
+import {
+  getDelegationAvgAprMultiplier,
+  updateDelegationValue,
+} from './delegation'
 import {createDelegationValueRecord} from './delegationValueRecord'
 
 const handleBasePoolsUpdate = async (
@@ -59,11 +62,11 @@ const handleBasePoolsUpdate = async (
     }
     account.vaultValue = newVaultValue
     account.stakePoolValue = newStakePoolValue
-    account.vaultAvgAprMultiplier = getAvgAprMultiplier(
+    account.vaultAvgAprMultiplier = getDelegationAvgAprMultiplier(
       account.delegations.filter((x) => x.basePool.kind === BasePoolKind.Vault)
     )
 
-    account.stakePoolAvgAprMultiplier = getAvgAprMultiplier(
+    account.stakePoolAvgAprMultiplier = getDelegationAvgAprMultiplier(
       account.delegations.filter(
         (x) => x.basePool.kind === BasePoolKind.StakePool
       )
@@ -135,7 +138,7 @@ const handleBasePoolsUpdate = async (
       )
     }
 
-    account.vaultAvgAprMultiplier = getAvgAprMultiplier(
+    account.vaultAvgAprMultiplier = getDelegationAvgAprMultiplier(
       account.delegations.filter((x) => x.basePool.kind === BasePoolKind.Vault)
     )
   }

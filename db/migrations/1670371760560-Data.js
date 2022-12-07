@@ -1,8 +1,8 @@
-module.exports = class Data1670368156082 {
-    name = 'Data1670368156082'
+module.exports = class Data1670371760560 {
+    name = 'Data1670371760560'
 
     async up(db) {
-        await db.query(`CREATE TABLE "global_state" ("id" character varying NOT NULL, "height" integer NOT NULL, "total_value" numeric NOT NULL, "average_block_time_updated_height" integer NOT NULL, "average_block_time_updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "average_block_time" integer NOT NULL, "idle_worker_shares" numeric NOT NULL, CONSTRAINT "PK_8b4db1150cf49bfd067e2572c74" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "global_state" ("id" character varying NOT NULL, "height" integer NOT NULL, "total_value" numeric NOT NULL, "average_block_time_updated_height" integer NOT NULL, "average_block_time_updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "average_block_time" integer NOT NULL, "average_apr_multiplier_updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "average_apr_multiplier" numeric NOT NULL, "idle_worker_shares" numeric NOT NULL, CONSTRAINT "PK_8b4db1150cf49bfd067e2572c74" PRIMARY KEY ("id"))`)
         await db.query(`CREATE TABLE "vault" ("id" character varying NOT NULL, "last_share_price_checkpoint" numeric NOT NULL, "claimable_owner_shares" numeric NOT NULL, "base_pool_id" character varying NOT NULL, CONSTRAINT "REL_79f07f6ce7cca2f1ebfc2c0b11" UNIQUE ("base_pool_id"), CONSTRAINT "PK_dd0898234c77f9d97585171ac59" PRIMARY KEY ("id"))`)
         await db.query(`CREATE UNIQUE INDEX "IDX_79f07f6ce7cca2f1ebfc2c0b11" ON "vault" ("base_pool_id") `)
         await db.query(`CREATE TABLE "session" ("id" character varying NOT NULL, "is_bound" boolean NOT NULL, "stake" numeric NOT NULL, "state" character varying(18) NOT NULL, "v" numeric NOT NULL, "ve" numeric NOT NULL, "p_init" integer NOT NULL, "p_instant" integer NOT NULL, "total_reward" numeric NOT NULL, "cooling_down_start_time" TIMESTAMP WITH TIME ZONE, "stake_pool_id" character varying, "worker_id" character varying, CONSTRAINT "PK_f55da76ac1c3ac420f444d2ff11" PRIMARY KEY ("id"))`)

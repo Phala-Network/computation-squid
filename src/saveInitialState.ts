@@ -1,8 +1,8 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import assert from 'assert'
-import config from './config'
 import {readFile} from 'fs/promises'
 import path from 'path'
+import config from './config'
 import {
   Account,
   BasePool,
@@ -23,14 +23,18 @@ import {
 import {Ctx} from './processor'
 import {
   createPool,
+  getBasePoolAvgAprMultiplier,
   updateSharePrice,
   updateStakePoolAprMultiplier,
 } from './utils/basePool'
-import {assertGet, join, getAccount, max} from './utils/common'
-import {updateWorkerShares} from './utils/worker'
+import {assertGet, getAccount, join, max} from './utils/common'
 import {fromBits, toBalance} from './utils/converter'
-import {getAvgAprMultiplier, updateDelegationValue} from './utils/delegation'
+import {
+  getDelegationAvgAprMultiplier,
+  updateDelegationValue,
+} from './utils/delegation'
 import {createDelegationValueRecord} from './utils/delegationValueRecord'
+import {updateWorkerShares} from './utils/worker'
 
 interface IBasePool {
   pid: string
@@ -111,10 +115,11 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
   const globalState = new GlobalState({
     id: '0',
     height: fromHeight - 1,
-    totalValue: BigDecimal(0),
+    averageAprMultiplierUpdatedTime: new Date(dump.timestamp),
     averageBlockTimeUpdatedHeight: fromHeight - 1,
     averageBlockTimeUpdatedTime: new Date(dump.timestamp),
     averageBlockTime: 12000,
+    totalValue: BigDecimal(0),
     idleWorkerShares: BigDecimal(0),
   })
   const accountMap = new Map<string, Account>()
@@ -300,6 +305,9 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
 
       delegation.shares = shares.add(delegation.withdrawalShares)
       updateDelegationValue(delegation, basePool)
+      if (![...basePoolMap.values()].some((x) => x.account.id === owner.id)) {
+        globalState.totalValue = globalState.totalValue.plus(delegation.value)
+      }
       delegation.delegationNft = delegationNft
 
       delegationNftMap.set(delegationNft.id, delegationNft)
@@ -323,7 +331,8 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
         x.basePool.kind === BasePoolKind.StakePool &&
         x.account.id === account.id
     )
-    account.stakePoolAvgAprMultiplier = getAvgAprMultiplier(delegations)
+    account.stakePoolAvgAprMultiplier =
+      getDelegationAvgAprMultiplier(delegations)
 
     delegationValueRecords.push(
       createDelegationValueRecord({
@@ -347,7 +356,7 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
       (x) =>
         x.basePool.kind === BasePoolKind.Vault && x.account.id === account.id
     )
-    account.vaultAvgAprMultiplier = getAvgAprMultiplier(delegations)
+    account.vaultAvgAprMultiplier = getDelegationAvgAprMultiplier(delegations)
   }
 
   const rewardRecord = new RewardRecord({
@@ -355,6 +364,10 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
     time: new Date(dump.timestamp),
     value: BigDecimal(0),
   })
+
+  globalState.averageAprMultiplier = getBasePoolAvgAprMultiplier(
+    [...basePoolMap.values()].filter((x) => x.kind === BasePoolKind.StakePool)
+  )
 
   for (const x of [
     globalState,

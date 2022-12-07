@@ -6,6 +6,8 @@ type GlobalState @entity {
   averageBlockTimeUpdatedHeight: Int!
   averageBlockTimeUpdatedTime: DateTime!
   averageBlockTime: Int!
+  averageAprMultiplierUpdatedTime: DateTime!
+  averageAprMultiplier: BigDecimal!
   "for apr calculation"
   idleWorkerShares: BigDecimal!
 }

@@ -29,6 +29,12 @@ export class GlobalState {
   @Column_("int4", {nullable: false})
   averageBlockTime!: number
 
+  @Column_("timestamp with time zone", {nullable: false})
+  averageAprMultiplierUpdatedTime!: Date
+
+  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+  averageAprMultiplier!: BigDecimal
+
   /**
    * for apr calculation
    */

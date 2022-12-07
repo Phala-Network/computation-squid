@@ -116,6 +116,21 @@ export class PhalaBasePoolNftCreatedEvent {
         assert(this.isV1191)
         return this._chain.decodeEvent(this.event)
     }
+
+    /**
+     * A Nft is created to contain pool shares
+     */
+    get isV1197(): boolean {
+        return this._chain.getEventHash('PhalaBasePool.NftCreated') === 'c29457a79ee80b60d4bba1786acd75b45882d66dd36d38a4cd292123bf7cdccc'
+    }
+
+    /**
+     * A Nft is created to contain pool shares
+     */
+    get asV1197(): {pid: bigint, cid: number, nftId: number, owner: Uint8Array, shares: bigint} {
+        assert(this.isV1197)
+        return this._chain.decodeEvent(this.event)
+    }
 }
 
 export class PhalaBasePoolPoolWhitelistCreatedEvent {

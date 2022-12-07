@@ -27,11 +27,12 @@ import {
 import saveInitialState from './saveInitialState'
 import {
   createPool,
+  updateAverageAprMultiplier,
   updateSharePrice,
   updateStakePoolAprMultiplier,
   updateStakePoolDelegable,
 } from './utils/basePool'
-import {assertGet, join, getAccount, max, toMap} from './utils/common'
+import {assertGet, getAccount, join, max, toMap} from './utils/common'
 import {updateAverageBlockTime} from './utils/globalState'
 import handleBasePoolsUpdate from './utils/handleBasePoolsUpdate'
 import {queryIdentities} from './utils/identity'
@@ -518,7 +519,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
             })
           const prevShares = delegation.shares
           delegation.delegationNft = delegationNft
-          delegation.shares = shares
+          delegation.shares = shares.plus(delegation.withdrawalShares)
           delegationMap.set(delegationId, delegation)
           if (prevShares.eq(0) && shares.gt(0)) {
             basePool.delegatorCount++
@@ -559,10 +560,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           basePool.freeValue.minus(amount),
           BigDecimal(0)
         )
-        delegation.withdrawalShares = max(
-          delegation.withdrawalShares.minus(shares),
-          BigDecimal(0)
-        )
+        delegation.shares = delegation.shares.minus(shares)
+        delegation.withdrawalShares = delegation.withdrawalShares.minus(shares)
         if (basePool.kind === BasePoolKind.StakePool) {
           const stakePool = assertGet(stakePoolMap, pid)
           updateStakePoolAprMultiplier(basePool, stakePool)
@@ -841,4 +840,5 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   }
 
   await handleBasePoolsUpdate(ctx, [...updatedBasePoolIdSet])
+  await updateAverageAprMultiplier(ctx)
 })

@@ -12,7 +12,9 @@ export const updateDelegationValue = (
     .round(12, 0)
 }
 
-export const getAvgAprMultiplier = (delegations: Delegation[]): BigDecimal => {
+export const getDelegationAvgAprMultiplier = (
+  delegations: Delegation[]
+): BigDecimal => {
   const totalValue = sum(...delegations.map((x) => x.value))
   if (totalValue.eq(0)) return BigDecimal(0)
   return delegations
