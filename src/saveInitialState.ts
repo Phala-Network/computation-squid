@@ -219,7 +219,7 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
       const {stakePool} = pool
 
       if (b.stakePool.capacity != null) {
-        stakePool.capacity = BigDecimal(b.stakePool.capacity)
+        stakePool.capacity = toBalance(b.stakePool.capacity)
         stakePool.delegable = max(
           BigDecimal(0),
           basePool.totalValue.minus(stakePool.capacity)
