@@ -109,6 +109,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   const delegationNftIdSet = new Set<string>()
   const basePoolWhitelistIdSet = new Set<string>()
   const sharePriceUpdatedStakePoolIdSet = new Set<string>()
+  const sharePriceUpdatedVaultIdSet = new Set<string>()
   const aprMultiplierUpdatedBasePoolIdSet = new Set<string>()
 
   for (const {name, args} of events) {
@@ -458,6 +459,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const basePool = assertGet(basePoolMap, pid)
         const vault = assertGet(vaultMap, pid)
         basePool.totalShares = basePool.totalShares.plus(shares)
+        updateSharePrice(basePool)
+        sharePriceUpdatedVaultIdSet.add(pid)
         vault.claimableOwnerShares = vault.claimableOwnerShares.plus(shares)
         vault.lastSharePriceCheckpoint = basePool.sharePrice
         break
@@ -836,6 +839,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
 
   await updateDelegationAndAccount(
     ctx,
+    [...sharePriceUpdatedVaultIdSet],
     [...sharePriceUpdatedStakePoolIdSet],
     [...aprMultiplierUpdatedBasePoolIdSet]
   )

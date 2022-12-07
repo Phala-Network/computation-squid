@@ -12,6 +12,7 @@ import {
 
 const updateDelegationAndAccount = async (
   ctx: Ctx,
+  sharePriceUpdatedVaultIds: string[],
   sharePriceUpdatedStakePoolIds: string[],
   aprMultiplierUpdatedBasePoolIds: string[]
 ): Promise<void> => {
@@ -101,7 +102,16 @@ const updateDelegationAndAccount = async (
 
   const accountIdsAffectedByVault = new Set<string>()
   const delegationsAffectedByVault = await ctx.store.find(Delegation, {
-    where: {basePool: {id: In([...vaultIdsAffectedByAccount])}},
+    where: {
+      basePool: {
+        id: In([
+          ...new Set(
+            ...vaultIdsAffectedByAccount,
+            ...sharePriceUpdatedVaultIds
+          ),
+        ]),
+      },
+    },
     relations: {
       account: true,
       basePool: true,
