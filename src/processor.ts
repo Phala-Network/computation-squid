@@ -101,11 +101,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
 
   const identityUpdatedAccountIdSet = new Set<string>()
   const basePoolIdSet = new Set<string>()
-  const basePoolCidSet = new Set<number>()
   const workerIdSet = new Set<string>()
   const sessionIdSet = new Set<string>()
   const delegationIdSet = new Set<string>()
-  const delegationCidSet = new Set<string>()
   const delegationNftIdSet = new Set<string>()
   const basePoolWhitelistIdSet = new Set<string>()
   // MEMO: base pools with updated share price, apr multiplier or commission
@@ -142,6 +140,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       delegationIdSet.add(join(args.pid, args.accountId))
     }
 
+    if (name === 'PhalaBasePool.NftCreated') {
+      delegationIdSet.add(join(args.pid, args.owner))
+    }
+
     if (
       name === 'PhalaStakePoolv2.PoolWorkerAdded' ||
       name === 'PhalaStakePoolv2.PoolWorkerRemoved' ||
@@ -170,11 +172,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
 
     if (name === 'PhalaBasePool.PoolWhitelistStakerRemoved') {
       basePoolWhitelistIdSet.add(join(args.pid, args.accountId))
-    }
-
-    if (name === 'PhalaBasePool.NftCreated') {
-      basePoolCidSet.add(args.cid)
-      delegationCidSet.add(join(args.cid, args.owner))
     }
 
     if (name === 'RmrkCore.NFTBurned' || name === 'RmrkCore.PropertySet') {
@@ -207,13 +204,13 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       basePoolIdSet.add(stakePool.id)
     }
   }
-  const basePools = await ctx.store.find(BasePool, {
-    where: [{id: In([...basePoolIdSet])}, {cid: In([...basePoolCidSet])}],
-    relations: {owner: true, account: true},
-  })
+  const basePoolMap = await ctx.store
+    .find(BasePool, {
+      where: {id: In([...basePoolIdSet])},
+      relations: {owner: true, account: true},
+    })
+    .then(toMap)
 
-  const basePoolMap = toMap(basePools)
-  const basePoolCidMap = toMap(basePools, 'cid')
   const stakePoolMap = await ctx.store
     .find(StakePool, {
       where: {id: In([...basePoolIdSet])},
@@ -238,13 +235,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   // MEMO: get all delegations in updated pools for value update
   const delegationMap = await ctx.store
     .find(Delegation, {
-      where: [
-        {id: In([...delegationIdSet])},
-        ...[...delegationCidSet].map((id) => {
-          const [cid, accountId] = id.split('-')
-          return {basePool: {cid: Number(cid)}, account: {id: accountId}}
-        }),
-      ],
+      where: {id: In([...delegationIdSet])},
       relations: {
         account: true,
         basePool: true,
@@ -285,7 +276,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           poolAccount,
         })
         basePoolMap.set(pid, basePool)
-        basePoolCidMap.set(cid, basePool)
         stakePoolMap.set(pid, stakePool)
         await ctx.store.save(ownerAccount)
         await ctx.store.insert(poolAccount)
@@ -448,7 +438,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           poolAccount,
         })
         basePoolMap.set(pid, basePool)
-        basePoolCidMap.set(cid, basePool)
         vaultMap.set(pid, vault)
         await ctx.store.insert(poolAccount)
         await ctx.store.save(ownerAccount)
@@ -492,9 +481,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         break
       }
       case 'PhalaBasePool.NftCreated': {
-        const {owner, cid, nftId, shares} = args
+        const {pid, owner, cid, nftId, shares} = args
         const ownerAccount = getAccount(accountMap, owner)
-        const basePool = assertGet(basePoolCidMap, cid)
+        const basePool = assertGet(basePoolMap, pid)
         // MEMO: ignore withdrawal nft
         if (basePool.account.id !== owner) {
           const delegationNftId = join(cid, nftId)
@@ -505,7 +494,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
             nftId,
           })
           delegationNftMap.set(delegationNftId, delegationNft)
-          const delegationId = join(basePool.id, owner)
+          const delegationId = join(pid, owner)
           const delegation =
             delegationMap.get(delegationId) ??
             new Delegation({

@@ -203,10 +203,11 @@ const decodeEvent = (
     }
     case 'PhalaBasePool.NftCreated': {
       const e = new PhalaBasePoolNftCreatedEvent(ctx, item.event)
-      const {cid, nftId, owner, shares} = e.asV1191
+      const {pid, cid, nftId, owner, shares} = e.asV1197
       return {
         name,
         args: {
+          pid: String(pid),
           cid,
           nftId,
           owner: encodeAddress(owner),
