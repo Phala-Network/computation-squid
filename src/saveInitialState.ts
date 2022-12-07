@@ -259,7 +259,7 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
         basePool,
         shares: BigDecimal(0),
         value: BigDecimal(0),
-        withdrawalShares: BigDecimal(0),
+        withdrawingShares: BigDecimal(0),
         withdrawalStartTime: new Date(withdrawal.startTime * 1000),
         withdrawalNft,
       })
@@ -281,7 +281,8 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
       const user = assertGet(nftUserMap, delegationNftId)
       const delegationId = join(basePool.id, user)
       const delegation = assertGet(delegationMap, delegationId)
-      delegation.withdrawalShares = shares
+      delegation.shares = delegation.shares.plus(shares)
+      delegation.withdrawingShares = shares
       updateDelegationValue(delegation, basePool)
     } else {
       const delegationId = join(basePool.id, d.owner)
@@ -299,11 +300,11 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
           account: owner,
           basePool,
           delegationNft,
-          withdrawalShares: BigDecimal(0),
-          withdrawalValue: BigDecimal(0),
+          withdrawingShares: BigDecimal(0),
+          withdrawingValue: BigDecimal(0),
         })
 
-      delegation.shares = shares.add(delegation.withdrawalShares)
+      delegation.shares = shares.add(delegation.withdrawingShares)
       updateDelegationValue(delegation, basePool)
       if (![...basePoolMap.values()].some((x) => x.account.id === owner.id)) {
         globalState.totalValue = globalState.totalValue.plus(delegation.value)

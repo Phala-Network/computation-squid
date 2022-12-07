@@ -65,8 +65,8 @@ type BasePool @entity {
   sharePrice: BigDecimal!
   freeValue: BigDecimal!
   releasingValue: BigDecimal!
-  withdrawalValue: BigDecimal!
-  withdrawalShares: BigDecimal!
+  withdrawingValue: BigDecimal!
+  withdrawingShares: BigDecimal!
   delegatorCount: Int!
   whitelistEnabled: Boolean!
   whitelists: [BasePoolWhitelist!] @derivedFrom(field: "basePool")
@@ -104,8 +104,8 @@ type Delegation @entity {
   basePool: BasePool!
   value: BigDecimal!
   shares: BigDecimal!
-  withdrawalValue: BigDecimal!
-  withdrawalShares: BigDecimal!
+  withdrawingValue: BigDecimal!
+  withdrawingShares: BigDecimal!
   withdrawalStartTime: DateTime
   delegationNft: DelegationNft
   withdrawalNft: DelegationNft

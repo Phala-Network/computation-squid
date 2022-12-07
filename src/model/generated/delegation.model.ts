@@ -32,10 +32,10 @@ export class Delegation {
   shares!: BigDecimal
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  withdrawalValue!: BigDecimal
+  withdrawingValue!: BigDecimal
 
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  withdrawalShares!: BigDecimal
+  withdrawingShares!: BigDecimal
 
   @Column_("timestamp with time zone", {nullable: true})
   withdrawalStartTime!: Date | undefined | null

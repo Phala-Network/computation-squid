@@ -47,8 +47,8 @@ export function createPool(
     sharePrice: BigDecimal(1),
     freeValue: BigDecimal(0),
     releasingValue: BigDecimal(0),
-    withdrawalShares: BigDecimal(0),
-    withdrawalValue: BigDecimal(0),
+    withdrawingShares: BigDecimal(0),
+    withdrawingValue: BigDecimal(0),
     delegatorCount: 0,
     whitelistEnabled: false,
   })
@@ -79,7 +79,7 @@ export function updateSharePrice(basePool: BasePool): void {
     ? BigDecimal(1)
     : basePool.totalValue.div(basePool.totalShares)
   basePool.sharePrice = sharePrice
-  basePool.withdrawalValue = basePool.withdrawalShares.times(sharePrice)
+  basePool.withdrawingValue = basePool.withdrawingShares.times(sharePrice)
 }
 
 export function updateStakePoolAprMultiplier(
@@ -93,6 +93,16 @@ export function updateStakePoolAprMultiplier(
         .div(basePool.totalValue)
 }
 
+export const updateVaultCommission = (
+  basePool: BasePool,
+  commission: BigDecimal
+): void => {
+  basePool.aprMultiplier = basePool.aprMultiplier
+    .div(BigDecimal(1).minus(basePool.commission))
+    .times(BigDecimal(1).minus(commission))
+  basePool.commission = commission
+}
+
 export const updateStakePoolDelegable = (
   basePool: BasePool,
   stakePool: StakePool
@@ -101,7 +111,7 @@ export const updateStakePoolDelegable = (
     stakePool.delegable = max(
       stakePool.capacity
         .minus(basePool.totalValue)
-        .plus(basePool.withdrawalValue),
+        .plus(basePool.withdrawingValue),
       BigDecimal(0)
     )
   } else {
@@ -122,7 +132,9 @@ export const getBasePoolAvgAprMultiplier = (
     .div(totalValue)
 }
 
-export const updateAverageAprMultiplier = async (ctx: Ctx): Promise<void> => {
+export const updateGlobalAverageAprMultiplier = async (
+  ctx: Ctx
+): Promise<void> => {
   const lastBlock = ctx.blocks[ctx.blocks.length - 1]
   const globalState = await ctx.store.findOneByOrFail(GlobalState, {id: '0'})
   const FIVE_MINUTES = 5 * 60 * 1000

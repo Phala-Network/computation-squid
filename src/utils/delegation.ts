@@ -7,7 +7,7 @@ export const updateDelegationValue = (
   basePool: BasePool
 ): void => {
   delegation.value = delegation.shares.times(basePool.sharePrice).round(12, 0)
-  delegation.withdrawalValue = delegation.withdrawalShares
+  delegation.withdrawingValue = delegation.withdrawingShares
     .times(basePool.sharePrice)
     .round(12, 0)
 }
