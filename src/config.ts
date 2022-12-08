@@ -5,10 +5,10 @@ const config: {
   dataSource: DataSource
   blockRange: Exclude<BlockRangeOption['range'], undefined>
 } = {
-  blockRange: {from: 102001},
+  blockRange: {from: 3036},
   dataSource: {
-    archive: 'http://51.210.116.29:8888/graphql',
-    chain: 'wss://pc-test-3.phala.network/khala/ws',
+    archive: 'http://51.210.116.29:8889/graphql',
+    chain: 'wss://pc-test-4.phala.network/khala/ws',
   },
 }
 

@@ -40,7 +40,7 @@ import postUpdate from './utils/postUpdate'
 import {updateWorkerShares} from './utils/worker'
 
 const processor = new SubstrateBatchProcessor()
-  .includeAllBlocks(config.blockRange)
+  // .includeAllBlocks(config.blockRange)
   .setDataSource(config.dataSource)
   .setBlockRange(config.blockRange)
   .addEvent('PhalaStakePoolv2.PoolCreated')

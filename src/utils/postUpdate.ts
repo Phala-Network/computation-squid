@@ -33,7 +33,7 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
     await new PhalaComputationTokenomicParametersStorage(
       ctx,
       lastBlock.header
-    ).asV1191
+    ).asV1196
       .get()
       .then((value) => {
         assert(value)
