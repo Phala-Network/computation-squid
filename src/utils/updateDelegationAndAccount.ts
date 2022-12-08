@@ -1,7 +1,13 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import assert from 'assert'
 import {In} from 'typeorm'
-import {Account, BasePool, BasePoolKind, Delegation} from '../model'
+import {
+  Account,
+  BasePool,
+  BasePoolKind,
+  Delegation,
+  DelegationValueRecord,
+} from '../model'
 import {Ctx} from '../processor'
 import {updateSharePrice} from './basePool'
 import {sum} from './common'
@@ -9,6 +15,7 @@ import {
   getDelegationAvgAprMultiplier,
   updateDelegationValue,
 } from './delegation'
+import {createDelegationValueRecord} from './delegationValueRecord'
 
 const updateDelegationAndAccount = async (
   ctx: Ctx,
@@ -18,7 +25,34 @@ const updateDelegationAndAccount = async (
 ): Promise<void> => {
   const lastBlock = ctx.blocks.at(-1)
   assert(lastBlock)
-  // const updatedTime = new Date(lastBlock.header.timestamp)
+  const updatedTime = new Date(lastBlock.header.timestamp)
+
+  const recordAccountTotalValue = async (
+    account: Account,
+    value: BigDecimal
+  ): Promise<void> => {
+    const ONE_DAY = 24 * 60 * 60 * 1000
+    const lastRecord = await ctx.store.findOne(DelegationValueRecord, {
+      order: {updatedTime: 'DESC'},
+      where: {account: {id: account.id}},
+      relations: {account: true},
+    })
+    if (
+      lastRecord == null ||
+      lastRecord.updatedTime.getTime() < updatedTime.getTime() - ONE_DAY
+    ) {
+      const delegationValueRecord = createDelegationValueRecord({
+        account,
+        value,
+        updatedTime,
+      })
+      await ctx.store.save(delegationValueRecord)
+    } else {
+      lastRecord.value = value
+      await ctx.store.save(lastRecord)
+    }
+  }
+
   const accountIdsAffectedByStakePool = new Set<string>()
   const delegationsAffectedByStakePool = await ctx.store.find(Delegation, {
     where: {
@@ -64,12 +98,11 @@ const updateDelegationAndAccount = async (
         .map((x) => x.value)
     )
 
-    // const totalValue = newStakePoolValue.plus(account.vaultValue)
-    // const delegationValueRecord = createDelegationValueRecord({
-    //   account,
-    //   value: newTotalValue,
-    //   updatedTime,
-    // })
+    await recordAccountTotalValue(
+      account,
+      newStakePoolValue.plus(account.vaultValue)
+    )
+
     if (!account.stakePoolValue.eq(newStakePoolValue)) {
       account.stakePoolValue = newStakePoolValue
       if (account.basePool != null) {
@@ -139,12 +172,11 @@ const updateDelegationAndAccount = async (
         .map((x) => x.value)
     )
 
-    // const totalValue = newStakePoolValue.plus(account.StakePoolValue)
-    // const delegationValueRecord = createDelegationValueRecord({
-    //   account,
-    //   value: newTotalValue,
-    //   updatedTime,
-    // })
+    await recordAccountTotalValue(
+      account,
+      newVaultValue.plus(account.stakePoolValue)
+    )
+
     if (!account.vaultValue.eq(newVaultValue)) {
       account.vaultValue = newVaultValue
     }

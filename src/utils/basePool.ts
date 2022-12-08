@@ -97,9 +97,10 @@ export const updateVaultCommission = (
   basePool: BasePool,
   commission: BigDecimal
 ): void => {
-  basePool.aprMultiplier = basePool.aprMultiplier
-    .div(BigDecimal(1).minus(basePool.commission))
-    .times(BigDecimal(1).minus(commission))
+  basePool.aprMultiplier = basePool.account.stakePoolAvgAprMultiplier.times(
+    BigDecimal(1).minus(commission)
+  )
+
   basePool.commission = commission
 }
 

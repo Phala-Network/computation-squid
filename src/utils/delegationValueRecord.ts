@@ -10,10 +10,12 @@ export const createDelegationValueRecord = ({
   account: Account
   value: BigDecimal
   updatedTime: Date
-}): DelegationValueRecord =>
-  new DelegationValueRecord({
-    id: join(account.id, updatedTime.getTime()),
+}): DelegationValueRecord => {
+  const dateString = updatedTime.toISOString().slice(0, 10)
+  return new DelegationValueRecord({
+    id: join(account.id, dateString),
     account,
     value,
-    updatedTime,
+    updatedTime: new Date(`${dateString}T00:00:00.000Z`),
   })
+}
