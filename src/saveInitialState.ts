@@ -134,6 +134,7 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
   const basePoolWhitelistMap = new Map<string, BasePoolWhitelist>()
   const nftUserMap = new Map<string, string>()
   const delegationValueRecords: DelegationValueRecord[] = []
+  const whitelists: BasePoolWhitelist[] = []
 
   for (const i of dump.identities) {
     const account = getAccount(accountMap, i.id)
@@ -244,6 +245,19 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
       }
 
       updateStakePoolAprMultiplier(basePool, stakePool)
+
+      for (let i = 0; i < b.whitelists.length; i++) {
+        const address = b.whitelists[i]
+        whitelists.push(
+          new BasePoolWhitelist({
+            id: join(b.pid, address),
+            account: getAccount(accountMap, address),
+            basePool,
+            // MEMO: keep the order of whitelists
+            createTime: new Date(dump.timestamp - whitelists.length + i),
+          })
+        )
+      }
     }
 
     for (const withdrawal of b.withdrawQueue) {
@@ -383,11 +397,12 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
     basePoolWhitelistMap,
     delegationValueRecords,
     rewardRecord,
+    whitelists,
   ]) {
     if (x instanceof Map) {
       await ctx.store.save([...x.values()])
     } else if (Array.isArray(x)) {
-      await ctx.store.save(x)
+      await ctx.store.save([...x])
     } else {
       // bypass type check
       await ctx.store.save(x)
