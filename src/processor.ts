@@ -31,7 +31,7 @@ import {
   updateSharePrice,
   updateStakePoolAprMultiplier,
   updateStakePoolDelegable,
-  updateVaultCommission,
+  updateVaultAprMultiplier,
 } from './utils/basePool'
 import {assertGet, getAccount, join, max, toMap} from './utils/common'
 import {updateDelegationValue} from './utils/delegation'
@@ -108,9 +108,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   const delegationIdSet = new Set<string>()
   const delegationNftIdSet = new Set<string>()
   const basePoolWhitelistIdSet = new Set<string>()
-  const sharePriceUpdatedStakePoolIdSet = new Set<string>()
   const sharePriceUpdatedVaultIdSet = new Set<string>()
-  const aprMultiplierUpdatedBasePoolIdSet = new Set<string>()
+  const sharePriceUpdatedStakePoolIdSet = new Set<string>()
+  const aprMultiplierUpdatedVaultIdSet = new Set<string>()
+  const aprMultiplierUpdatedStakePoolIdSet = new Set<string>()
 
   for (const {name, args} of events) {
     if (
@@ -293,7 +294,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const stakePool = assertGet(stakePoolMap, pid)
         basePool.commission = commission
         updateStakePoolAprMultiplier(basePool, stakePool)
-        aprMultiplierUpdatedBasePoolIdSet.add(pid)
+        aprMultiplierUpdatedStakePoolIdSet.add(pid)
         break
       }
       case 'PhalaStakePoolv2.PoolCapacitySet': {
@@ -377,7 +378,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         basePool.totalShares = basePool.totalShares.plus(shares)
         basePool.totalValue = basePool.totalValue.plus(amount)
         updateStakePoolAprMultiplier(basePool, stakePool)
-        aprMultiplierUpdatedBasePoolIdSet.add(pid)
+        aprMultiplierUpdatedStakePoolIdSet.add(pid)
         // MEMO: delegator is not a vault
         if (account.basePool == null) {
           globalState.totalValue = globalState.totalValue.plus(amount)
@@ -450,8 +451,12 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       case 'PhalaVault.VaultCommissionSet': {
         const {pid, commission} = args
         const basePool = assertGet(basePoolMap, pid)
-        updateVaultCommission(basePool, commission)
-        aprMultiplierUpdatedBasePoolIdSet.add(pid)
+        basePool.commission = commission
+        updateVaultAprMultiplier(
+          basePool,
+          assertGet(accountMap, basePool.account.id)
+        )
+        aprMultiplierUpdatedVaultIdSet.add(pid)
         break
       }
       case 'PhalaVault.OwnerSharesGained': {
@@ -478,6 +483,11 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         basePool.totalShares = basePool.totalShares.plus(shares)
         basePool.totalValue = basePool.totalValue.plus(amount)
         globalState.totalValue = globalState.totalValue.plus(amount)
+        updateVaultAprMultiplier(
+          basePool,
+          assertGet(accountMap, basePool.account.id)
+        )
+        aprMultiplierUpdatedVaultIdSet.add(pid)
         break
       }
       case 'PhalaBasePool.NftCreated': {
@@ -506,26 +516,37 @@ processor.run(new TypeormDatabase(), async (ctx) => {
               withdrawingValue: BigDecimal(0),
               withdrawingShares: BigDecimal(0),
             })
+          const prevValue = delegation.value
           const prevShares = delegation.shares
           delegation.delegationNft = delegationNft
           delegation.shares = shares.plus(delegation.withdrawingShares)
           updateDelegationValue(delegation, basePool)
           delegationMap.set(delegationId, delegation)
-          if (prevShares.eq(0) && delegation.shares.gt(0)) {
-            basePool.delegatorCount++
-            if (basePool.kind === BasePoolKind.StakePool) {
+          const isNewDelegation = prevShares.eq(0) && delegation.shares.gt(0)
+          const isEmptyDelegation = prevShares.gt(0) && delegation.shares.eq(0)
+          if (basePool.kind === BasePoolKind.StakePool) {
+            ownerAccount.stakePoolValue = ownerAccount.stakePoolValue
+              .plus(delegation.value)
+              .minus(prevValue)
+            if (isNewDelegation) {
+              basePool.delegatorCount++
               ownerAccount.stakePoolNftCount++
             }
-            if (basePool.kind === BasePoolKind.Vault) {
-              ownerAccount.vaultNftCount++
-            }
-          }
-          if (prevShares.gt(0) && delegation.shares.eq(0)) {
-            basePool.delegatorCount--
-            if (basePool.kind === BasePoolKind.StakePool) {
+            if (isEmptyDelegation) {
+              basePool.delegatorCount--
               ownerAccount.stakePoolNftCount--
             }
-            if (basePool.kind === BasePoolKind.Vault) {
+          }
+          if (basePool.kind === BasePoolKind.Vault) {
+            ownerAccount.vaultValue = ownerAccount.vaultValue
+              .plus(delegation.value)
+              .minus(prevValue)
+            if (isNewDelegation) {
+              basePool.delegatorCount++
+              ownerAccount.vaultNftCount++
+            }
+            if (isEmptyDelegation) {
+              basePool.delegatorCount--
               ownerAccount.vaultNftCount--
             }
           }
@@ -563,7 +584,14 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           const stakePool = assertGet(stakePoolMap, pid)
           updateStakePoolAprMultiplier(basePool, stakePool)
           updateStakePoolDelegable(basePool, stakePool)
-          aprMultiplierUpdatedBasePoolIdSet.add(pid)
+          aprMultiplierUpdatedStakePoolIdSet.add(pid)
+        }
+        if (basePool.kind === BasePoolKind.Vault) {
+          updateVaultAprMultiplier(
+            basePool,
+            assertGet(accountMap, basePool.account.id)
+          )
+          aprMultiplierUpdatedVaultIdSet.add(pid)
         }
 
         // MEMO: exclude vault's withdrawal
@@ -651,7 +679,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
             .minus(prevShares)
             .plus(worker.shares)
           updateStakePoolAprMultiplier(basePool, stakePool)
-          aprMultiplierUpdatedBasePoolIdSet.add(basePool.id)
+          aprMultiplierUpdatedStakePoolIdSet.add(basePool.id)
         }
         break
       }
@@ -676,7 +704,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           worker.shares
         )
         updateStakePoolAprMultiplier(basePool, stakePool)
-        aprMultiplierUpdatedBasePoolIdSet.add(basePool.id)
+        aprMultiplierUpdatedStakePoolIdSet.add(basePool.id)
         break
       }
       case 'PhalaComputation.WorkerStopped': {
@@ -696,7 +724,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
             worker.shares
           )
           updateStakePoolAprMultiplier(basePool, stakePool)
-          aprMultiplierUpdatedBasePoolIdSet.add(basePool.id)
+          aprMultiplierUpdatedStakePoolIdSet.add(basePool.id)
           stakePool.idleWorkerCount--
         }
         session.state = WorkerState.WorkerCoolingDown
@@ -730,7 +758,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           worker.shares
         )
         updateStakePoolAprMultiplier(basePool, stakePool)
-        aprMultiplierUpdatedBasePoolIdSet.add(basePool.id)
+        aprMultiplierUpdatedStakePoolIdSet.add(basePool.id)
         break
       }
       case 'PhalaComputation.WorkerExitUnresponsive': {
@@ -751,7 +779,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           worker.shares
         )
         updateStakePoolAprMultiplier(basePool, stakePool)
-        aprMultiplierUpdatedBasePoolIdSet.add(basePool.id)
+        aprMultiplierUpdatedStakePoolIdSet.add(basePool.id)
         break
       }
       case 'PhalaComputation.BenchmarkUpdated': {
@@ -774,7 +802,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
             .minus(prevShares)
             .plus(worker.shares)
           updateStakePoolAprMultiplier(basePool, stakePool)
-          aprMultiplierUpdatedBasePoolIdSet.add(basePool.id)
+          aprMultiplierUpdatedStakePoolIdSet.add(basePool.id)
         }
         break
       }
@@ -841,7 +869,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     ctx,
     [...sharePriceUpdatedVaultIdSet],
     [...sharePriceUpdatedStakePoolIdSet],
-    [...aprMultiplierUpdatedBasePoolIdSet]
+    [...aprMultiplierUpdatedVaultIdSet],
+    [...aprMultiplierUpdatedStakePoolIdSet]
   )
   await updateGlobalAverageAprMultiplier(ctx)
 })

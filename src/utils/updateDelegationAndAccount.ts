@@ -21,7 +21,8 @@ const updateDelegationAndAccount = async (
   ctx: Ctx,
   sharePriceUpdatedVaultIds: string[],
   sharePriceUpdatedStakePoolIds: string[],
-  aprMultiplierUpdatedBasePoolIds: string[]
+  aprMultiplierUpdatedVaultIds: string[],
+  aprMultiplierUpdatedStakePoolIds: string[]
 ): Promise<void> => {
   const lastBlock = ctx.blocks.at(-1)
   assert(lastBlock)
@@ -60,7 +61,7 @@ const updateDelegationAndAccount = async (
         id: In([
           ...new Set(
             ...sharePriceUpdatedStakePoolIds,
-            ...aprMultiplierUpdatedBasePoolIds
+            ...aprMultiplierUpdatedStakePoolIds
           ),
         ]),
       },
@@ -124,10 +125,12 @@ const updateDelegationAndAccount = async (
   })
 
   for (const vault of vaultsAffectedByAccount) {
-    vault.aprMultiplier = vault.account.stakePoolAvgAprMultiplier.times(
-      BigDecimal(1).minus(vault.commission)
-    )
-    vault.totalValue = vault.freeValue.plus(vault.account.stakePoolValue)
+    const totalValue = vault.freeValue.plus(vault.account.stakePoolValue)
+    vault.aprMultiplier = vault.account.stakePoolAvgAprMultiplier
+      .times(BigDecimal(1).minus(vault.commission))
+      .times(vault.account.stakePoolValue)
+      .div(totalValue)
+    vault.totalValue = totalValue
     updateSharePrice(vault)
   }
 
@@ -140,7 +143,8 @@ const updateDelegationAndAccount = async (
         id: In([
           ...new Set(
             ...vaultIdsAffectedByAccount,
-            ...sharePriceUpdatedVaultIds
+            ...sharePriceUpdatedVaultIds,
+            ...aprMultiplierUpdatedVaultIds
           ),
         ]),
       },

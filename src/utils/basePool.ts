@@ -93,15 +93,18 @@ export function updateStakePoolAprMultiplier(
         .div(basePool.totalValue)
 }
 
-export const updateVaultCommission = (
+export const updateVaultAprMultiplier = (
   basePool: BasePool,
-  commission: BigDecimal
+  account: Account
 ): void => {
-  basePool.aprMultiplier = basePool.account.stakePoolAvgAprMultiplier.times(
-    BigDecimal(1).minus(commission)
-  )
-
-  basePool.commission = commission
+  if (basePool.totalValue.eq(0)) {
+    basePool.aprMultiplier = BigDecimal(0)
+  } else {
+    basePool.aprMultiplier = account.stakePoolAvgAprMultiplier
+      .times(account.stakePoolValue)
+      .div(basePool.totalValue)
+      .times(BigDecimal(1).minus(basePool.commission))
+  }
 }
 
 export const updateStakePoolDelegable = (
