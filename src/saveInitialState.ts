@@ -26,8 +26,10 @@ import {
   getBasePoolAvgAprMultiplier,
   updateSharePrice,
   updateStakePoolAprMultiplier,
+  updateStakePoolDelegable,
+  updateVaultAprMultiplier,
 } from './utils/basePool'
-import {assertGet, getAccount, join, max} from './utils/common'
+import {assertGet, getAccount, join} from './utils/common'
 import {fromBits, toBalance} from './utils/converter'
 import {
   getDelegationAvgAprMultiplier,
@@ -221,10 +223,6 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
 
       if (b.stakePool.capacity != null) {
         stakePool.capacity = toBalance(b.stakePool.capacity)
-        stakePool.delegable = max(
-          BigDecimal(0),
-          basePool.totalValue.minus(stakePool.capacity)
-        )
       }
       stakePool.workerCount = b.stakePool.workers.length
       stakePool.ownerReward = toBalance(b.stakePool.ownerReward)
@@ -298,6 +296,7 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
       delegation.shares = delegation.shares.plus(shares)
       delegation.withdrawingShares = shares
       updateDelegationValue(delegation, basePool)
+      basePool.withdrawingShares = basePool.withdrawingShares.plus(shares)
     } else {
       const delegationId = join(basePool.id, d.owner)
       const delegationNft = new DelegationNft({
@@ -360,10 +359,15 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
 
   for (const basePool of basePoolMap.values()) {
     if (basePool.kind === BasePoolKind.Vault) {
-      basePool.aprMultiplier = basePool.account.stakePoolAvgAprMultiplier.times(
-        BigDecimal(1).minus(basePool.commission)
-      )
+      updateVaultAprMultiplier(basePool, basePool.account)
     }
+    basePool.withdrawingValue = basePool.withdrawingShares
+      .times(basePool.sharePrice)
+      .round(12, 0)
+  }
+
+  for (const stakePool of stakePoolMap.values()) {
+    updateStakePoolDelegable(stakePool.basePool, stakePool)
   }
 
   for (const account of accountMap.values()) {

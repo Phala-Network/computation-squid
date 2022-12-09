@@ -565,6 +565,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           basePool.withdrawingShares.minus(shares),
           BigDecimal(0)
         )
+        basePool.withdrawingValue = basePool.withdrawingValue
+          .times(basePool.sharePrice)
+          .round(12, 0)
         if (basePool.totalShares.eq(0)) {
           basePool.sharePrice = BigDecimal(1)
           sharePriceUpdatedStakePoolIdSet.add(pid)
@@ -610,6 +613,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         basePool.withdrawingShares = basePool.withdrawingShares
           .minus(prevWithdrawingShares)
           .add(shares)
+        basePool.withdrawingValue = basePool.withdrawingValue
+          .times(basePool.sharePrice)
+          .round(12, 0)
         // Replace previous withdrawal
         delegation.withdrawingShares = shares
         delegation.withdrawalStartTime = blockTime
