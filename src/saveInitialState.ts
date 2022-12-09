@@ -243,6 +243,9 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
       }
 
       updateStakePoolAprMultiplier(basePool, stakePool)
+      if (b.whitelists.length > 0) {
+        basePool.whitelistEnabled = true
+      }
 
       for (let i = 0; i < b.whitelists.length; i++) {
         const address = b.whitelists[i]
