@@ -613,7 +613,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         basePool.withdrawingShares = basePool.withdrawingShares
           .minus(prevWithdrawingShares)
           .add(shares)
-        basePool.withdrawingValue = basePool.withdrawingValue
+        basePool.withdrawingValue = basePool.withdrawingShares
           .times(basePool.sharePrice)
           .round(12, 0)
         // Replace previous withdrawal
