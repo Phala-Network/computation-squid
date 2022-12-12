@@ -1,5 +1,6 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import assert from 'assert'
+import {groupBy} from 'lodash'
 import {
   Account,
   BasePool,
@@ -21,10 +22,10 @@ import {
 } from './delegation'
 import {createDelegationValueRecord} from './delegationValueRecord'
 
-const ONE_DAY = 24 * 60 * 60 * 1000
 const ONE_YEAR = 365 * 24 * 60 * 60 * 1000
 
 const postUpdate = async (ctx: Ctx): Promise<void> => {
+  ctx.log.info(`1 ${new Date().toISOString()}`)
   const lastBlock = ctx.blocks.at(-1)
   assert(lastBlock)
   const updatedTime = new Date(lastBlock.header.timestamp)
@@ -47,37 +48,10 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
         }
       })
 
-  const recordAccountTotalValue = async (
-    account: Account,
-    value: BigDecimal
-  ): Promise<void> => {
-    const lastRecord = await ctx.store.findOne(DelegationValueRecord, {
-      order: {updatedTime: 'DESC'},
-      where: {account: {id: account.id}},
-      relations: {account: true},
-    })
-    if (
-      lastRecord == null ||
-      lastRecord.updatedTime.getTime() < updatedTime.getTime() - ONE_DAY
-    ) {
-      const delegationValueRecord = createDelegationValueRecord({
-        account,
-        value,
-        updatedTime,
-      })
-      await ctx.store.save(delegationValueRecord)
-    } else {
-      lastRecord.value = value
-      await ctx.store.save(lastRecord)
-    }
-  }
+  const delegationValueRecords: DelegationValueRecord[] = []
+  const basePoolAprRecords: BasePoolAprRecord[] = []
 
-  const recordApr = async (basePool: BasePool): Promise<void> => {
-    const lastRecord = await ctx.store.findOne(BasePoolAprRecord, {
-      order: {updatedTime: 'DESC'},
-      where: {basePool: {id: basePool.id}},
-      relations: {basePool: true},
-    })
+  const getApr = (basePool: BasePool): BasePoolAprRecord => {
     const {budgetPerBlock, treasuryRatio} = tokenomicParameters
     const {averageBlockTime, idleWorkerShares} = globalState
     const value = basePool.aprMultiplier
@@ -86,20 +60,12 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       .times(ONE_YEAR)
       .div(averageBlockTime)
       .div(idleWorkerShares)
-    if (
-      lastRecord == null ||
-      lastRecord.updatedTime.getTime() < updatedTime.getTime() - ONE_DAY
-    ) {
-      const basePoolAprRecord = createBasePoolAprRecord({
-        basePool,
-        value,
-        updatedTime,
-      })
-      await ctx.store.save(basePoolAprRecord)
-    } else {
-      lastRecord.value = value
-      await ctx.store.save(lastRecord)
-    }
+
+    return createBasePoolAprRecord({
+      basePool,
+      value,
+      updatedTime,
+    })
   }
 
   const basePoolMap = await ctx.store
@@ -116,6 +82,7 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       withdrawalNft: true,
     },
   })
+  const delegationMap = groupBy(delegations, (x) => x.account.id)
 
   for (const delegation of delegations) {
     if (delegation.basePool.kind === BasePoolKind.StakePool) {
@@ -126,13 +93,15 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
     }
   }
 
+  ctx.log.info(`2 ${new Date().toISOString()}`)
+
   const accountMap = await ctx.store.find(Account).then(toMap)
 
   for (const [, account] of accountMap) {
-    const accountStakePoolDelegations = delegations.filter(
-      (x) =>
-        x.basePool.kind === BasePoolKind.StakePool &&
-        x.account.id === account.id
+    const accountDelegations = delegationMap[account.id]
+    if (accountDelegations === undefined) continue
+    const accountStakePoolDelegations = accountDelegations.filter(
+      (x) => x.basePool.kind === BasePoolKind.StakePool
     )
     account.stakePoolValue = sum(
       ...accountStakePoolDelegations.map((x) => x.value)
@@ -141,6 +110,7 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       accountStakePoolDelegations
     )
   }
+  ctx.log.info(`2-1 ${new Date().toISOString()}`)
 
   for (const [, basePool] of basePoolMap) {
     const account = assertGet(accountMap, basePool.account.id)
@@ -153,8 +123,9 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       basePool.totalValue = totalValue
       updateSharePrice(basePool)
     }
-    await recordApr(basePool)
+    basePoolAprRecords.push(getApr(basePool))
   }
+  ctx.log.info(`3 ${new Date().toISOString()}`)
 
   for (const delegation of delegations) {
     if (delegation.basePool.kind === BasePoolKind.Vault) {
@@ -164,27 +135,35 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       )
     }
   }
+  ctx.log.info(`4 ${new Date().toISOString()}`)
 
   for (const [, account] of accountMap) {
-    const accountVaultDelegations = delegations.filter(
-      (x) =>
-        x.basePool.kind === BasePoolKind.Vault && x.account.id === account.id
+    const accountDelegations = delegationMap[account.id]
+    if (accountDelegations === undefined) continue
+    const accountVaultDelegations = accountDelegations.filter(
+      (x) => x.basePool.kind === BasePoolKind.Vault
     )
     account.vaultValue = sum(...accountVaultDelegations.map((x) => x.value))
 
-    await recordAccountTotalValue(
-      account,
-      account.vaultValue.plus(account.stakePoolValue)
+    delegationValueRecords.push(
+      createDelegationValueRecord({
+        account,
+        value: account.vaultValue.plus(account.stakePoolValue),
+        updatedTime,
+      })
     )
 
     account.vaultAvgAprMultiplier = getDelegationAvgAprMultiplier(
       accountVaultDelegations
     )
   }
+  ctx.log.info(`5 ${new Date().toISOString()}`)
 
   await ctx.store.save(delegations)
   await ctx.store.save([...accountMap.values()])
   await ctx.store.save([...basePoolMap.values()])
+  await ctx.store.save(delegationValueRecords)
+  await ctx.store.save(basePoolAprRecords)
 }
 
 export default postUpdate
