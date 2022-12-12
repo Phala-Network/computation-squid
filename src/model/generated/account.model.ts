@@ -1,9 +1,9 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, OneToMany as OneToMany_} from "typeorm"
-import * as marshal from "./marshal"
+import {Column as Column_, Entity as Entity_, OneToMany as OneToMany_, OneToOne as OneToOne_, PrimaryColumn as PrimaryColumn_} from "typeorm"
 import {BasePool} from "./basePool.model"
-import {IdentityLevel} from "./_identityLevel"
 import {Delegation} from "./delegation.model"
+import * as marshal from "./marshal"
+import {IdentityLevel} from "./_identityLevel"
 
 @Entity_()
 export class Account {

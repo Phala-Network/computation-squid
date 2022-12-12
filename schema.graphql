@@ -174,3 +174,11 @@ type RewardRecord @entity {
   time: DateTime!
   value: BigDecimal!
 }
+
+type BasePoolAprRecord @entity {
+  id: ID!
+  "block time"
+  updatedTime: DateTime!
+  basePool: BasePool!
+  value: BigDecimal!
+}

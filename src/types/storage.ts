@@ -49,3 +49,35 @@ export interface IdentityIdentityOfStorageV1191 {
     getPairsPaged(pageSize: number): AsyncIterable<[k: Uint8Array, v: v1191.Registration][]>
     getPairsPaged(pageSize: number, key: Uint8Array): AsyncIterable<[k: Uint8Array, v: v1191.Registration][]>
 }
+
+export class PhalaComputationTokenomicParametersStorage extends StorageBase {
+    protected getPrefix() {
+        return 'PhalaComputation'
+    }
+
+    protected getName() {
+        return 'TokenomicParameters'
+    }
+
+    /**
+     *  Tokenomic parameters used by Gatekeepers to compute the V promote.
+     */
+    get isV1191(): boolean {
+        return this.getTypeHash() === '7e29f4ae3d65a80220e0c0baf372e7ffb44fb3981aa27fe6a83ce02eb0f439d9'
+    }
+
+    /**
+     *  Tokenomic parameters used by Gatekeepers to compute the V promote.
+     */
+    get asV1191(): PhalaComputationTokenomicParametersStorageV1191 {
+        assert(this.isV1191)
+        return this as any
+    }
+}
+
+/**
+ *  Tokenomic parameters used by Gatekeepers to compute the V promote.
+ */
+export interface PhalaComputationTokenomicParametersStorageV1191 {
+    get(): Promise<(v1191.TokenomicParameters | undefined)>
+}

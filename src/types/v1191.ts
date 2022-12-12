@@ -16,6 +16,23 @@ export interface Registration {
     info: IdentityInfo
 }
 
+export interface TokenomicParameters {
+    phaRate: bigint
+    rho: bigint
+    budgetPerBlock: bigint
+    vMax: bigint
+    costK: bigint
+    costB: bigint
+    slashRate: bigint
+    treasuryRatio: bigint
+    heartbeatWindow: number
+    rigK: bigint
+    rigB: bigint
+    re: bigint
+    k: bigint
+    kappa: bigint
+}
+
 export type Judgement = Judgement_Unknown | Judgement_FeePaid | Judgement_Reasonable | Judgement_KnownGood | Judgement_OutOfDate | Judgement_LowQuality | Judgement_Erroneous
 
 export interface Judgement_Unknown {

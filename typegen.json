@@ -50,5 +50,5 @@
     "Identity.JudgementGiven"
   ],
   "calls": [],
-  "storage": ["Identity.IdentityOf"]
+  "storage": ["Identity.IdentityOf", "PhalaComputation.TokenomicParameters"]
 }
