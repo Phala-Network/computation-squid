@@ -114,6 +114,12 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       basePool.totalValue = basePool.freeValue.plus(account.stakePoolValue)
       updateSharePrice(basePool)
       updateVaultAprMultiplier(basePool, account)
+      const delegations = delegationMap[account.id]
+      if (delegations !== undefined) {
+        basePool.releasingValue = sum(
+          ...delegations.map((x) => x.basePool.releasingValue)
+        )
+      }
     }
     basePoolAprRecords.push(getApr(basePool))
   }

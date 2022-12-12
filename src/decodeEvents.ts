@@ -131,7 +131,11 @@ const decodeEvent = (
     }
     case 'PhalaStakePoolv2.Contribution': {
       const e = new PhalaStakePoolv2ContributionEvent(ctx, item.event)
+<<<<<<< Updated upstream
       const {pid, user, amount, shares} = e.asV1191
+=======
+      const {pid, user, amount, shares, asVault} = e.asV1196
+>>>>>>> Stashed changes
       return {
         name,
         args: {
@@ -139,6 +143,7 @@ const decodeEvent = (
           accountId: encodeAddress(user),
           amount: toBalance(amount),
           shares: toBalance(shares),
+          asVault: asVault === undefined ? undefined : String(asVault),
         },
       }
     }

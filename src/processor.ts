@@ -139,6 +139,15 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     }
 
     if (
+      name === 'PhalaStakePoolv2.Contribution' ||
+      name === 'PhalaBasePool.WithdrawalQueued'
+    ) {
+      if (args.asVault !== undefined) {
+        basePoolIdSet.add(args.asVault)
+      }
+    }
+
+    if (
       name === 'PhalaBasePool.Withdrawal' ||
       name === 'PhalaBasePool.WithdrawalQueued'
     ) {
@@ -370,8 +379,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         break
       }
       case 'PhalaStakePoolv2.Contribution': {
-        const {pid, accountId, amount, shares} = args
-        const account = getAccount(accountMap, accountId)
+        const {pid, amount, shares, asVault} = args
         const basePool = assertGet(basePoolMap, pid)
         const stakePool = assertGet(stakePoolMap, pid)
         basePool.freeValue = basePool.freeValue.plus(amount)
@@ -380,8 +388,11 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         updateStakePoolAprMultiplier(basePool, stakePool)
         // aprMultiplierUpdatedStakePoolIdSet.add(pid)
         // MEMO: delegator is not a vault
-        if (account.basePool == null) {
+        if (asVault === undefined) {
           globalState.totalValue = globalState.totalValue.plus(amount)
+        } else {
+          const vault = assertGet(basePoolMap, asVault)
+          vault.freeValue = vault.freeValue.minus(amount)
         }
         updateStakePoolDelegable(basePool, stakePool)
         break
