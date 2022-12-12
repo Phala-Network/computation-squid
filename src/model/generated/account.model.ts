@@ -1,9 +1,9 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Column as Column_, Entity as Entity_, OneToMany as OneToMany_, OneToOne as OneToOne_, PrimaryColumn as PrimaryColumn_} from "typeorm"
-import {BasePool} from "./basePool.model"
-import {Delegation} from "./delegation.model"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
+import {BasePool} from "./basePool.model"
 import {IdentityLevel} from "./_identityLevel"
+import {Delegation} from "./delegation.model"
 
 @Entity_()
 export class Account {
@@ -17,7 +17,7 @@ export class Account {
   @PrimaryColumn_()
   id!: string
 
-  @OneToOne_(() => BasePool, e => e.account)
+  @OneToOne_(() => BasePool)
   basePool!: BasePool | undefined | null
 
   @OneToMany_(() => BasePool, e => e.owner)

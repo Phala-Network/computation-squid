@@ -9,10 +9,10 @@ import {
   BasePoolKind,
   BasePoolWhitelist,
   Delegation,
-  DelegationNft,
   DelegationValueRecord,
   GlobalState,
   IdentityLevel,
+  Nft,
   RewardRecord,
   Session,
   StakePool,
@@ -132,7 +132,7 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
   const vaultMap = new Map<string, Vault>()
   const sessionMap = new Map<string, Session>()
   const delegationMap = new Map<string, Delegation>()
-  const delegationNftMap = new Map<string, DelegationNft>()
+  const delegationNftMap = new Map<string, Nft>()
   const basePoolWhitelistMap = new Map<string, BasePoolWhitelist>()
   const nftUserMap = new Map<string, string>()
   const delegationValueRecords: DelegationValueRecord[] = []
@@ -262,11 +262,14 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
     }
 
     for (const withdrawal of b.withdrawQueue) {
-      const withdrawalNft = new DelegationNft({
+      const withdrawalNft = new Nft({
         id: join(b.cid, withdrawal.nftId),
         owner: getAccount(accountMap, b.poolAccountId),
         cid: b.cid,
         nftId: withdrawal.nftId,
+        burned: false,
+        // TODO
+        mintTime: new Date(),
       })
       const delegation = new Delegation({
         id: join(b.pid, withdrawal.user),
@@ -302,11 +305,14 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
       basePool.withdrawingShares = basePool.withdrawingShares.plus(shares)
     } else {
       const delegationId = join(basePool.id, d.owner)
-      const delegationNft = new DelegationNft({
+      const delegationNft = new Nft({
         id: delegationNftId,
         owner,
         cid: d.cid,
         nftId: d.nftId,
+        burned: false,
+        // TODO
+        mintTime: new Date(),
       })
 
       const delegation =

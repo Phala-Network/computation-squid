@@ -15,8 +15,8 @@ import {
   BasePoolKind,
   BasePoolWhitelist,
   Delegation,
-  DelegationNft,
   GlobalState,
+  Nft,
   RewardRecord,
   Session,
   StakePool,
@@ -82,7 +82,7 @@ const processor = new SubstrateBatchProcessor()
   .addEvent('PhalaRegistry.InitialScoreSet')
 
   .addEvent('RmrkCore.NftMinted')
-  .addEvent('RmrkCore.PropertySet')
+  // .addEvent('RmrkCore.PropertySet')
   .addEvent('RmrkCore.NFTBurned')
 
   .addEvent('Identity.IdentitySet')
@@ -105,7 +105,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   const workerIdSet = new Set<string>()
   const sessionIdSet = new Set<string>()
   const delegationIdSet = new Set<string>()
-  const delegationNftIdSet = new Set<string>()
+  const nftIdSet = new Set<string>()
   const basePoolWhitelistIdSet = new Set<string>()
   // const sharePriceUpdatedVaultIdSet = new Set<string>()
   // const sharePriceUpdatedStakePoolIdSet = new Set<string>()
@@ -178,8 +178,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       basePoolWhitelistIdSet.add(join(args.pid, args.accountId))
     }
 
-    if (name === 'RmrkCore.NFTBurned' || name === 'RmrkCore.PropertySet') {
-      delegationNftIdSet.add(join(args.cid, args.nftId))
+    if (name === 'RmrkCore.NFTBurned') {
+      nftIdSet.add(join(args.cid, args.nftId))
     }
 
     if (
@@ -248,9 +248,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       },
     })
     .then(toMap)
-  const delegationNftMap = await ctx.store
-    .find(DelegationNft, {
-      where: {id: In([...delegationNftIdSet])},
+  const nftMap = await ctx.store
+    .find(Nft, {
+      where: {id: In([...nftIdSet])},
       relations: {owner: true},
     })
     .then(toMap)
@@ -495,14 +495,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const basePool = assertGet(basePoolMap, pid)
         // MEMO: ignore withdrawal nft
         if (basePool.account.id !== owner) {
-          const delegationNftId = join(cid, nftId)
-          const delegationNft = new DelegationNft({
-            id: delegationNftId,
-            owner: ownerAccount,
-            cid,
-            nftId,
-          })
-          delegationNftMap.set(delegationNftId, delegationNft)
+          const delegationNft = assertGet(nftMap, join(cid, nftId))
           const delegationId = join(pid, owner)
           const delegation =
             delegationMap.get(delegationId) ??
@@ -618,10 +611,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         // Replace previous withdrawal
         delegation.withdrawingShares = shares
         delegation.withdrawalStartTime = blockTime
-        const withdrawalNft = assertGet(
-          delegationNftMap,
-          join(basePool.cid, nftId)
-        )
+        const withdrawalNft = assertGet(nftMap, join(basePool.cid, nftId))
         delegation.withdrawalNft = withdrawalNft
         if (stakePool != null) {
           updateStakePoolDelegable(basePool, stakePool)
@@ -834,10 +824,27 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         worker.initialScore = initialScore
         break
       }
-      case 'RmrkCore.PropertySet': {
+      case 'RmrkCore.NftMinted': {
+        const {cid, nftId, owner} = args
+        const id = join(cid, nftId)
+        const nft = new Nft({
+          id,
+          owner: getAccount(accountMap, owner),
+          cid,
+          nftId,
+          burned: false,
+          mintTime: blockTime,
+        })
+        nftMap.set(id, nft)
         break
       }
+      // case 'RmrkCore.PropertySet': {
+      //   break
+      // }
       case 'RmrkCore.NFTBurned': {
+        const {cid, nftId} = args
+        const nft = assertGet(nftMap, join(cid, nftId))
+        nft.burned = true
         break
       }
     }
@@ -855,7 +862,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     vaultMap,
     sessionMap,
     workerMap,
-    delegationNftMap,
+    nftMap,
     delegationMap,
     basePoolWhitelistMap,
     rewardRecords,

@@ -3,7 +3,7 @@ import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, M
 import * as marshal from "./marshal"
 import {Account} from "./account.model"
 import {BasePool} from "./basePool.model"
-import {DelegationNft} from "./delegationNft.model"
+import {Nft} from "./nft.model"
 
 @Entity_()
 export class Delegation {
@@ -41,10 +41,10 @@ export class Delegation {
   withdrawalStartTime!: Date | undefined | null
 
   @Index_()
-  @ManyToOne_(() => DelegationNft, {nullable: true})
-  delegationNft!: DelegationNft | undefined | null
+  @ManyToOne_(() => Nft, {nullable: true})
+  delegationNft!: Nft | undefined | null
 
   @Index_()
-  @ManyToOne_(() => DelegationNft, {nullable: true})
-  withdrawalNft!: DelegationNft | undefined | null
+  @ManyToOne_(() => Nft, {nullable: true})
+  withdrawalNft!: Nft | undefined | null
 }

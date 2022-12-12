@@ -2,8 +2,8 @@ import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, M
 import {Account} from "./account.model"
 
 @Entity_()
-export class DelegationNft {
-  constructor(props?: Partial<DelegationNft>) {
+export class Nft {
+  constructor(props?: Partial<Nft>) {
     Object.assign(this, props)
   }
 
@@ -22,4 +22,10 @@ export class DelegationNft {
 
   @Column_("int4", {nullable: false})
   nftId!: number
+
+  @Column_("bool", {nullable: false})
+  burned!: boolean
+
+  @Column_("timestamp with time zone", {nullable: false})
+  mintTime!: Date
 }

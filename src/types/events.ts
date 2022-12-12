@@ -1318,6 +1318,29 @@ export class RmrkCoreNftBurnedEvent {
     }
 }
 
+export class RmrkCoreNftMintedEvent {
+    private readonly _chain: Chain
+    private readonly event: Event
+
+    constructor(ctx: EventContext)
+    constructor(ctx: ChainContext, event: Event)
+    constructor(ctx: EventContext, event?: Event) {
+        event = event || ctx.event
+        assert(event.name === 'RmrkCore.NftMinted')
+        this._chain = ctx._chain
+        this.event = event
+    }
+
+    get isV1191(): boolean {
+        return this._chain.getEventHash('RmrkCore.NftMinted') === '32be929f2001709c6bcec6083e9bd994b08d551dfcc516fd7efe7d2e2c858a63'
+    }
+
+    get asV1191(): {owner: v1191.AccountIdOrCollectionNftTuple, collectionId: number, nftId: number} {
+        assert(this.isV1191)
+        return this._chain.decodeEvent(this.event)
+    }
+}
+
 export class RmrkCorePropertySetEvent {
     private readonly _chain: Chain
     private readonly event: Event

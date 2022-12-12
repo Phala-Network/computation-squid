@@ -40,7 +40,7 @@ import {
   PhalaVaultPoolCreatedEvent,
   PhalaVaultVaultCommissionSetEvent,
   RmrkCoreNftBurnedEvent,
-  RmrkCorePropertySetEvent,
+  RmrkCoreNftMintedEvent,
 } from './types/events'
 import {encodeAddress, fromBits, toBalance} from './utils/converter'
 
@@ -364,15 +364,24 @@ const decodeEvent = (
         args: {workerId: toHex(pubkey), initialScore: initScore},
       }
     }
-    case 'RmrkCore.PropertySet': {
-      const e = new RmrkCorePropertySetEvent(ctx, item.event)
-      const {collectionId, maybeNftId, key, value} = e.asV1191
-      if (maybeNftId === undefined) return
+    case 'RmrkCore.NftMinted': {
+      const e = new RmrkCoreNftMintedEvent(ctx, item.event)
+      const {owner, collectionId, nftId} = e.asV1191
+      if (owner.__kind !== 'AccountId') return
       return {
         name,
-        args: {cid: collectionId, nftId: maybeNftId, key, value},
+        args: {owner: encodeAddress(owner.value), cid: collectionId, nftId},
       }
     }
+    // case 'RmrkCore.PropertySet': {
+    //   const e = new RmrkCorePropertySetEvent(ctx, item.event)
+    //   const {collectionId, maybeNftId, key, value} = e.asV1191
+    //   if (maybeNftId === undefined) return
+    //   return {
+    //     name,
+    //     args: {cid: collectionId, nftId: maybeNftId, key, value},
+    //   }
+    // }
     case 'RmrkCore.NFTBurned': {
       const e = new RmrkCoreNftBurnedEvent(ctx, item.event)
       const {owner, collectionId, nftId} = e.asV1191

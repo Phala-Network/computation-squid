@@ -42,6 +42,7 @@
     "PhalaRegistry.InitialScoreSet",
 
     "RmrkCore.CollectionCreated",
+    "RmrkCore.NftMinted",
     "RmrkCore.PropertySet",
     "RmrkCore.NFTBurned",
 

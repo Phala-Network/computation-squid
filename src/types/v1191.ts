@@ -10,6 +10,18 @@ export interface AttestationProvider_Ias {
     __kind: 'Ias'
 }
 
+export type AccountIdOrCollectionNftTuple = AccountIdOrCollectionNftTuple_AccountId | AccountIdOrCollectionNftTuple_CollectionAndNftTuple
+
+export interface AccountIdOrCollectionNftTuple_AccountId {
+    __kind: 'AccountId'
+    value: Uint8Array
+}
+
+export interface AccountIdOrCollectionNftTuple_CollectionAndNftTuple {
+    __kind: 'CollectionAndNftTuple'
+    value: [number, number]
+}
+
 export interface Registration {
     judgements: [number, Judgement][]
     deposit: bigint
