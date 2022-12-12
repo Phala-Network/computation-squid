@@ -12,7 +12,7 @@ import {
 } from '../model'
 import {Ctx} from '../processor'
 import {PhalaComputationTokenomicParametersStorage} from '../types/storage'
-import {updateSharePrice} from './basePool'
+import {updateSharePrice, updateVaultAprMultiplier} from './basePool'
 import {createBasePoolAprRecord} from './basePoolAprRecord'
 import {assertGet, sum, toMap} from './common'
 import {fromBits} from './converter'
@@ -25,7 +25,6 @@ import {createDelegationValueRecord} from './delegationValueRecord'
 const ONE_YEAR = 365 * 24 * 60 * 60 * 1000
 
 const postUpdate = async (ctx: Ctx): Promise<void> => {
-  ctx.log.info(`1 ${new Date().toISOString()}`)
   const lastBlock = ctx.blocks.at(-1)
   assert(lastBlock)
   const updatedTime = new Date(lastBlock.header.timestamp)
@@ -93,8 +92,6 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
     }
   }
 
-  ctx.log.info(`2 ${new Date().toISOString()}`)
-
   const accountMap = await ctx.store.find(Account).then(toMap)
 
   for (const [, account] of accountMap) {
@@ -110,22 +107,16 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       accountStakePoolDelegations
     )
   }
-  ctx.log.info(`2-1 ${new Date().toISOString()}`)
 
   for (const [, basePool] of basePoolMap) {
     const account = assertGet(accountMap, basePool.account.id)
     if (basePool.kind === BasePoolKind.Vault) {
-      const totalValue = basePool.freeValue.plus(account.stakePoolValue)
-      basePool.aprMultiplier = account.stakePoolAvgAprMultiplier
-        .times(BigDecimal(1).minus(basePool.commission))
-        .times(account.stakePoolValue)
-        .div(totalValue)
-      basePool.totalValue = totalValue
+      basePool.totalValue = basePool.freeValue.plus(account.stakePoolValue)
       updateSharePrice(basePool)
+      updateVaultAprMultiplier(basePool, account)
     }
     basePoolAprRecords.push(getApr(basePool))
   }
-  ctx.log.info(`3 ${new Date().toISOString()}`)
 
   for (const delegation of delegations) {
     if (delegation.basePool.kind === BasePoolKind.Vault) {
@@ -135,7 +126,6 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       )
     }
   }
-  ctx.log.info(`4 ${new Date().toISOString()}`)
 
   for (const [, account] of accountMap) {
     const accountDelegations = delegationMap[account.id]
@@ -157,7 +147,6 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       accountVaultDelegations
     )
   }
-  ctx.log.info(`5 ${new Date().toISOString()}`)
 
   await ctx.store.save(delegations)
   await ctx.store.save([...accountMap.values()])
