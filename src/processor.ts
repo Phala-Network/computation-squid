@@ -9,6 +9,7 @@ import assert from 'assert'
 import {In} from 'typeorm'
 import config from './config'
 import decodeEvents from './decodeEvents'
+import importDump from './importDump'
 import {
   Account,
   BasePool,
@@ -24,7 +25,6 @@ import {
   Worker,
   WorkerState,
 } from './model'
-import saveInitialState from './saveInitialState'
 import {
   createPool,
   updateGlobalAverageAprMultiplier,
@@ -95,9 +95,9 @@ export type Ctx = BatchContext<Store, Item>
 
 processor.run(new TypeormDatabase(), async (ctx) => {
   if ((await ctx.store.get(GlobalState, '0')) == null) {
-    ctx.log.info('Saving initial state...')
-    await saveInitialState(ctx)
-    ctx.log.info('Initial state saved')
+    ctx.log.info('Importing dump...')
+    await importDump(ctx)
+    ctx.log.info('Dump imported')
   }
   const events = decodeEvents(ctx)
 
@@ -508,6 +508,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         // MEMO: ignore withdrawal nft
         if (basePool.account.id !== owner) {
           const delegationNft = assertGet(nftMap, join(cid, nftId))
+          if (shares.eq(0)) {
+            delegationNft.burned = true
+          }
           const delegationId = join(pid, owner)
           const delegation =
             delegationMap.get(delegationId) ??

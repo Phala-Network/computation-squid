@@ -1,6 +1,7 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import assert from 'assert'
 import {readFile} from 'fs/promises'
+import {groupBy} from 'lodash'
 import path from 'path'
 import config from './config'
 import {
@@ -99,15 +100,16 @@ interface Dump {
     // superId: string | null
     // subIdentity: string | null
   }>
-  delegationNfts: Array<{
+  nfts: Array<{
     cid: number
     nftId: number
     owner: string
-    shares: string
+    shares?: string
+    createTime?: number
   }>
 }
 
-const saveInitialState = async (ctx: Ctx): Promise<void> => {
+const importDump = async (ctx: Ctx): Promise<void> => {
   const fromHeight = config.blockRange.from
   const dumpFile = await readFile(
     path.join(__dirname, `../assets/dump_${fromHeight - 1}.json`),
@@ -132,7 +134,7 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
   const vaultMap = new Map<string, Vault>()
   const sessionMap = new Map<string, Session>()
   const delegationMap = new Map<string, Delegation>()
-  const delegationNftMap = new Map<string, Nft>()
+  const nftMap = new Map<string, Nft>()
   const basePoolWhitelistMap = new Map<string, BasePoolWhitelist>()
   const nftUserMap = new Map<string, string>()
   const delegationValueRecords: DelegationValueRecord[] = []
@@ -268,8 +270,6 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
         cid: b.cid,
         nftId: withdrawal.nftId,
         burned: false,
-        // TODO
-        mintTime: new Date(),
       })
       const delegation = new Delegation({
         id: join(b.pid, withdrawal.user),
@@ -281,7 +281,7 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
         withdrawalStartTime: new Date(withdrawal.startTime * 1000),
         withdrawalNft,
       })
-      delegationNftMap.set(withdrawalNft.id, withdrawalNft)
+      nftMap.set(withdrawalNft.id, withdrawalNft)
       delegationMap.set(delegation.id, delegation)
       nftUserMap.set(withdrawalNft.id, withdrawal.user)
     }
@@ -289,14 +289,40 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
     basePoolCidMap.set(basePool.cid.toString(), basePool)
   }
 
-  for (const d of dump.delegationNfts) {
+  for (const d of dump.nfts) {
     const owner = getAccount(accountMap, d.owner)
+    const nftId = join(d.cid, d.nftId)
+
+    // MEMO: normal nft
+    if (d.shares === undefined || d.createTime === undefined) {
+      const nft = new Nft({
+        id: nftId,
+        owner,
+        cid: d.cid,
+        nftId: d.nftId,
+        burned: false,
+      })
+      nftMap.set(nft.id, nft)
+      continue
+    }
     const basePool = assertGet(basePoolCidMap, d.cid.toString())
+
+    // MEMO: normal nft
+    if (d.shares === undefined || d.createTime === undefined) {
+      const nft = new Nft({
+        id: nftId,
+        owner,
+        cid: d.cid,
+        nftId: d.nftId,
+        burned: false,
+      })
+      nftMap.set(nft.id, nft)
+      continue
+    }
     const shares = toBalance(d.shares)
-    const delegationNftId = join(d.cid, d.nftId)
-    if (delegationNftMap.has(delegationNftId)) {
+    if (nftMap.has(nftId)) {
       // MEMO: is a withdrawal nft
-      const user = assertGet(nftUserMap, delegationNftId)
+      const user = assertGet(nftUserMap, nftId)
       const delegationId = join(basePool.id, user)
       const delegation = assertGet(delegationMap, delegationId)
       delegation.shares = delegation.shares.plus(shares)
@@ -306,13 +332,13 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
     } else {
       const delegationId = join(basePool.id, d.owner)
       const delegationNft = new Nft({
-        id: delegationNftId,
+        id: nftId,
         owner,
         cid: d.cid,
         nftId: d.nftId,
-        burned: false,
-        // TODO
-        mintTime: new Date(),
+        // HACK: mark as burned to avoid displaying on dashboard
+        burned: shares.eq(0),
+        mintTime: new Date(d.createTime),
       })
 
       const delegation =
@@ -333,7 +359,7 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
       }
       delegation.delegationNft = delegationNft
 
-      delegationNftMap.set(delegationNft.id, delegationNft)
+      nftMap.set(delegationNft.id, delegationNft)
       delegationMap.set(delegation.id, delegation)
       if (shares.gt(0)) {
         basePool.delegatorCount++
@@ -348,14 +374,18 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
     }
   }
 
+  const accountDelegationMap = groupBy(
+    [...delegationMap.values()],
+    (x) => x.account.id
+  )
+
   for (const account of accountMap.values()) {
-    const delegations = Array.from(delegationMap.values()).filter(
-      (x) =>
-        x.basePool.kind === BasePoolKind.StakePool &&
-        x.account.id === account.id
+    const delegations = accountDelegationMap[account.id] ?? []
+    const stakePoolDelegations = delegations.filter(
+      (x) => x.basePool.kind === BasePoolKind.StakePool
     )
     account.stakePoolAvgAprMultiplier =
-      getDelegationAvgAprMultiplier(delegations)
+      getDelegationAvgAprMultiplier(stakePoolDelegations)
 
     delegationValueRecords.push(
       createDelegationValueRecord({
@@ -380,11 +410,12 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
   }
 
   for (const account of accountMap.values()) {
-    const delegations = Array.from(delegationMap.values()).filter(
-      (x) =>
-        x.basePool.kind === BasePoolKind.Vault && x.account.id === account.id
+    const delegations = accountDelegationMap[account.id] ?? []
+    const vaultDelegations = delegations.filter(
+      (x) => x.basePool.kind === BasePoolKind.Vault
     )
-    account.vaultAvgAprMultiplier = getDelegationAvgAprMultiplier(delegations)
+    account.vaultAvgAprMultiplier =
+      getDelegationAvgAprMultiplier(vaultDelegations)
   }
 
   const rewardRecord = new RewardRecord({
@@ -405,7 +436,7 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
     vaultMap,
     sessionMap,
     workerMap,
-    delegationNftMap,
+    nftMap,
     delegationMap,
     basePoolWhitelistMap,
     delegationValueRecords,
@@ -423,4 +454,4 @@ const saveInitialState = async (ctx: Ctx): Promise<void> => {
   }
 }
 
-export default saveInitialState
+export default importDump

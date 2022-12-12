@@ -118,7 +118,7 @@ type Nft @entity {
   cid: Int!
   nftId: Int!
   burned: Boolean!
-  mintTime: DateTime!
+  mintTime: DateTime
 }
 
 type BasePoolWhitelist @entity {

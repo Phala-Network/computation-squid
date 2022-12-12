@@ -26,6 +26,6 @@ export class Nft {
   @Column_("bool", {nullable: false})
   burned!: boolean
 
-  @Column_("timestamp with time zone", {nullable: false})
-  mintTime!: Date
+  @Column_("timestamp with time zone", {nullable: true})
+  mintTime!: Date | undefined | null
 }
