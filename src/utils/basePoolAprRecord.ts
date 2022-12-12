@@ -15,7 +15,7 @@ export const createBasePoolAprRecord = ({
   return new BasePoolAprRecord({
     id: join(basePool.id, dateString),
     basePool,
-    value,
+    value: value.round(4, 0),
     updatedTime: new Date(`${dateString}T00:00:00.000Z`),
   })
 }

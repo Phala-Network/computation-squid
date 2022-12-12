@@ -15,7 +15,7 @@ export const createDelegationValueRecord = ({
   return new DelegationValueRecord({
     id: join(account.id, dateString),
     account,
-    value,
+    value: value.round(2, 0),
     updatedTime: new Date(`${dateString}T00:00:00.000Z`),
   })
 }
