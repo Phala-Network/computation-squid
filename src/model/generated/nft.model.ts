@@ -1,5 +1,6 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToOne as OneToOne_} from "typeorm"
 import {Account} from "./account.model"
+import {Delegation} from "./delegation.model"
 
 @Entity_()
 export class Nft {
@@ -28,4 +29,7 @@ export class Nft {
 
   @Column_("timestamp with time zone", {nullable: true})
   mintTime!: Date | undefined | null
+
+  @OneToOne_(() => Delegation)
+  delegation!: Delegation | undefined | null
 }

@@ -107,7 +107,7 @@ type Delegation @entity {
   withdrawingValue: BigDecimal!
   withdrawingShares: BigDecimal!
   withdrawalStartTime: DateTime
-  delegationNft: Nft
+  delegationNft: Nft! @unique
   withdrawalNft: Nft
 }
 
@@ -119,6 +119,7 @@ type Nft @entity {
   nftId: Int!
   burned: Boolean!
   mintTime: DateTime
+  delegation: Delegation @derivedFrom(field: "delegationNft")
 }
 
 type BasePoolWhitelist @entity {

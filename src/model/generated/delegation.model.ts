@@ -1,5 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToOne as OneToOne_, JoinColumn as JoinColumn_} from "typeorm"
 import * as marshal from "./marshal"
 import {Account} from "./account.model"
 import {BasePool} from "./basePool.model"
@@ -40,9 +40,10 @@ export class Delegation {
   @Column_("timestamp with time zone", {nullable: true})
   withdrawalStartTime!: Date | undefined | null
 
-  @Index_()
-  @ManyToOne_(() => Nft, {nullable: true})
-  delegationNft!: Nft | undefined | null
+  @Index_({unique: true})
+  @OneToOne_(() => Nft, {nullable: false})
+  @JoinColumn_()
+  delegationNft!: Nft
 
   @Index_()
   @ManyToOne_(() => Nft, {nullable: true})
