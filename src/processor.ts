@@ -307,7 +307,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const stakePool = assertGet(stakePoolMap, pid)
         basePool.commission = commission
         updateStakePoolAprMultiplier(basePool, stakePool)
-        // aprMultiplierUpdatedStakePoolIdSet.add(pid)
         break
       }
       case 'PhalaStakePoolv2.PoolCapacitySet': {
@@ -563,18 +562,16 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           basePool.withdrawingShares.minus(shares),
           BigDecimal(0)
         )
-        basePool.withdrawingValue = basePool.withdrawingValue
+        basePool.withdrawingValue = basePool.withdrawingShares
           .times(basePool.sharePrice)
           .round(12, 0)
         if (basePool.totalShares.eq(0)) {
           basePool.sharePrice = BigDecimal(1)
-          // sharePriceUpdatedStakePoolIdSet.add(pid)
         }
         basePool.freeValue = max(
           basePool.freeValue.minus(amount),
           BigDecimal(0)
         )
-        delegation.shares = delegation.shares.minus(shares)
         delegation.withdrawingShares =
           delegation.withdrawingShares.minus(shares)
         updateDelegationValue(delegation, basePool)
@@ -605,7 +602,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const prevWithdrawingShares = delegation.withdrawingShares
         basePool.withdrawingShares = basePool.withdrawingShares
           .minus(prevWithdrawingShares)
-          .add(shares)
+          .plus(shares)
         basePool.withdrawingValue = basePool.withdrawingShares
           .times(basePool.sharePrice)
           .round(12, 0)
