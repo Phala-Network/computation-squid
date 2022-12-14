@@ -376,7 +376,7 @@ const decodeEvent = (
     }
     // case 'RmrkCore.PropertySet': {
     //   const e = new RmrkCorePropertySetEvent(ctx, item.event)
-    //   const {collectionId, maybeNftId, key, value} = e.asV1191
+    //   const {collectionId, maybeNftId, key, value} = e.asV1193
     //   if (maybeNftId === undefined) return
     //   return {
     //     name,

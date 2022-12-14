@@ -26,7 +26,6 @@ type Account @entity {
   "account address"
   id: ID!
   basePool: BasePool @derivedFrom(field: "account")
-  ownedPools: [BasePool!]! @derivedFrom(field: "owner")
   identityDisplay: String
   identityLevel: IdentityLevel
   # subIdentity: String
@@ -37,7 +36,7 @@ type Account @entity {
   vaultValue: BigDecimal!
   vaultNftCount: Int!
   vaultAvgAprMultiplier: BigDecimal!
-  delegations: [Delegation!]! @derivedFrom(field: "account")
+  ownedPools: [BasePool!] @derivedFrom(field: "owner")
 }
 
 enum BasePoolKind {

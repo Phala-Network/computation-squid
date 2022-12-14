@@ -3,7 +3,6 @@ import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, O
 import * as marshal from "./marshal"
 import {BasePool} from "./basePool.model"
 import {IdentityLevel} from "./_identityLevel"
-import {Delegation} from "./delegation.model"
 
 @Entity_()
 export class Account {
@@ -17,11 +16,8 @@ export class Account {
   @PrimaryColumn_()
   id!: string
 
-  @OneToOne_(() => BasePool)
+  @OneToOne_(() => BasePool, e => e.account)
   basePool!: BasePool | undefined | null
-
-  @OneToMany_(() => BasePool, e => e.owner)
-  ownedPools!: BasePool[]
 
   @Column_("text", {nullable: true})
   identityDisplay!: string | undefined | null
@@ -47,6 +43,6 @@ export class Account {
   @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
   vaultAvgAprMultiplier!: BigDecimal
 
-  @OneToMany_(() => Delegation, e => e.account)
-  delegations!: Delegation[]
+  @OneToMany_(() => BasePool, e => e.owner)
+  ownedPools!: BasePool[]
 }
