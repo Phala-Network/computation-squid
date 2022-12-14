@@ -30,7 +30,7 @@ import {
   updateStakePoolDelegable,
   updateVaultAprMultiplier,
 } from './utils/basePool'
-import {assertGet, getAccount, join} from './utils/common'
+import {assertGet, getAccount, join, sum} from './utils/common'
 import {fromBits, toBalance} from './utils/converter'
 import {
   getDelegationAvgAprMultiplier,
@@ -242,6 +242,11 @@ const importDump = async (ctx: Ctx): Promise<void> => {
             worker.shares
           )
         }
+        if (worker.session.state === WorkerState.WorkerCoolingDown) {
+          basePool.releasingValue = basePool.releasingValue.plus(
+            worker.session.stake
+          )
+        }
       }
 
       updateStakePoolAprMultiplier(basePool, stakePool)
@@ -399,6 +404,13 @@ const importDump = async (ctx: Ctx): Promise<void> => {
   for (const basePool of basePoolMap.values()) {
     if (basePool.kind === BasePoolKind.Vault) {
       updateVaultAprMultiplier(basePool, basePool.account)
+      const delegations = accountDelegationMap[basePool.account.id] ?? []
+      const stakePoolDelegations = delegations.filter(
+        (x) => x.basePool.kind === BasePoolKind.StakePool
+      )
+      basePool.releasingValue = sum(
+        ...stakePoolDelegations.map((x) => x.basePool.releasingValue)
+      )
     }
     basePool.withdrawingValue = basePool.withdrawingShares
       .times(basePool.sharePrice)
