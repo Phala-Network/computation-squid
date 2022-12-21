@@ -10,9 +10,9 @@
     "update": "npx npm-check-updates --filter /subsquid/ --upgrade && npm i -f"
   },
   "dependencies": {
-    "@subsquid/archive-registry": "1.0.16",
+    "@subsquid/archive-registry": "1.0.18",
     "@subsquid/big-decimal": "^0.0.0",
-    "@subsquid/graphql-server": "3.2.4",
+    "@subsquid/graphql-server": "3.3.0",
     "@subsquid/ss58": "0.1.2",
     "@subsquid/substrate-processor": "2.1.0",
     "@subsquid/typeorm-migration": "0.1.4",
@@ -29,16 +29,16 @@
     "@subsquid/typeorm-codegen": "0.2.3",
     "@types/lodash": "^4.14.191",
     "@types/node": "16.11.56",
-    "@typescript-eslint/eslint-plugin": "^5.45.1",
-    "eslint": "^8.29.0",
+    "@typescript-eslint/eslint-plugin": "^5.47.0",
+    "eslint": "^8.30.0",
     "eslint-config-prettier": "^8.5.0",
-    "eslint-config-standard-with-typescript": "^23.0.0",
+    "eslint-config-standard-with-typescript": "^24.0.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-n": "^15.6.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-promise": "^6.1.1",
-    "prettier": "2.8.0",
-    "typescript": "4.9.3"
+    "prettier": "2.8.1",
+    "typescript": "4.9.4"
   },
   "engines": {
     "node": ">=16"

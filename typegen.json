@@ -1,6 +1,7 @@
 {
+  "$schema": "node_modules/@subsquid/substrate-typegen/src/config.schema.json",
   "outDir": "src/types",
-  "specVersions": "http://51.210.116.29:8889/graphql",
+  "specVersions": "https://khala.archive.subsquid.io/graphql",
   "events": [
     "PhalaStakePoolv2.PoolCreated",
     "PhalaStakePoolv2.PoolCommissionSet",

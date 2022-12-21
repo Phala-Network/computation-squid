@@ -1,14 +1,14 @@
-// import {lookupArchive} from '@subsquid/archive-registry'
+import {lookupArchive} from '@subsquid/archive-registry'
 import {BlockRangeOption, DataSource} from '@subsquid/substrate-processor'
 
 const config: {
   dataSource: DataSource
   blockRange: Exclude<BlockRangeOption['range'], undefined>
 } = {
-  blockRange: {from: 7801},
+  blockRange: {from: 2950661},
   dataSource: {
-    archive: 'http://51.210.116.29:8889/graphql',
-    chain: 'wss://pc-test-4.phala.network/khala/ws',
+    archive: lookupArchive('khala', {release: 'FireSquid'}),
+    chain: 'wss://priv-api.phala.network/khala/ws',
   },
 }
 

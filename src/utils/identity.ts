@@ -13,7 +13,7 @@ export const queryIdentities = async (
     ctx,
     ctx.blocks[ctx.blocks.length - 1].header
   )
-  const res = await identityOf.asV1193.getMany(accountIds.map(decodeAddress))
+  const res = await identityOf.asV1.getMany(accountIds.map(decodeAddress))
   for (let i = 0; i < res.length; i++) {
     const account = getAccount(accountMap, accountIds[i])
     const registration = res[i]
