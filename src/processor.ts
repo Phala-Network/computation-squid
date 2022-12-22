@@ -411,6 +411,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const session = assertGet(sessionMap, worker.session.id)
         basePool.releasingValue = basePool.releasingValue.minus(session.stake)
         basePool.freeValue = basePool.freeValue.plus(session.stake)
+        session.state = WorkerState.Ready
+        session.coolingDownStartTime = null
+        session.stake = BigDecimal(0)
         break
       }
       case 'PhalaBasePool.PoolWhitelistCreated': {
@@ -723,14 +726,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         session.state = WorkerState.WorkerCoolingDown
         session.coolingDownStartTime = blockTime
         basePool.releasingValue = basePool.releasingValue.plus(session.stake)
-        break
-      }
-      case 'PhalaComputation.WorkerReclaimed': {
-        const {sessionId} = args
-        const session = assertGet(sessionMap, sessionId)
-        session.state = WorkerState.Ready
-        session.coolingDownStartTime = null
-        session.stake = BigDecimal(0)
         break
       }
       case 'PhalaComputation.WorkerEnterUnresponsive': {
