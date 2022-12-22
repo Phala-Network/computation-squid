@@ -139,7 +139,7 @@ const decodeEvent = (
           accountId: encodeAddress(user),
           amount: toBalance(amount),
           shares: toBalance(shares),
-          asVault: asVault === undefined ? undefined : String(asVault),
+          asVault: asVault?.toString(),
         },
       }
     }

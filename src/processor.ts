@@ -568,6 +568,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         basePool.freeValue = basePool.freeValue.minus(amount)
         delegation.withdrawingShares =
           delegation.withdrawingShares.minus(shares)
+        delegation.shares = delegation.shares.minus(shares)
         updateDelegationValue(delegation, basePool)
         if (delegation.withdrawingShares.eq(0)) {
           delegation.withdrawalNft = null
