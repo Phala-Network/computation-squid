@@ -42,9 +42,6 @@ import {updateWorkerShares} from './utils/worker'
 const processor = new SubstrateBatchProcessor()
   .setDataSource(config.dataSource)
   .setBlockRange(config.blockRange)
-  // TODO: remove two lines below in production
-  .includeAllBlocks(config.blockRange)
-  .addEvent('System.ExtrinsicSuccess')
 
   .addEvent('PhalaStakePoolv2.PoolCreated')
   .addEvent('PhalaStakePoolv2.PoolCommissionSet')
@@ -568,10 +565,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         if (basePool.totalShares.eq(0)) {
           basePool.sharePrice = BigDecimal(1)
         }
-        basePool.freeValue = max(
-          basePool.freeValue.minus(amount),
-          BigDecimal(0)
-        )
+        basePool.freeValue = basePool.freeValue.minus(amount)
         delegation.withdrawingShares =
           delegation.withdrawingShares.minus(shares)
         updateDelegationValue(delegation, basePool)
