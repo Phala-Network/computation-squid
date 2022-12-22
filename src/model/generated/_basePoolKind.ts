@@ -1,4 +1,4 @@
 export enum BasePoolKind {
-  Vault = "Vault",
-  StakePool = "StakePool",
+    Vault = "Vault",
+    StakePool = "StakePool",
 }

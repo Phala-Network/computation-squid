@@ -1,5 +1,5 @@
 {
-  "$schema": "node_modules/@subsquid/substrate-typegen/src/config.schema.json",
+  "$schema": "https://raw.githubusercontent.com/subsquid/squid-sdk/master/substrate/substrate-typegen/src/config.schema.json",
   "outDir": "src/types",
   "specVersions": "https://khala.archive.subsquid.io/graphql",
   "events": [

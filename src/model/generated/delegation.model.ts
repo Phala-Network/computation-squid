@@ -7,45 +7,45 @@ import {Nft} from "./nft.model"
 
 @Entity_()
 export class Delegation {
-  constructor(props?: Partial<Delegation>) {
-    Object.assign(this, props)
-  }
+    constructor(props?: Partial<Delegation>) {
+        Object.assign(this, props)
+    }
 
-  /**
-   * ${pid}-${accountId}
-   */
-  @PrimaryColumn_()
-  id!: string
+    /**
+     * ${pid}-${accountId}
+     */
+    @PrimaryColumn_()
+    id!: string
 
-  @Index_()
-  @ManyToOne_(() => Account, {nullable: true})
-  account!: Account
+    @Index_()
+    @ManyToOne_(() => Account, {nullable: true})
+    account!: Account
 
-  @Index_()
-  @ManyToOne_(() => BasePool, {nullable: true})
-  basePool!: BasePool
+    @Index_()
+    @ManyToOne_(() => BasePool, {nullable: true})
+    basePool!: BasePool
 
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  value!: BigDecimal
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    value!: BigDecimal
 
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  shares!: BigDecimal
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    shares!: BigDecimal
 
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  withdrawingValue!: BigDecimal
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    withdrawingValue!: BigDecimal
 
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  withdrawingShares!: BigDecimal
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    withdrawingShares!: BigDecimal
 
-  @Column_("timestamp with time zone", {nullable: true})
-  withdrawalStartTime!: Date | undefined | null
+    @Column_("timestamp with time zone", {nullable: true})
+    withdrawalStartTime!: Date | undefined | null
 
-  @Index_({unique: true})
-  @OneToOne_(() => Nft, {nullable: false})
-  @JoinColumn_()
-  delegationNft!: Nft
+    @Index_({unique: true})
+    @OneToOne_(() => Nft, {nullable: false})
+    @JoinColumn_()
+    delegationNft!: Nft
 
-  @Index_()
-  @ManyToOne_(() => Nft, {nullable: true})
-  withdrawalNft!: Nft | undefined | null
+    @Index_()
+    @ManyToOne_(() => Nft, {nullable: true})
+    withdrawalNft!: Nft | undefined | null
 }

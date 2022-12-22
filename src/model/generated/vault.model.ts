@@ -5,27 +5,27 @@ import {BasePool} from "./basePool.model"
 
 @Entity_()
 export class Vault {
-  constructor(props?: Partial<Vault>) {
-    Object.assign(this, props)
-  }
+    constructor(props?: Partial<Vault>) {
+        Object.assign(this, props)
+    }
 
-  /**
-   * pid
-   */
-  @PrimaryColumn_()
-  id!: string
+    /**
+     * pid
+     */
+    @PrimaryColumn_()
+    id!: string
 
-  @Index_({unique: true})
-  @OneToOne_(() => BasePool, {nullable: false})
-  @JoinColumn_()
-  basePool!: BasePool
+    @Index_({unique: true})
+    @OneToOne_(() => BasePool, {nullable: false})
+    @JoinColumn_()
+    basePool!: BasePool
 
-  /**
-   * share price of owner's last gain
-   */
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  lastSharePriceCheckpoint!: BigDecimal
+    /**
+     * share price of owner's last gain
+     */
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    lastSharePriceCheckpoint!: BigDecimal
 
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  claimableOwnerShares!: BigDecimal
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    claimableOwnerShares!: BigDecimal
 }

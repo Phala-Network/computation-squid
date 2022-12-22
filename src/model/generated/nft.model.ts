@@ -1,35 +1,33 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToOne as OneToOne_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import {Account} from "./account.model"
 import {Delegation} from "./delegation.model"
 
 @Entity_()
 export class Nft {
-  constructor(props?: Partial<Nft>) {
-    Object.assign(this, props)
-  }
+    constructor(props?: Partial<Nft>) {
+        Object.assign(this, props)
+    }
 
-  /**
-   * ${cid}-${nftId}
-   */
-  @PrimaryColumn_()
-  id!: string
+    /**
+     * ${cid}-${nftId}
+     */
+    @PrimaryColumn_()
+    id!: string
 
-  @Index_()
-  @ManyToOne_(() => Account, {nullable: true})
-  owner!: Account
+    @Index_()
+    @ManyToOne_(() => Account, {nullable: true})
+    owner!: Account
 
-  @Column_("int4", {nullable: false})
-  cid!: number
+    @Column_("int4", {nullable: false})
+    cid!: number
 
-  @Column_("int4", {nullable: false})
-  nftId!: number
+    @Column_("int4", {nullable: false})
+    nftId!: number
 
-  @Column_("bool", {nullable: false})
-  burned!: boolean
+    @Column_("bool", {nullable: false})
+    burned!: boolean
 
-  @Column_("timestamp with time zone", {nullable: true})
-  mintTime!: Date | undefined | null
+    @Column_("timestamp with time zone", {nullable: true})
+    mintTime!: Date | undefined | null
 
-  @OneToOne_(() => Delegation)
-  delegation!: Delegation | undefined | null
 }

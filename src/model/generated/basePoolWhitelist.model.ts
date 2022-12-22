@@ -4,24 +4,24 @@ import {BasePool} from "./basePool.model"
 
 @Entity_()
 export class BasePoolWhitelist {
-  constructor(props?: Partial<BasePoolWhitelist>) {
-    Object.assign(this, props)
-  }
+    constructor(props?: Partial<BasePoolWhitelist>) {
+        Object.assign(this, props)
+    }
 
-  /**
-   * ${pid}-${accountId}
-   */
-  @PrimaryColumn_()
-  id!: string
+    /**
+     * ${pid}-${accountId}
+     */
+    @PrimaryColumn_()
+    id!: string
 
-  @Index_()
-  @ManyToOne_(() => Account, {nullable: true})
-  account!: Account
+    @Index_()
+    @ManyToOne_(() => Account, {nullable: true})
+    account!: Account
 
-  @Index_()
-  @ManyToOne_(() => BasePool, {nullable: true})
-  basePool!: BasePool
+    @Index_()
+    @ManyToOne_(() => BasePool, {nullable: true})
+    basePool!: BasePool
 
-  @Column_("timestamp with time zone", {nullable: false})
-  createTime!: Date
+    @Column_("timestamp with time zone", {nullable: false})
+    createTime!: Date
 }

@@ -4,40 +4,40 @@ import * as marshal from "./marshal"
 
 @Entity_()
 export class GlobalState {
-  constructor(props?: Partial<GlobalState>) {
-    Object.assign(this, props)
-  }
+    constructor(props?: Partial<GlobalState>) {
+        Object.assign(this, props)
+    }
 
-  /**
-   * constant 0
-   */
-  @PrimaryColumn_()
-  id!: string
+    /**
+     * constant 0
+     */
+    @PrimaryColumn_()
+    id!: string
 
-  @Column_("int4", {nullable: false})
-  height!: number
+    @Column_("int4", {nullable: false})
+    height!: number
 
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  totalValue!: BigDecimal
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    totalValue!: BigDecimal
 
-  @Column_("int4", {nullable: false})
-  averageBlockTimeUpdatedHeight!: number
+    @Column_("int4", {nullable: false})
+    averageBlockTimeUpdatedHeight!: number
 
-  @Column_("timestamp with time zone", {nullable: false})
-  averageBlockTimeUpdatedTime!: Date
+    @Column_("timestamp with time zone", {nullable: false})
+    averageBlockTimeUpdatedTime!: Date
 
-  @Column_("int4", {nullable: false})
-  averageBlockTime!: number
+    @Column_("int4", {nullable: false})
+    averageBlockTime!: number
 
-  @Column_("timestamp with time zone", {nullable: false})
-  averageAprMultiplierUpdatedTime!: Date
+    @Column_("timestamp with time zone", {nullable: false})
+    averageAprMultiplierUpdatedTime!: Date
 
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  averageAprMultiplier!: BigDecimal
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    averageAprMultiplier!: BigDecimal
 
-  /**
-   * for apr calculation
-   */
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  idleWorkerShares!: BigDecimal
+    /**
+     * for apr calculation
+     */
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    idleWorkerShares!: BigDecimal
 }

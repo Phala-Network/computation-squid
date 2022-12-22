@@ -5,23 +5,23 @@ import {BasePool} from "./basePool.model"
 
 @Entity_()
 export class BasePoolAprRecord {
-  constructor(props?: Partial<BasePoolAprRecord>) {
-    Object.assign(this, props)
-  }
+    constructor(props?: Partial<BasePoolAprRecord>) {
+        Object.assign(this, props)
+    }
 
-  @PrimaryColumn_()
-  id!: string
+    @PrimaryColumn_()
+    id!: string
 
-  /**
-   * block time
-   */
-  @Column_("timestamp with time zone", {nullable: false})
-  updatedTime!: Date
+    /**
+     * block time
+     */
+    @Column_("timestamp with time zone", {nullable: false})
+    updatedTime!: Date
 
-  @Index_()
-  @ManyToOne_(() => BasePool, {nullable: true})
-  basePool!: BasePool
+    @Index_()
+    @ManyToOne_(() => BasePool, {nullable: true})
+    basePool!: BasePool
 
-  @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-  value!: BigDecimal
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    value!: BigDecimal
 }

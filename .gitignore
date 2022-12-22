@@ -28,6 +28,7 @@ node_modules
 # Build directories (next.js...)
 /dist
 /lib
+/builds
 
 # Cache
 **/tsconfig.tsbuildinfo
