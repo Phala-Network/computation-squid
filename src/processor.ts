@@ -386,7 +386,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         basePool.totalValue = basePool.totalValue.plus(amount)
         updateStakePoolAprMultiplier(basePool, stakePool)
         // MEMO: delegator is not a vault
-        if (asVault === undefined) {
+        if (asVault === undefined || asVault === '0') {
           globalState.totalValue = globalState.totalValue.plus(amount)
         } else {
           const vault = assertGet(basePoolMap, asVault)
