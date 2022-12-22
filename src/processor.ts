@@ -389,8 +389,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         if (asVault === undefined || asVault === '0') {
           globalState.totalValue = globalState.totalValue.plus(amount)
         } else {
-          const vault = assertGet(basePoolMap, asVault)
-          vault.freeValue = vault.freeValue.minus(amount)
+          const vaultBasePool = assertGet(basePoolMap, asVault)
+          vaultBasePool.freeValue = vaultBasePool.freeValue.minus(amount)
         }
         updateStakePoolDelegable(basePool, stakePool)
         break
@@ -555,6 +555,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const delegation = assertGet(delegationMap, delegationId)
         basePool.totalShares = basePool.totalShares.minus(shares)
         basePool.totalValue = basePool.totalValue.minus(amount)
+        basePool.freeValue = basePool.freeValue.minus(amount)
         basePool.withdrawingShares = max(
           basePool.withdrawingShares.minus(shares),
           BigDecimal(0)
@@ -565,7 +566,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         if (basePool.totalShares.eq(0)) {
           basePool.sharePrice = BigDecimal(1)
         }
-        basePool.freeValue = basePool.freeValue.minus(amount)
         delegation.withdrawingShares =
           delegation.withdrawingShares.minus(shares)
         delegation.shares = delegation.shares.minus(shares)
