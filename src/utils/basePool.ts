@@ -115,9 +115,7 @@ export const updateStakePoolDelegable = (
 ): void => {
   if (stakePool.capacity != null) {
     stakePool.delegable = max(
-      stakePool.capacity
-        .minus(basePool.totalValue)
-        .plus(basePool.withdrawingValue),
+      stakePool.capacity.minus(basePool.totalValue),
       BigDecimal(0)
     )
   } else {

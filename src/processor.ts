@@ -203,7 +203,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   }
   const globalState = await ctx.store.findOneByOrFail(GlobalState, {id: '0'})
   const accountMap: Map<string, Account> = await ctx.store
-    .find(Account, {relations: {basePool: true}})
+    .find(Account)
     .then(toMap)
   const sessionMap = await ctx.store
     .find(Session, {
@@ -219,12 +219,19 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       basePoolIdSet.add(stakePool.id)
     }
   }
-  const basePoolMap = await ctx.store
-    .find(BasePool, {
-      where: {id: In([...basePoolIdSet])},
-      relations: {owner: true, account: true},
-    })
-    .then(toMap)
+  const basePools = await ctx.store.find(BasePool, {
+    where: [
+      {id: In([...basePoolIdSet])},
+      {account: {id: In([...basePoolAccountIdSet])}},
+    ],
+    relations: {owner: true, account: true},
+  })
+
+  const basePoolMap = toMap(basePools)
+  const basePoolAccountIdMap = toMap(
+    basePools,
+    (basePool) => basePool.account.id
+  )
 
   const stakePoolMap = await ctx.store
     .find(StakePool, {
@@ -291,6 +298,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           poolAccount,
         })
         basePoolMap.set(pid, basePool)
+        basePoolAccountIdMap.set(poolAccountId, basePool)
         stakePoolMap.set(pid, stakePool)
         await ctx.store.save(ownerAccount)
         await ctx.store.insert(poolAccount)
@@ -450,6 +458,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           poolAccount,
         })
         basePoolMap.set(pid, basePool)
+        basePoolAccountIdMap.set(poolAccountId, basePool)
         vaultMap.set(pid, vault)
         await ctx.store.insert(poolAccount)
         await ctx.store.save(ownerAccount)
@@ -550,7 +559,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       case 'PhalaBasePool.Withdrawal': {
         const {pid, accountId, amount, shares} = args
         const basePool = assertGet(basePoolMap, pid)
-        const account = assertGet(accountMap, accountId)
         const delegationId = join(pid, accountId)
         const delegation = assertGet(delegationMap, delegationId)
         basePool.totalShares = basePool.totalShares.minus(shares)
@@ -579,8 +587,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           updateStakePoolDelegable(basePool, stakePool)
         }
 
-        if (account.basePool != null) {
-          const vaultBasePool = assertGet(basePoolMap, account.basePool.id)
+        if (basePoolAccountIdMap.has(accountId)) {
+          const vaultBasePool = assertGet(basePoolAccountIdMap, accountId)
           vaultBasePool.freeValue = vaultBasePool.freeValue.plus(amount)
         } else {
           // MEMO: exclude vault's withdrawal

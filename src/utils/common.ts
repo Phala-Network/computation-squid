@@ -28,10 +28,10 @@ export const assertGet = <T, U>(map: Map<U, T>, key: U): T => {
 export const join = (...args: Array<string | number | bigint>): string =>
   args.map((x) => x.toString()).join('-')
 
-export const toMap = <T extends {id: string}, U extends keyof T = 'id'>(
+export const toMap = <T extends {id: string}>(
   a: T[],
-  key: U = 'id' as U
-): Map<T[U], T> => new Map(a.map((a) => [a[key], a]))
+  fn: (a: T) => string = (a) => a.id
+): Map<string, T> => new Map(a.map((a) => [fn(a), a]))
 
 export const max = (a: BigDecimal, b: BigDecimal): BigDecimal =>
   a.gt(b) ? a : b

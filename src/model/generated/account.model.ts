@@ -16,7 +16,7 @@ export class Account {
   @PrimaryColumn_()
   id!: string
 
-  @OneToOne_(() => BasePool, e => e.account)
+  @OneToOne_(() => BasePool)
   basePool!: BasePool | undefined | null
 
   @Column_("text", {nullable: true})
