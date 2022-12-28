@@ -100,6 +100,9 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
     const accountStakePoolDelegations = accountDelegations.filter(
       (x) => x.basePool.kind === BasePoolKind.StakePool
     )
+    account.stakePoolNftCount = accountStakePoolDelegations.filter((x) =>
+      x.shares.gt(0)
+    ).length
     account.stakePoolValue = sum(
       ...accountStakePoolDelegations.map((x) => x.value)
     )
@@ -140,6 +143,9 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       (x) => x.basePool.kind === BasePoolKind.Vault
     )
     account.vaultValue = sum(...accountVaultDelegations.map((x) => x.value))
+    account.vaultNftCount = accountVaultDelegations.filter((x) =>
+      x.shares.gt(0)
+    ).length
 
     delegationValueRecords.push(
       createDelegationValueRecord({
