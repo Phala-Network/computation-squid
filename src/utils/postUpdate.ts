@@ -120,7 +120,7 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       const delegations = delegationMap[account.id]
       if (delegations !== undefined) {
         basePool.releasingValue = sum(
-          ...delegations.map((x) => x.basePool.releasingValue)
+          ...delegations.map((x) => x.withdrawingValue)
         )
       }
     }

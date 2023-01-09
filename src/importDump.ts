@@ -409,7 +409,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
         (x) => x.basePool.kind === BasePoolKind.StakePool
       )
       basePool.releasingValue = sum(
-        ...stakePoolDelegations.map((x) => x.basePool.releasingValue)
+        ...stakePoolDelegations.map((x) => x.withdrawingValue)
       )
     }
     basePool.withdrawingValue = basePool.withdrawingShares
