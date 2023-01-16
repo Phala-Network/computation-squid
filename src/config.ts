@@ -1,5 +1,8 @@
 import {lookupArchive} from '@subsquid/archive-registry'
-import {BlockRangeOption, DataSource} from '@subsquid/substrate-processor'
+import {
+  type BlockRangeOption,
+  type DataSource,
+} from '@subsquid/substrate-processor'
 
 const config: {
   dataSource: DataSource

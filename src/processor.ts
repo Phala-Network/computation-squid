@@ -1,10 +1,10 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import {
-  BatchContext,
-  BatchProcessorItem,
   SubstrateBatchProcessor,
+  type BatchContext,
+  type BatchProcessorItem,
 } from '@subsquid/substrate-processor'
-import {Store, TypeormDatabase} from '@subsquid/typeorm-store'
+import {TypeormDatabase, type Store} from '@subsquid/typeorm-store'
 import assert from 'assert'
 import {In} from 'typeorm'
 import config from './config'
@@ -517,14 +517,19 @@ processor.run(new TypeormDatabase(), async (ctx) => {
               id: delegationId,
               basePool,
               account: ownerAccount,
+              cost: BigDecimal(0),
               value: BigDecimal(0),
               shares: BigDecimal(0),
               withdrawingValue: BigDecimal(0),
               withdrawingShares: BigDecimal(0),
             })
           delegation.delegationNft = delegationNft
+          const prevShares = delegation.shares
           delegation.shares = shares.plus(delegation.withdrawingShares)
           updateDelegationValue(delegation, basePool)
+          delegation.cost = delegation.cost.plus(
+            delegation.shares.minus(prevShares).times(basePool.sharePrice)
+          )
           delegationMap.set(delegationId, delegation)
         }
         break
@@ -551,6 +556,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           delegation.withdrawingShares.minus(shares)
         delegation.shares = delegation.shares.minus(shares)
         updateDelegationValue(delegation, basePool)
+        delegation.cost = delegation.cost.minus(amount)
         if (delegation.withdrawingShares.eq(0)) {
           delegation.withdrawalNft = null
         }

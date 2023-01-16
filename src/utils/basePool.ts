@@ -1,13 +1,13 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import {
-  Account,
   BasePool,
   BasePoolKind,
   GlobalState,
   StakePool,
   Vault,
+  type Account,
 } from '../model'
-import {Ctx} from '../processor'
+import {type Ctx} from '../processor'
 import {max, sum} from './common'
 
 export function createPool(

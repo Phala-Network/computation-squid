@@ -1,5 +1,5 @@
-import {Account, IdentityLevel} from '../model'
-import {Ctx} from '../processor'
+import {IdentityLevel, type Account} from '../model'
+import {type Ctx} from '../processor'
 import {IdentityIdentityOfStorage} from '../types/storage'
 import {getAccount} from './common'
 import {decodeAddress} from './converter'

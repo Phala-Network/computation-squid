@@ -1,6 +1,6 @@
 import {BigDecimal} from '@subsquid/big-decimal'
-import {SubstrateBlock, toHex} from '@subsquid/substrate-processor'
-import {Ctx} from './processor'
+import {toHex, type SubstrateBlock} from '@subsquid/substrate-processor'
+import {type Ctx} from './processor'
 import {
   IdentityIdentityClearedEvent,
   IdentityIdentitySetEvent,

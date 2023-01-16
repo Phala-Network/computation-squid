@@ -1,5 +1,5 @@
-import {SubstrateBlock} from '@subsquid/substrate-processor'
-import {GlobalState} from '../model'
+import {type SubstrateBlock} from '@subsquid/substrate-processor'
+import {type GlobalState} from '../model'
 
 export const updateAverageBlockTime = (
   block: SubstrateBlock,

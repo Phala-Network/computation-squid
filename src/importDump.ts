@@ -5,23 +5,24 @@ import {groupBy} from 'lodash'
 import path from 'path'
 import config from './config'
 import {
-  Account,
-  BasePool,
   BasePoolKind,
   BasePoolWhitelist,
   Delegation,
-  DelegationValueRecord,
   GlobalState,
-  IdentityLevel,
   Nft,
   RewardRecord,
   Session,
-  StakePool,
-  Vault,
   Worker,
   WorkerState,
+  type Account,
+  type AccountValueSnapshot,
+  type BasePool,
+  type IdentityLevel,
+  type StakePool,
+  type Vault,
 } from './model'
-import {Ctx} from './processor'
+import {type Ctx} from './processor'
+import {createAccountValueSnapshot} from './utils/accountValueSnapshot'
 import {
   createPool,
   getBasePoolAvgAprMultiplier,
@@ -36,7 +37,6 @@ import {
   getDelegationAvgAprMultiplier,
   updateDelegationValue,
 } from './utils/delegation'
-import {createDelegationValueRecord} from './utils/delegationValueRecord'
 import {updateWorkerShares} from './utils/worker'
 
 interface IBasePool {
@@ -137,7 +137,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
   const nftMap = new Map<string, Nft>()
   const basePoolWhitelistMap = new Map<string, BasePoolWhitelist>()
   const nftUserMap = new Map<string, string>()
-  const delegationValueRecords: DelegationValueRecord[] = []
+  const accountValueSnapshots: AccountValueSnapshot[] = []
   const whitelists: BasePoolWhitelist[] = []
 
   for (const i of dump.identities) {
@@ -312,19 +312,6 @@ const importDump = async (ctx: Ctx): Promise<void> => {
       continue
     }
     const basePool = assertGet(basePoolCidMap, d.cid.toString())
-
-    // MEMO: normal nft
-    if (d.shares === undefined || d.createTime === undefined) {
-      const nft = new Nft({
-        id: nftId,
-        owner,
-        cid: d.cid,
-        nftId: d.nftId,
-        burned: false,
-      })
-      nftMap.set(nft.id, nft)
-      continue
-    }
     const shares = toBalance(d.shares)
     if (nftMap.has(nftId)) {
       // MEMO: is a withdrawal nft
@@ -334,6 +321,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
       delegation.shares = delegation.shares.plus(shares)
       delegation.withdrawingShares = shares
       updateDelegationValue(delegation, basePool)
+      delegation.cost = delegation.value
       basePool.withdrawingShares = basePool.withdrawingShares.plus(shares)
     } else {
       const delegationId = join(basePool.id, d.owner)
@@ -360,6 +348,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
 
       delegation.shares = shares.add(delegation.withdrawingShares)
       updateDelegationValue(delegation, basePool)
+      delegation.cost = delegation.value
       if (![...basePoolMap.values()].some((x) => x.account.id === owner.id)) {
         globalState.totalValue = globalState.totalValue.plus(delegation.value)
       }
@@ -393,8 +382,8 @@ const importDump = async (ctx: Ctx): Promise<void> => {
     account.stakePoolAvgAprMultiplier =
       getDelegationAvgAprMultiplier(stakePoolDelegations)
 
-    delegationValueRecords.push(
-      createDelegationValueRecord({
+    accountValueSnapshots.push(
+      createAccountValueSnapshot({
         account,
         value: account.stakePoolValue.plus(account.vaultValue),
         updatedTime: new Date(dump.timestamp),
@@ -452,7 +441,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
     nftMap,
     delegationMap,
     basePoolWhitelistMap,
-    delegationValueRecords,
+    accountValueSnapshots,
     rewardRecord,
     whitelists,
   ]) {

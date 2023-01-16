@@ -1,5 +1,5 @@
 import {BigDecimal} from '@subsquid/big-decimal'
-import {Session, Worker} from '../model'
+import {type Session, type Worker} from '../model'
 
 type ConfidenceLevel = 1 | 2 | 3 | 4 | 5
 const validateConfidenceLevel = (n: number): n is ConfidenceLevel =>

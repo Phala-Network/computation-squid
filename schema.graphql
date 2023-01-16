@@ -102,12 +102,14 @@ type Delegation @entity {
   account: Account!
   basePool: BasePool!
   value: BigDecimal!
+  cost: BigDecimal!
   shares: BigDecimal!
   withdrawingValue: BigDecimal!
   withdrawingShares: BigDecimal!
   withdrawalStartTime: DateTime
   delegationNft: Nft! @unique
   withdrawalNft: Nft
+  snapshots: [DelegationSnapshot!] @derivedFrom(field: "delegation")
 }
 
 type Nft @entity {
@@ -162,7 +164,7 @@ type Session @entity {
   coolingDownStartTime: DateTime
 }
 
-type DelegationValueRecord @entity {
+type AccountValueSnapshot @entity {
   id: ID!
   "block time"
   updatedTime: DateTime!
@@ -177,10 +179,43 @@ type RewardRecord @entity {
   value: BigDecimal!
 }
 
-type BasePoolAprRecord @entity {
+type BasePoolSnapshot @entity {
   id: ID!
   "block time"
   updatedTime: DateTime!
   basePool: BasePool!
+  commission: BigDecimal!
+  apr: BigDecimal!
+  totalValue: BigDecimal!
+  delegatorCount: Int!
+  sharePrice: BigDecimal!
+  workerCount: Int
+  idleWorkerCount: Int
+}
+
+type DelegationSnapshot @entity {
+  id: ID!
+  "block time"
+  updatedTime: DateTime!
+  delegation: Delegation!
+  cost: BigDecimal!
   value: BigDecimal!
+}
+
+type WorkerSnapshot @entity {
+  id: ID!
+  "block time"
+  updatedTime: DateTime!
+  worker: Worker!
+  stakePoolId: String
+  sessionId: String
+  confidenceLevel: Int!
+  initialScore: Int
+  stake: BigDecimal
+  state: WorkerState
+  v: BigDecimal
+  ve: BigDecimal
+  pInit: Int
+  pInstant: Int
+  totalReward: BigDecimal
 }
