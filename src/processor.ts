@@ -718,19 +718,21 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const session = assertGet(sessionMap, sessionId)
         assert(session.worker)
         assert(session.stakePool)
-        session.state = WorkerState.WorkerUnresponsive
         const basePool = assertGet(basePoolMap, session.stakePool.id)
         const stakePool = assertGet(stakePoolMap, session.stakePool.id)
-        stakePool.idleWorkerCount--
-        const worker = assertGet(workerMap, session.worker.id)
-        assert(worker.shares)
-        globalState.idleWorkerShares = globalState.idleWorkerShares.minus(
-          worker.shares
-        )
-        stakePool.idleWorkerShares = stakePool.idleWorkerShares.minus(
-          worker.shares
-        )
-        updateStakePoolAprMultiplier(basePool, stakePool)
+        if (session.state === WorkerState.WorkerIdle) {
+          session.state = WorkerState.WorkerUnresponsive
+          stakePool.idleWorkerCount--
+          const worker = assertGet(workerMap, session.worker.id)
+          assert(worker.shares)
+          globalState.idleWorkerShares = globalState.idleWorkerShares.minus(
+            worker.shares
+          )
+          stakePool.idleWorkerShares = stakePool.idleWorkerShares.minus(
+            worker.shares
+          )
+          updateStakePoolAprMultiplier(basePool, stakePool)
+        }
         break
       }
       case 'PhalaComputation.WorkerExitUnresponsive': {
