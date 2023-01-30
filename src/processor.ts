@@ -764,8 +764,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         assert(session.worker)
         assert(session.stakePool)
         const worker = assertGet(workerMap, session.worker.id)
-        assert(worker.shares)
-        const prevShares = worker.shares
+        const prevShares = worker.shares ?? BigDecimal(0)
         updateWorkerShares(worker, session)
         if (session.state === WorkerState.WorkerIdle) {
           globalState.idleWorkerShares = globalState.idleWorkerShares
@@ -791,10 +790,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {workerId, confidenceLevel} = args
         const worker = assertGet(workerMap, workerId)
         worker.confidenceLevel = confidenceLevel
-        if (worker.session != null) {
-          const session = assertGet(sessionMap, worker.session.id)
-          updateWorkerShares(worker, session)
-        }
         break
       }
       case 'PhalaRegistry.InitialScoreSet': {
