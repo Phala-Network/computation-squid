@@ -250,22 +250,23 @@ const importDump = async (ctx: Ctx): Promise<void> => {
       }
 
       updateStakePoolAprMultiplier(basePool, stakePool)
-      if (b.whitelists.length > 0) {
-        basePool.whitelistEnabled = true
-      }
+    }
 
-      for (let i = 0; i < b.whitelists.length; i++) {
-        const address = b.whitelists[i]
-        whitelists.push(
-          new BasePoolWhitelist({
-            id: join(b.pid, address),
-            account: getAccount(accountMap, address),
-            basePool,
-            // MEMO: keep the order of whitelists
-            createTime: new Date(dump.timestamp - whitelists.length + i),
-          })
-        )
-      }
+    if (b.whitelists.length > 0) {
+      basePool.whitelistEnabled = true
+    }
+
+    for (let i = 0; i < b.whitelists.length; i++) {
+      const address = b.whitelists[i]
+      whitelists.push(
+        new BasePoolWhitelist({
+          id: join(b.pid, address),
+          account: getAccount(accountMap, address),
+          basePool,
+          // MEMO: keep the order of whitelists
+          createTime: new Date(dump.timestamp - whitelists.length + i),
+        })
+      )
     }
 
     for (const withdrawal of b.withdrawQueue) {
