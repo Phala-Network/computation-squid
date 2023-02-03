@@ -1,6 +1,6 @@
 manifestVersion: subsquid.io/v0.1
 name: phala-computation
-version: 4
+version: 1
 description: 'Phala computation squid'
 build:
 deploy:

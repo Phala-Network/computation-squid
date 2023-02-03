@@ -522,19 +522,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
               withdrawingValue: BigDecimal(0),
               withdrawingShares: BigDecimal(0),
             })
-          const prevShares = delegation.shares
           delegation.delegationNft = delegationNft
           delegation.shares = shares.plus(delegation.withdrawingShares)
           updateDelegationValue(delegation, basePool)
           delegationMap.set(delegationId, delegation)
-          const isNewDelegation = prevShares.eq(0) && delegation.shares.gt(0)
-          const isEmptyDelegation = prevShares.gt(0) && delegation.shares.eq(0)
-          if (isNewDelegation) {
-            basePool.delegatorCount++
-          }
-          if (isEmptyDelegation) {
-            basePool.delegatorCount--
-          }
         }
         break
       }
@@ -556,11 +547,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         if (basePool.totalShares.eq(0)) {
           basePool.sharePrice = BigDecimal(1)
         }
-        const prevShares = delegation.shares
         delegation.withdrawingShares =
           delegation.withdrawingShares.minus(shares)
         delegation.shares = delegation.shares.minus(shares)
-        const isEmptyDelegation = prevShares.gt(0) && delegation.shares.eq(0)
         updateDelegationValue(delegation, basePool)
         if (delegation.withdrawingShares.eq(0)) {
           delegation.withdrawalNft = null
@@ -569,10 +558,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           const stakePool = assertGet(stakePoolMap, pid)
           updateStakePoolAprMultiplier(basePool, stakePool)
           updateStakePoolDelegable(basePool, stakePool)
-        }
-
-        if (isEmptyDelegation) {
-          basePool.delegatorCount--
         }
 
         if (basePoolAccountIdMap.has(accountId)) {

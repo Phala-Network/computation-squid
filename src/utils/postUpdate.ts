@@ -67,11 +67,13 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
     })
   }
 
-  const basePoolMap = await ctx.store
-    .find(BasePool, {
-      relations: {owner: true, account: true},
-    })
-    .then(toMap)
+  const basePools = await ctx.store.find(BasePool, {
+    relations: {owner: true, account: true},
+  })
+  const basePoolMap = toMap(basePools)
+  for (const basePool of basePools) {
+    basePool.delegatorCount = 0
+  }
 
   const delegations = await ctx.store.find(Delegation, {
     relations: {
@@ -82,13 +84,18 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
     },
   })
   const delegationMap = groupBy(delegations, (x) => x.account.id)
+  const emptyDelegation: Delegation[] = []
 
   for (const delegation of delegations) {
     if (delegation.basePool.kind === BasePoolKind.StakePool) {
-      updateDelegationValue(
-        delegation,
-        assertGet(basePoolMap, delegation.basePool.id)
-      )
+      const basePool = assertGet(basePoolMap, delegation.basePool.id)
+
+      if (delegation.shares.eq(0)) {
+        emptyDelegation.push(delegation)
+      } else {
+        updateDelegationValue(delegation, basePool)
+        basePool.delegatorCount++
+      }
     }
   }
 
@@ -129,10 +136,14 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
 
   for (const delegation of delegations) {
     if (delegation.basePool.kind === BasePoolKind.Vault) {
-      updateDelegationValue(
-        delegation,
-        assertGet(basePoolMap, delegation.basePool.id)
-      )
+      const basePool = assertGet(basePoolMap, delegation.basePool.id)
+
+      if (delegation.shares.eq(0)) {
+        emptyDelegation.push(delegation)
+      } else {
+        updateDelegationValue(delegation, basePool)
+        basePool.delegatorCount++
+      }
     }
   }
 
@@ -161,8 +172,9 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
   }
 
   await ctx.store.save(delegations)
+  await ctx.store.remove(emptyDelegation)
   await ctx.store.save([...accountMap.values()])
-  await ctx.store.save([...basePoolMap.values()])
+  await ctx.store.save(basePools)
   await ctx.store.save(delegationValueRecords)
   await ctx.store.save(basePoolAprRecords)
 }
