@@ -23,6 +23,7 @@ deploy:
       - '--dumb-cache-max-age'
       - '1000'
 scale:
+  dedicated: true
   addons:
     postgres:
       profile: large

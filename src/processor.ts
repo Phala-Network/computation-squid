@@ -585,7 +585,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         // Replace previous withdrawal
         delegation.withdrawingShares = shares
         delegation.withdrawalStartTime = blockTime
-        const withdrawalNft = assertGet(nftMap, join(basePool.cid, nftId))
+        const withdrawalNftId = join(basePool.cid, nftId)
+        const withdrawalNft =
+          nftMap.get(withdrawalNftId) ??
+          (await ctx.store.findOneBy(Nft, {id: join(basePool.cid, nftId)}))
         delegation.withdrawalNft = withdrawalNft
         if (stakePool != null) {
           updateStakePoolDelegable(basePool, stakePool)
