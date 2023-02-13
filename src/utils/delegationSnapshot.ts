@@ -17,8 +17,8 @@ export const createDelegationSnapshot = ({
   return new DelegationSnapshot({
     id: join(delegation.id, savedTime.toISOString()),
     delegation,
-    cost: delegation.cost.round(4, 0),
-    value: delegation.value.round(4, 0),
+    cost: delegation.cost,
+    value: delegation.value,
     updatedTime: savedTime,
   })
 }

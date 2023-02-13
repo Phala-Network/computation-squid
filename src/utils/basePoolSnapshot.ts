@@ -23,7 +23,7 @@ export const createBasePoolSnapshot = ({
     id: join(basePool.id, savedTime.toISOString()),
     basePool,
     commission: basePool.commission,
-    totalValue: basePool.totalValue.round(4, 0),
+    totalValue: basePool.totalValue,
     sharePrice: basePool.sharePrice.round(12, 0),
     delegatorCount: basePool.delegatorCount,
     apr: apr.round(6, 0),
