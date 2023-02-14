@@ -8,7 +8,7 @@ import {
   type Account,
 } from '../model'
 import {type Ctx} from '../processor'
-import {max, sum} from './common'
+import {sum} from './common'
 
 export function createPool(
   kind: BasePoolKind.StakePool,
@@ -114,10 +114,11 @@ export const updateStakePoolDelegable = (
   stakePool: StakePool
 ): void => {
   if (stakePool.capacity != null) {
-    stakePool.delegable = max(
-      stakePool.capacity.minus(basePool.totalValue),
-      BigDecimal(0)
-    )
+    stakePool.delegable = basePool.totalValue.gt(stakePool.capacity)
+      ? BigDecimal(0)
+      : stakePool.capacity
+          .minus(basePool.totalValue)
+          .plus(basePool.withdrawingValue)
   } else {
     stakePool.delegable = null
   }

@@ -346,7 +346,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
           withdrawingValue: BigDecimal(0),
         })
 
-      delegation.shares = shares.add(delegation.withdrawingShares)
+      delegation.shares = shares.plus(delegation.withdrawingShares)
       updateDelegationValue(delegation, basePool)
       delegation.cost = delegation.value
       if (![...basePoolMap.values()].some((x) => x.account.id === owner.id)) {
