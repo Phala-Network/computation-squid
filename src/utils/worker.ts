@@ -25,6 +25,7 @@ export function updateWorkerShares(
       .pow(2)
       .add(BigDecimal(2).mul(pInstant).mul(confidenceScore).pow(2))
       .sqrt()
+      .round(12, 0)
 
     worker.shares = shares
   }

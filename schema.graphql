@@ -10,6 +10,13 @@ type GlobalState @entity {
   averageAprMultiplier: BigDecimal!
   "for apr calculation"
   idleWorkerShares: BigDecimal!
+
+  phaRate: BigDecimal!
+  budgetPerBlock: BigDecimal!
+  vMax: BigDecimal!
+  treasuryRatio: BigDecimal!
+  re: BigDecimal!
+  k: BigDecimal!
 }
 
 enum IdentityLevel {
@@ -191,6 +198,7 @@ type BasePoolSnapshot @entity {
   sharePrice: BigDecimal!
   workerCount: Int
   idleWorkerCount: Int
+  stakePoolCount: Int
 }
 
 type DelegationSnapshot @entity {

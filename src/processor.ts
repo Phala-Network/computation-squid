@@ -34,7 +34,10 @@ import {
 } from './utils/basePool'
 import {assertGet, getAccount, join, max, toMap} from './utils/common'
 import {updateDelegationValue} from './utils/delegation'
-import {updateAverageBlockTime} from './utils/globalState'
+import {
+  updateAverageBlockTime,
+  updateTokenomicParameters,
+} from './utils/globalState'
 import {queryIdentities} from './utils/identity'
 import postUpdate from './utils/postUpdate'
 import {updateWorkerShares} from './utils/worker'
@@ -77,6 +80,7 @@ const processor = new SubstrateBatchProcessor()
   .addEvent('PhalaComputation.WorkerEnterUnresponsive')
   .addEvent('PhalaComputation.WorkerExitUnresponsive')
   .addEvent('PhalaComputation.BenchmarkUpdated')
+  .addEvent('PhalaComputation.TokenomicParametersChanged')
 
   .addEvent('PhalaRegistry.WorkerAdded')
   .addEvent('PhalaRegistry.WorkerUpdated')
@@ -771,6 +775,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
             .plus(worker.shares)
           updateStakePoolAprMultiplier(basePool, stakePool)
         }
+        break
+      }
+      case 'PhalaComputation.TokenomicParametersChanged': {
+        await updateTokenomicParameters(ctx, block, globalState)
         break
       }
       case 'PhalaRegistry.WorkerAdded': {

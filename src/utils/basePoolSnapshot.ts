@@ -30,5 +30,7 @@ export const createBasePoolSnapshot = ({
     updatedTime: savedTime,
     workerCount: stakePool?.workerCount,
     idleWorkerCount: stakePool?.idleWorkerCount,
+    stakePoolCount:
+      stakePool == null ? basePool.account.stakePoolNftCount : undefined,
   })
 }

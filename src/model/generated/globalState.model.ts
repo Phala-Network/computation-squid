@@ -40,4 +40,22 @@ export class GlobalState {
      */
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     idleWorkerShares!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    phaRate!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    budgetPerBlock!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    vMax!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    treasuryRatio!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    re!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    k!: BigDecimal
 }

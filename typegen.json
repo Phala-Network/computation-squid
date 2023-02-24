@@ -37,6 +37,7 @@
     "PhalaComputation.WorkerExitUnresponsive",
     "PhalaComputation.SessionSettled",
     "PhalaComputation.BenchmarkUpdated",
+    "PhalaComputation.TokenomicParametersChanged",
 
     "PhalaRegistry.WorkerAdded",
     "PhalaRegistry.WorkerUpdated",

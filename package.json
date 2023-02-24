@@ -9,11 +9,11 @@
     "query-node:start": "squid-graphql-server --subscriptions --max-response-size 10000 --dumb-cache in-memory --dumb-cache-ttl 1000 --dumb-cache-size 100 --dumb-cache-max-age 1000"
   },
   "dependencies": {
-    "@subsquid/archive-registry": "2.1.4",
+    "@subsquid/archive-registry": "2.1.6",
     "@subsquid/big-decimal": "^0.0.0",
     "@subsquid/graphql-server": "3.3.2",
     "@subsquid/ss58": "0.1.4",
-    "@subsquid/substrate-processor": "2.3.1",
+    "@subsquid/substrate-processor": "2.4.0",
     "@subsquid/typeorm-migration": "0.1.6",
     "@subsquid/typeorm-store": "0.2.2",
     "dotenv": "^10.0.0",
@@ -28,7 +28,7 @@
     "@types/lodash": "^4.14.191",
     "@types/node": "16.11.56",
     "@typescript-eslint/eslint-plugin": "^5.51.0",
-    "eslint": "^8.33.0",
+    "eslint": "^8.34.0",
     "eslint-config-prettier": "^8.6.0",
     "eslint-config-standard-with-typescript": "^34.0.0",
     "eslint-plugin-import": "^2.27.5",

@@ -1,27 +1,24 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import assert from 'assert'
 import {groupBy} from 'lodash'
-import {In} from 'typeorm'
 import {
   Account,
   BasePool,
   BasePoolKind,
   Delegation,
-  DelegationSnapshot,
   GlobalState,
   StakePool,
   Worker,
   type AccountValueSnapshot,
   type BasePoolSnapshot,
+  type DelegationSnapshot,
   type WorkerSnapshot,
 } from '../model'
 import {type Ctx} from '../processor'
-import {PhalaComputationTokenomicParametersStorage} from '../types/storage'
 import {createAccountValueSnapshot} from './accountValueSnapshot'
 import {updateSharePrice, updateVaultAprMultiplier} from './basePool'
 import {createBasePoolSnapshot} from './basePoolSnapshot'
 import {assertGet, sum, toMap} from './common'
-import {fromBits} from './converter'
 import {
   getDelegationAvgAprMultiplier,
   updateDelegationValue,
@@ -43,42 +40,14 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
   }
   const updatedTime = new Date(latestBlock.header.timestamp)
   const globalState = await ctx.store.findOneByOrFail(GlobalState, {id: '0'})
-  let tokenomicParameters: {
-    phaRate: BigDecimal
-    budgetPerBlock: BigDecimal
-    vMax: BigDecimal
-    treasuryRatio: BigDecimal
-    re: BigDecimal
-    k: BigDecimal
-  }
 
   const accountValueSnapshots: AccountValueSnapshot[] = []
   const delegationSnapshots: DelegationSnapshot[] = []
-  const emptyDelegations: Delegation[] = []
   const basePoolSnapshots: BasePoolSnapshot[] = []
 
   const getApr = async (basePool: BasePool): Promise<BigDecimal> => {
-    if (tokenomicParameters === undefined) {
-      tokenomicParameters =
-        await new PhalaComputationTokenomicParametersStorage(
-          ctx,
-          latestBlock.header
-        ).asV1199
-          .get()
-          .then((value) => {
-            assert(value)
-            return {
-              phaRate: fromBits(value.phaRate),
-              budgetPerBlock: fromBits(value.budgetPerBlock),
-              vMax: fromBits(value.vMax),
-              treasuryRatio: fromBits(value.treasuryRatio),
-              re: fromBits(value.re),
-              k: fromBits(value.k),
-            }
-          })
-    }
-    const {budgetPerBlock, treasuryRatio} = tokenomicParameters
-    const {averageBlockTime, idleWorkerShares} = globalState
+    const {averageBlockTime, idleWorkerShares, budgetPerBlock, treasuryRatio} =
+      globalState
     const value = basePool.aprMultiplier
       .times(budgetPerBlock)
       .times(BigDecimal(1).minus(treasuryRatio))
@@ -169,15 +138,10 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       basePool.delegatorCount++
     }
 
-    if (shouldRecord) {
-      if (delegation.shares.eq(0)) {
-        emptyDelegations.push(delegation)
-        delegationMap.delete(delegation.id)
-      } else {
-        delegationSnapshots.push(
-          createDelegationSnapshot({delegation, updatedTime})
-        )
-      }
+    if (shouldRecord && delegation.shares.eq(0)) {
+      delegationSnapshots.push(
+        createDelegationSnapshot({delegation, updatedTime})
+      )
     }
   }
 
@@ -208,13 +172,6 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
   }
 
   await ctx.store.save([...delegationMap.values()])
-  const deprecatedDelegationSnapshots = await ctx.store.find(
-    DelegationSnapshot,
-    {where: {delegation: {id: In(emptyDelegations.map((d) => d.id))}}}
-  )
-  await ctx.store.remove(deprecatedDelegationSnapshots)
-  await ctx.store.remove(emptyDelegations)
-
   await ctx.store.save([...accountMap.values()])
   await ctx.store.save(basePools)
   await ctx.store.save(accountValueSnapshots)

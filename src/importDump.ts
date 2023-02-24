@@ -37,6 +37,7 @@ import {
   getDelegationAvgAprMultiplier,
   updateDelegationValue,
 } from './utils/delegation'
+import {updateTokenomicParameters} from './utils/globalState'
 import {updateWorkerShares} from './utils/worker'
 
 interface IBasePool {
@@ -126,6 +127,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
     totalValue: BigDecimal(0),
     idleWorkerShares: BigDecimal(0),
   })
+  await updateTokenomicParameters(ctx, ctx.blocks[0].header, globalState)
   const accountMap = new Map<string, Account>()
   const workerMap = new Map<string, Worker>()
   const basePoolMap = new Map<string, BasePool>()

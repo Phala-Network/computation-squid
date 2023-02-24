@@ -510,6 +510,41 @@ export class PhalaComputationSessionUnboundEvent {
     }
 }
 
+export class PhalaComputationTokenomicParametersChangedEvent {
+    private readonly _chain: Chain
+    private readonly event: Event
+
+    constructor(ctx: EventContext)
+    constructor(ctx: ChainContext, event: Event)
+    constructor(ctx: EventContext, event?: Event) {
+        event = event || ctx.event
+        assert(event.name === 'PhalaComputation.TokenomicParametersChanged')
+        this._chain = ctx._chain
+        this.event = event
+    }
+
+    /**
+     * Tokenomic parameter changed.
+     * 
+     * Affected states:
+     * - [`TokenomicParameters`] is updated.
+     */
+    get isV1199(): boolean {
+        return this._chain.getEventHash('PhalaComputation.TokenomicParametersChanged') === '01f2f9c28aa1d4d36a81ff042620b6677d25bf07c2bf4acc37b58658778a4fca'
+    }
+
+    /**
+     * Tokenomic parameter changed.
+     * 
+     * Affected states:
+     * - [`TokenomicParameters`] is updated.
+     */
+    get asV1199(): null {
+        assert(this.isV1199)
+        return this._chain.decodeEvent(this.event)
+    }
+}
+
 export class PhalaComputationWorkerEnterUnresponsiveEvent {
     private readonly _chain: Chain
     private readonly event: Event

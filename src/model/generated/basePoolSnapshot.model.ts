@@ -42,4 +42,7 @@ export class BasePoolSnapshot {
 
     @Column_("int4", {nullable: true})
     idleWorkerCount!: number | undefined | null
+
+    @Column_("int4", {nullable: true})
+    stakePoolCount!: number | undefined | null
 }

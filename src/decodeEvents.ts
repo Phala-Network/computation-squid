@@ -341,6 +341,9 @@ const decodeEvent = (
       const {session, pInstant} = e.asV1199
       return {name, args: {sessionId: encodeAddress(session), pInstant}}
     }
+    case 'PhalaComputation.TokenomicParametersChanged': {
+      return {name, args: {}}
+    }
     case 'PhalaRegistry.WorkerAdded': {
       const e = new PhalaRegistryWorkerAddedEvent(ctx, item.event)
       const {pubkey, confidenceLevel} = e.asV1199
