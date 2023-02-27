@@ -138,7 +138,7 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       basePool.delegatorCount++
     }
 
-    if (shouldRecord && delegation.shares.eq(0)) {
+    if (shouldRecord && delegation.shares.gt(0)) {
       delegationSnapshots.push(
         createDelegationSnapshot({delegation, updatedTime})
       )
