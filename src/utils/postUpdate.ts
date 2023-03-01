@@ -43,7 +43,6 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
 
   const accountValueSnapshots: AccountValueSnapshot[] = []
   const delegationSnapshots: DelegationSnapshot[] = []
-  const basePoolSnapshots: BasePoolSnapshot[] = []
 
   const getApr = async (basePool: BasePool): Promise<BigDecimal> => {
     const {averageBlockTime, idleWorkerShares, budgetPerBlock, treasuryRatio} =
@@ -82,7 +81,9 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       const basePool = assertGet(basePoolMap, delegation.basePool.id)
 
       updateDelegationValue(delegation, basePool)
-      basePool.delegatorCount++
+      if (delegation.shares.gt(0)) {
+        basePool.delegatorCount++
+      }
     }
   }
 
@@ -118,16 +119,6 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
         )
       }
     }
-    if (shouldRecord) {
-      basePoolSnapshots.push(
-        createBasePoolSnapshot({
-          basePool,
-          updatedTime,
-          apr: await getApr(basePool),
-          stakePool: stakePoolMap.get(basePool.id),
-        })
-      )
-    }
   }
 
   for (const delegation of delegations) {
@@ -135,7 +126,9 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       const basePool = assertGet(basePoolMap, delegation.basePool.id)
 
       updateDelegationValue(delegation, basePool)
-      basePool.delegatorCount++
+      if (delegation.shares.gt(0)) {
+        basePool.delegatorCount++
+      }
     }
 
     if (shouldRecord && delegation.shares.gt(0)) {
@@ -175,23 +168,36 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
   await ctx.store.save([...accountMap.values()])
   await ctx.store.save(basePools)
   await ctx.store.save(accountValueSnapshots)
-  await ctx.store.save(basePoolSnapshots)
   await ctx.store.save(delegationSnapshots)
 
   if (shouldRecord) {
+    const workerSnapshots: WorkerSnapshot[] = []
+    const basePoolSnapshots: BasePoolSnapshot[] = []
+
     const workers = await ctx.store.find(Worker, {
       relations: {
         stakePool: true,
         session: true,
       },
     })
-    const workerSnapshots: WorkerSnapshot[] = []
 
     for (const worker of workers) {
       workerSnapshots.push(createWorkerSnapshot({worker, updatedTime}))
     }
 
+    for (const basePool of basePools) {
+      basePoolSnapshots.push(
+        createBasePoolSnapshot({
+          basePool,
+          updatedTime,
+          apr: await getApr(basePool),
+          stakePool: stakePoolMap.get(basePool.id),
+        })
+      )
+    }
+
     await ctx.store.save(workerSnapshots)
+    await ctx.store.save(basePoolSnapshots)
   }
 }
 
