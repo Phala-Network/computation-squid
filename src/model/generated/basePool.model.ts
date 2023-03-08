@@ -87,4 +87,7 @@ export class BasePool {
 
     @OneToMany_(() => Delegation, e => e.basePool)
     delegations!: Delegation[]
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    cumulativeOwnerRewards!: BigDecimal
 }

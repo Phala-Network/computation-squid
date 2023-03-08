@@ -42,6 +42,9 @@ export class GlobalState {
     idleWorkerShares!: BigDecimal
 
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    cumulativeRewards!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     phaRate!: BigDecimal
 
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})

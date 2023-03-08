@@ -6,6 +6,7 @@ import {
   BasePool,
   BasePoolKind,
   Delegation,
+  GlobalRewardsSnapshot,
   GlobalState,
   StakePool,
   Worker,
@@ -196,8 +197,15 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
       )
     }
 
+    const globalRewardsSnapshot = new GlobalRewardsSnapshot({
+      id: updatedTime.toISOString(),
+      updatedTime,
+      value: globalState.cumulativeRewards,
+    })
+
     await ctx.store.save(workerSnapshots)
     await ctx.store.save(basePoolSnapshots)
+    await ctx.store.save(globalRewardsSnapshot)
   }
 }
 

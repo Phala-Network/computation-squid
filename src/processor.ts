@@ -18,7 +18,6 @@ import {
   Delegation,
   GlobalState,
   Nft,
-  RewardRecord,
   Session,
   StakePool,
   Vault,
@@ -281,12 +280,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       where: {id: In([...basePoolWhitelistIdSet])},
     })
     .then(toMap)
-  const rewardRecord = await ctx.store.findOne(RewardRecord, {
-    order: {time: 'DESC'},
-    where: {},
-  })
-  assert(rewardRecord)
-  const rewardRecords = [rewardRecord]
 
   for (const {name, args, block} of events) {
     const blockTime = new Date(block.timestamp)
@@ -364,23 +357,13 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         basePool.totalValue = basePool.totalValue.plus(toStakers)
         basePool.freeValue = basePool.freeValue.plus(toStakers)
         globalState.totalValue = globalState.totalValue.plus(toStakers)
+        globalState.cumulativeRewards = globalState.cumulativeRewards
+          .plus(toOwner)
+          .plus(toStakers)
         updateSharePrice(basePool)
         updateStakePoolDelegable(basePool, stakePool)
-
-        const lastRewardRecord = rewardRecords[rewardRecords.length - 1]
-        const ONE_HOUR = 1000 * 60 * 60
-        const total = toStakers.plus(toOwner)
-        if (blockTime.getTime() - lastRewardRecord.time.getTime() < ONE_HOUR) {
-          lastRewardRecord.value = lastRewardRecord.value.plus(total)
-        } else {
-          rewardRecords.push(
-            new RewardRecord({
-              id: blockTime.getTime().toString(),
-              time: blockTime,
-              value: total,
-            })
-          )
-        }
+        basePool.cumulativeOwnerRewards =
+          basePool.cumulativeOwnerRewards.plus(toOwner)
         break
       }
       case 'PhalaStakePoolv2.OwnerRewardsWithdrawn': {
@@ -487,6 +470,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         updateSharePrice(basePool)
         vault.claimableOwnerShares = vault.claimableOwnerShares.plus(shares)
         vault.lastSharePriceCheckpoint = basePool.sharePrice
+        basePool.cumulativeOwnerRewards = basePool.cumulativeOwnerRewards.plus(
+          shares.times(basePool.sharePrice).round(12, 0)
+        )
         break
       }
       case 'PhalaVault.OwnerSharesClaimed': {
@@ -844,7 +830,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     nftMap,
     delegationMap,
     basePoolWhitelistMap,
-    rewardRecords,
   ]) {
     if (x instanceof Map) {
       await ctx.store.save([...x.values()])

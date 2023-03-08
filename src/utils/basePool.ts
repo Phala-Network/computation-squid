@@ -51,6 +51,7 @@ export function createPool(
     withdrawingValue: BigDecimal(0),
     delegatorCount: 0,
     whitelistEnabled: false,
+    cumulativeOwnerRewards: BigDecimal(0),
   })
 
   if (kind === BasePoolKind.StakePool) {

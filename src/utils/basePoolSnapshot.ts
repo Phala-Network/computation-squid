@@ -32,5 +32,6 @@ export const createBasePoolSnapshot = ({
     idleWorkerCount: stakePool?.idleWorkerCount,
     stakePoolCount:
       stakePool == null ? basePool.account.stakePoolNftCount : undefined,
+    cumulativeOwnerRewards: basePool.cumulativeOwnerRewards,
   })
 }

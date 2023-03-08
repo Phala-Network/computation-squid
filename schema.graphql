@@ -10,6 +10,7 @@ type GlobalState @entity {
   averageAprMultiplier: BigDecimal!
   "for apr calculation"
   idleWorkerShares: BigDecimal!
+  cumulativeRewards: BigDecimal!
 
   phaRate: BigDecimal!
   budgetPerBlock: BigDecimal!
@@ -77,6 +78,7 @@ type BasePool @entity {
   whitelistEnabled: Boolean!
   whitelists: [BasePoolWhitelist!] @derivedFrom(field: "basePool")
   delegations: [Delegation!] @derivedFrom(field: "basePool")
+  cumulativeOwnerRewards: BigDecimal!
 }
 
 type Vault @entity {
@@ -179,13 +181,6 @@ type AccountValueSnapshot @entity {
   value: BigDecimal!
 }
 
-type RewardRecord @entity {
-  id: ID!
-  "block time"
-  time: DateTime!
-  value: BigDecimal!
-}
-
 type BasePoolSnapshot @entity {
   id: ID!
   "block time"
@@ -199,6 +194,14 @@ type BasePoolSnapshot @entity {
   workerCount: Int
   idleWorkerCount: Int
   stakePoolCount: Int
+  cumulativeOwnerRewards: BigDecimal!
+}
+
+type GlobalRewardsSnapshot @entity {
+  id: ID!
+  "block time"
+  updatedTime: DateTime!
+  value: BigDecimal!
 }
 
 type DelegationSnapshot @entity {

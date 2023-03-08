@@ -10,7 +10,6 @@ import {
   Delegation,
   GlobalState,
   Nft,
-  RewardRecord,
   Session,
   Worker,
   WorkerState,
@@ -126,6 +125,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
     averageBlockTime: 12000,
     totalValue: BigDecimal(0),
     idleWorkerShares: BigDecimal(0),
+    cumulativeRewards: BigDecimal(0),
   })
   await updateTokenomicParameters(ctx, ctx.blocks[0].header, globalState)
   const accountMap = new Map<string, Account>()
@@ -422,12 +422,6 @@ const importDump = async (ctx: Ctx): Promise<void> => {
       getDelegationAvgAprMultiplier(vaultDelegations)
   }
 
-  const rewardRecord = new RewardRecord({
-    id: dump.timestamp.toString(),
-    time: new Date(dump.timestamp),
-    value: BigDecimal(0),
-  })
-
   globalState.averageAprMultiplier = getBasePoolAvgAprMultiplier(
     [...basePoolMap.values()].filter((x) => x.kind === BasePoolKind.StakePool)
   )
@@ -444,7 +438,6 @@ const importDump = async (ctx: Ctx): Promise<void> => {
     delegationMap,
     basePoolWhitelistMap,
     accountValueSnapshots,
-    rewardRecord,
     whitelists,
   ]) {
     if (x instanceof Map) {

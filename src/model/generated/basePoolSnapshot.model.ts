@@ -45,4 +45,7 @@ export class BasePoolSnapshot {
 
     @Column_("int4", {nullable: true})
     stakePoolCount!: number | undefined | null
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    cumulativeOwnerRewards!: BigDecimal
 }
