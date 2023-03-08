@@ -545,7 +545,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const delegation = assertGet(delegationMap, delegationId)
         basePool.totalShares = basePool.totalShares.minus(shares)
         basePool.totalValue = basePool.totalValue.minus(amount)
-        basePool.freeValue = basePool.freeValue.minus(amount)
+        basePool.freeValue = max(
+          basePool.freeValue.minus(amount),
+          BigDecimal(0)
+        )
         basePool.withdrawingShares = max(
           basePool.withdrawingShares.minus(shares),
           BigDecimal(0)
