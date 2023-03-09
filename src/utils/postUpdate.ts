@@ -10,13 +10,13 @@ import {
   GlobalState,
   StakePool,
   Worker,
-  type AccountValueSnapshot,
+  type AccountSnapshot,
   type BasePoolSnapshot,
   type DelegationSnapshot,
   type WorkerSnapshot,
 } from '../model'
 import {type Ctx} from '../processor'
-import {createAccountValueSnapshot} from './accountValueSnapshot'
+import {createAccountSnapshot} from './accountSnapshot'
 import {updateSharePrice, updateVaultAprMultiplier} from './basePool'
 import {createBasePoolSnapshot} from './basePoolSnapshot'
 import {assertGet, sum, toMap} from './common'
@@ -42,7 +42,7 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
   const updatedTime = new Date(latestBlock.header.timestamp)
   const globalState = await ctx.store.findOneByOrFail(GlobalState, {id: '0'})
 
-  const accountValueSnapshots: AccountValueSnapshot[] = []
+  const accountSnapshots: AccountSnapshot[] = []
   const delegationSnapshots: DelegationSnapshot[] = []
 
   const getApr = async (basePool: BasePool): Promise<BigDecimal> => {
@@ -151,13 +151,7 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
     ).length
 
     if (shouldRecord) {
-      accountValueSnapshots.push(
-        createAccountValueSnapshot({
-          account,
-          value: account.vaultValue.plus(account.stakePoolValue),
-          updatedTime,
-        })
-      )
+      accountSnapshots.push(createAccountSnapshot({account, updatedTime}))
     }
 
     account.vaultAvgAprMultiplier = getDelegationAvgAprMultiplier(
@@ -168,7 +162,7 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
   await ctx.store.save([...delegationMap.values()])
   await ctx.store.save([...accountMap.values()])
   await ctx.store.save(basePools)
-  await ctx.store.save(accountValueSnapshots)
+  await ctx.store.save(accountSnapshots)
   await ctx.store.save(delegationSnapshots)
 
   if (shouldRecord) {

@@ -13,6 +13,8 @@ export const getAccount = (m: Map<string, Account>, id: string): Account => {
       vaultValue: BigDecimal(0),
       vaultNftCount: 0,
       vaultAvgAprMultiplier: BigDecimal(0),
+      cumulativeStakePoolOwnerRewards: BigDecimal(0),
+      cumulativeVaultOwnerRewards: BigDecimal(0),
     })
     m.set(id, acc)
   }

@@ -7,7 +7,7 @@ import {
 import {TypeormDatabase, type Store} from '@subsquid/typeorm-store'
 import assert from 'assert'
 import {In} from 'typeorm'
-import config from './config'
+import config, {BASE_POOL_ACCOUNT} from './config'
 import decodeEvents from './decodeEvents'
 import importDump from './importDump'
 import {
@@ -353,6 +353,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {pid, toOwner, toStakers} = args
         const basePool = assertGet(basePoolMap, pid)
         const stakePool = assertGet(stakePoolMap, pid)
+        const owner = assertGet(accountMap, basePool.owner.id)
         stakePool.ownerReward = stakePool.ownerReward.plus(toOwner)
         basePool.totalValue = basePool.totalValue.plus(toStakers)
         basePool.freeValue = basePool.freeValue.plus(toStakers)
@@ -364,6 +365,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         updateStakePoolDelegable(basePool, stakePool)
         basePool.cumulativeOwnerRewards =
           basePool.cumulativeOwnerRewards.plus(toOwner)
+        owner.cumulativeStakePoolOwnerRewards =
+          owner.cumulativeStakePoolOwnerRewards.plus(toOwner)
         break
       }
       case 'PhalaStakePoolv2.OwnerRewardsWithdrawn': {
@@ -466,13 +469,16 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {pid, shares} = args
         const basePool = assertGet(basePoolMap, pid)
         const vault = assertGet(vaultMap, pid)
+        const owner = assertGet(accountMap, basePool.owner.id)
         basePool.totalShares = basePool.totalShares.plus(shares)
         updateSharePrice(basePool)
         vault.claimableOwnerShares = vault.claimableOwnerShares.plus(shares)
         vault.lastSharePriceCheckpoint = basePool.sharePrice
-        basePool.cumulativeOwnerRewards = basePool.cumulativeOwnerRewards.plus(
-          shares.times(basePool.sharePrice).round(12, 0)
-        )
+        const rewards = shares.times(basePool.sharePrice).round(12, 0)
+        basePool.cumulativeOwnerRewards =
+          basePool.cumulativeOwnerRewards.plus(rewards)
+        owner.cumulativeVaultOwnerRewards =
+          owner.cumulativeVaultOwnerRewards.plus(rewards)
         break
       }
       case 'PhalaVault.OwnerSharesClaimed': {
@@ -495,9 +501,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const ownerAccount = getAccount(accountMap, owner)
         const basePool = assertGet(basePoolMap, pid)
         // MEMO: ignore withdrawal nft
-        if (basePool.account.id !== owner) {
+        if (owner !== BASE_POOL_ACCOUNT) {
           const delegationNft = assertGet(nftMap, join(cid, nftId))
           if (shares.eq(0)) {
+            // HACK: mark empty delegation nft as burned
             delegationNft.burned = true
           }
           const delegationId = join(pid, owner)
@@ -531,10 +538,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const delegation = assertGet(delegationMap, delegationId)
         basePool.totalShares = basePool.totalShares.minus(shares)
         basePool.totalValue = basePool.totalValue.minus(amount)
-        basePool.freeValue = max(
-          basePool.freeValue.minus(amount),
-          BigDecimal(0)
-        )
+        basePool.freeValue = basePool.freeValue.minus(amount)
         basePool.withdrawingShares = max(
           basePool.withdrawingShares.minus(shares),
           BigDecimal(0)

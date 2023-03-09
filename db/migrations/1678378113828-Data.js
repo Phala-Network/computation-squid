@@ -1,5 +1,5 @@
-module.exports = class Data1678298839919 {
-    name = 'Data1678298839919'
+module.exports = class Data1678378113828 {
+    name = 'Data1678378113828'
 
     async up(db) {
         await db.query(`CREATE TABLE "global_state" ("id" character varying NOT NULL, "height" integer NOT NULL, "total_value" numeric NOT NULL, "average_block_time_updated_height" integer NOT NULL, "average_block_time_updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "average_block_time" integer NOT NULL, "average_apr_multiplier_updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "average_apr_multiplier" numeric NOT NULL, "idle_worker_shares" numeric NOT NULL, "cumulative_rewards" numeric NOT NULL, "pha_rate" numeric NOT NULL, "budget_per_block" numeric NOT NULL, "v_max" numeric NOT NULL, "treasury_ratio" numeric NOT NULL, "re" numeric NOT NULL, "k" numeric NOT NULL, CONSTRAINT "PK_8b4db1150cf49bfd067e2572c74" PRIMARY KEY ("id"))`)
@@ -18,7 +18,7 @@ module.exports = class Data1678298839919 {
         await db.query(`CREATE TABLE "base_pool" ("id" character varying NOT NULL, "pid" numeric NOT NULL, "cid" integer NOT NULL, "kind" character varying(9) NOT NULL, "commission" numeric NOT NULL, "apr_multiplier" numeric NOT NULL, "total_shares" numeric NOT NULL, "total_value" numeric NOT NULL, "share_price" numeric NOT NULL, "free_value" numeric NOT NULL, "releasing_value" numeric NOT NULL, "withdrawing_value" numeric NOT NULL, "withdrawing_shares" numeric NOT NULL, "delegator_count" integer NOT NULL, "whitelist_enabled" boolean NOT NULL, "cumulative_owner_rewards" numeric NOT NULL, "owner_id" character varying, "account_id" character varying NOT NULL, CONSTRAINT "REL_b17f3b9349da680afa1e2e9805" UNIQUE ("account_id"), CONSTRAINT "PK_eddfb05533fbdd025660778c6a2" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_e20be4204009ad2ad1d17a125d" ON "base_pool" ("owner_id") `)
         await db.query(`CREATE UNIQUE INDEX "IDX_b17f3b9349da680afa1e2e9805" ON "base_pool" ("account_id") `)
-        await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, "identity_display" text, "identity_level" character varying(10), "stake_pool_value" numeric NOT NULL, "stake_pool_nft_count" integer NOT NULL, "stake_pool_avg_apr_multiplier" numeric NOT NULL, "vault_value" numeric NOT NULL, "vault_nft_count" integer NOT NULL, "vault_avg_apr_multiplier" numeric NOT NULL, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, "identity_display" text, "identity_level" character varying(10), "stake_pool_value" numeric NOT NULL, "stake_pool_nft_count" integer NOT NULL, "stake_pool_avg_apr_multiplier" numeric NOT NULL, "vault_value" numeric NOT NULL, "vault_nft_count" integer NOT NULL, "vault_avg_apr_multiplier" numeric NOT NULL, "cumulative_stake_pool_owner_rewards" numeric NOT NULL, "cumulative_vault_owner_rewards" numeric NOT NULL, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
         await db.query(`CREATE TABLE "vault" ("id" character varying NOT NULL, "last_share_price_checkpoint" numeric NOT NULL, "claimable_owner_shares" numeric NOT NULL, "base_pool_id" character varying NOT NULL, CONSTRAINT "REL_79f07f6ce7cca2f1ebfc2c0b11" UNIQUE ("base_pool_id"), CONSTRAINT "PK_dd0898234c77f9d97585171ac59" PRIMARY KEY ("id"))`)
         await db.query(`CREATE UNIQUE INDEX "IDX_79f07f6ce7cca2f1ebfc2c0b11" ON "vault" ("base_pool_id") `)
         await db.query(`CREATE TABLE "session" ("id" character varying NOT NULL, "is_bound" boolean NOT NULL, "stake" numeric NOT NULL, "state" character varying(18) NOT NULL, "v" numeric NOT NULL, "ve" numeric NOT NULL, "p_init" integer NOT NULL, "p_instant" integer NOT NULL, "total_reward" numeric NOT NULL, "cooling_down_start_time" TIMESTAMP WITH TIME ZONE, "stake_pool_id" character varying, "worker_id" character varying, CONSTRAINT "PK_f55da76ac1c3ac420f444d2ff11" PRIMARY KEY ("id"))`)
@@ -29,8 +29,8 @@ module.exports = class Data1678298839919 {
         await db.query(`CREATE INDEX "IDX_9d35228a135aa08da0b546b58a" ON "worker" ("session_id") `)
         await db.query(`CREATE TABLE "stake_pool" ("id" character varying NOT NULL, "capacity" numeric, "delegable" numeric, "owner_reward" numeric NOT NULL, "worker_count" integer NOT NULL, "idle_worker_count" integer NOT NULL, "idle_worker_shares" numeric NOT NULL, "base_pool_id" character varying NOT NULL, CONSTRAINT "REL_663952452d6814016e857b710b" UNIQUE ("base_pool_id"), CONSTRAINT "PK_646d137a2979aa231fa880711f3" PRIMARY KEY ("id"))`)
         await db.query(`CREATE UNIQUE INDEX "IDX_663952452d6814016e857b710b" ON "stake_pool" ("base_pool_id") `)
-        await db.query(`CREATE TABLE "account_value_snapshot" ("id" character varying NOT NULL, "updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "value" numeric NOT NULL, "account_id" character varying, CONSTRAINT "PK_3314da2d3a74f237e235553bb0f" PRIMARY KEY ("id"))`)
-        await db.query(`CREATE INDEX "IDX_17f24694712afde4cb77d1ca68" ON "account_value_snapshot" ("account_id") `)
+        await db.query(`CREATE TABLE "account_snapshot" ("id" character varying NOT NULL, "updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "delegation_value" numeric NOT NULL, "cumulative_stake_pool_owner_rewards" numeric NOT NULL, "cumulative_vault_owner_rewards" numeric NOT NULL, "account_id" character varying, CONSTRAINT "PK_3296654a614882b571b225c84e3" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE INDEX "IDX_73a316a59d3e01d53ff90427a6" ON "account_snapshot" ("account_id") `)
         await db.query(`CREATE TABLE "base_pool_snapshot" ("id" character varying NOT NULL, "updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "commission" numeric NOT NULL, "apr" numeric NOT NULL, "total_value" numeric NOT NULL, "delegator_count" integer NOT NULL, "share_price" numeric NOT NULL, "worker_count" integer, "idle_worker_count" integer, "stake_pool_count" integer, "cumulative_owner_rewards" numeric NOT NULL, "base_pool_id" character varying, CONSTRAINT "PK_7adc035ceca68381a1613757d2a" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_16d8a7162b480ecb5848203d30" ON "base_pool_snapshot" ("base_pool_id") `)
         await db.query(`CREATE TABLE "global_rewards_snapshot" ("id" character varying NOT NULL, "updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "value" numeric NOT NULL, CONSTRAINT "PK_c1bff3506cc8f2290e4d8ea7fed" PRIMARY KEY ("id"))`)
@@ -52,7 +52,7 @@ module.exports = class Data1678298839919 {
         await db.query(`ALTER TABLE "worker" ADD CONSTRAINT "FK_81caea9d964ee3c0338fd44db4a" FOREIGN KEY ("stake_pool_id") REFERENCES "stake_pool"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "worker" ADD CONSTRAINT "FK_9d35228a135aa08da0b546b58ab" FOREIGN KEY ("session_id") REFERENCES "session"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "stake_pool" ADD CONSTRAINT "FK_663952452d6814016e857b710b4" FOREIGN KEY ("base_pool_id") REFERENCES "base_pool"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
-        await db.query(`ALTER TABLE "account_value_snapshot" ADD CONSTRAINT "FK_17f24694712afde4cb77d1ca682" FOREIGN KEY ("account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+        await db.query(`ALTER TABLE "account_snapshot" ADD CONSTRAINT "FK_73a316a59d3e01d53ff90427a68" FOREIGN KEY ("account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "base_pool_snapshot" ADD CONSTRAINT "FK_16d8a7162b480ecb5848203d30d" FOREIGN KEY ("base_pool_id") REFERENCES "base_pool"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "worker_snapshot" ADD CONSTRAINT "FK_01768e88a94de867b21107e7a7a" FOREIGN KEY ("worker_id") REFERENCES "worker"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     }
@@ -85,8 +85,8 @@ module.exports = class Data1678298839919 {
         await db.query(`DROP INDEX "public"."IDX_9d35228a135aa08da0b546b58a"`)
         await db.query(`DROP TABLE "stake_pool"`)
         await db.query(`DROP INDEX "public"."IDX_663952452d6814016e857b710b"`)
-        await db.query(`DROP TABLE "account_value_snapshot"`)
-        await db.query(`DROP INDEX "public"."IDX_17f24694712afde4cb77d1ca68"`)
+        await db.query(`DROP TABLE "account_snapshot"`)
+        await db.query(`DROP INDEX "public"."IDX_73a316a59d3e01d53ff90427a6"`)
         await db.query(`DROP TABLE "base_pool_snapshot"`)
         await db.query(`DROP INDEX "public"."IDX_16d8a7162b480ecb5848203d30"`)
         await db.query(`DROP TABLE "global_rewards_snapshot"`)
@@ -108,7 +108,7 @@ module.exports = class Data1678298839919 {
         await db.query(`ALTER TABLE "worker" DROP CONSTRAINT "FK_81caea9d964ee3c0338fd44db4a"`)
         await db.query(`ALTER TABLE "worker" DROP CONSTRAINT "FK_9d35228a135aa08da0b546b58ab"`)
         await db.query(`ALTER TABLE "stake_pool" DROP CONSTRAINT "FK_663952452d6814016e857b710b4"`)
-        await db.query(`ALTER TABLE "account_value_snapshot" DROP CONSTRAINT "FK_17f24694712afde4cb77d1ca682"`)
+        await db.query(`ALTER TABLE "account_snapshot" DROP CONSTRAINT "FK_73a316a59d3e01d53ff90427a68"`)
         await db.query(`ALTER TABLE "base_pool_snapshot" DROP CONSTRAINT "FK_16d8a7162b480ecb5848203d30d"`)
         await db.query(`ALTER TABLE "worker_snapshot" DROP CONSTRAINT "FK_01768e88a94de867b21107e7a7a"`)
     }

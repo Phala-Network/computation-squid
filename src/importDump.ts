@@ -3,7 +3,7 @@ import assert from 'assert'
 import {readFile} from 'fs/promises'
 import {groupBy} from 'lodash'
 import path from 'path'
-import config from './config'
+import config, {BASE_POOL_ACCOUNT} from './config'
 import {
   BasePoolKind,
   BasePoolWhitelist,
@@ -14,14 +14,14 @@ import {
   Worker,
   WorkerState,
   type Account,
-  type AccountValueSnapshot,
+  type AccountSnapshot,
   type BasePool,
   type IdentityLevel,
   type StakePool,
   type Vault,
 } from './model'
 import {type Ctx} from './processor'
-import {createAccountValueSnapshot} from './utils/accountValueSnapshot'
+import {createAccountSnapshot} from './utils/accountSnapshot'
 import {
   createPool,
   getBasePoolAvgAprMultiplier,
@@ -139,7 +139,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
   const nftMap = new Map<string, Nft>()
   const basePoolWhitelistMap = new Map<string, BasePoolWhitelist>()
   const nftUserMap = new Map<string, string>()
-  const accountValueSnapshots: AccountValueSnapshot[] = []
+  const accountValueSnapshots: AccountSnapshot[] = []
   const whitelists: BasePoolWhitelist[] = []
 
   for (const i of dump.identities) {
@@ -274,7 +274,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
     for (const withdrawal of b.withdrawQueue) {
       const withdrawalNft = new Nft({
         id: join(b.cid, withdrawal.nftId),
-        owner: getAccount(accountMap, b.poolAccountId),
+        owner: getAccount(accountMap, BASE_POOL_ACCOUNT),
         cid: b.cid,
         nftId: withdrawal.nftId,
         burned: false,
@@ -317,6 +317,8 @@ const importDump = async (ctx: Ctx): Promise<void> => {
     const shares = toBalance(d.shares)
     if (nftMap.has(nftId)) {
       // MEMO: is a withdrawal nft
+      const nft = assertGet(nftMap, nftId)
+      nft.mintTime = new Date(d.createTime)
       const user = assertGet(nftUserMap, nftId)
       const delegationId = join(basePool.id, user)
       const delegation = assertGet(delegationMap, delegationId)
@@ -385,11 +387,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
       getDelegationAvgAprMultiplier(stakePoolDelegations)
 
     accountValueSnapshots.push(
-      createAccountValueSnapshot({
-        account,
-        value: account.stakePoolValue.plus(account.vaultValue),
-        updatedTime: new Date(dump.timestamp),
-      })
+      createAccountSnapshot({account, updatedTime: new Date(dump.timestamp)})
     )
   }
 

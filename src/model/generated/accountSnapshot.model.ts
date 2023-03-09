@@ -4,8 +4,8 @@ import * as marshal from "./marshal"
 import {Account} from "./account.model"
 
 @Entity_()
-export class AccountValueSnapshot {
-    constructor(props?: Partial<AccountValueSnapshot>) {
+export class AccountSnapshot {
+    constructor(props?: Partial<AccountSnapshot>) {
         Object.assign(this, props)
     }
 
@@ -23,5 +23,11 @@ export class AccountValueSnapshot {
     account!: Account
 
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
-    value!: BigDecimal
+    delegationValue!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    cumulativeStakePoolOwnerRewards!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    cumulativeVaultOwnerRewards!: BigDecimal
 }

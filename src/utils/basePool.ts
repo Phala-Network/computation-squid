@@ -78,7 +78,7 @@ export function createPool(
 export function updateSharePrice(basePool: BasePool): void {
   const sharePrice = basePool.totalShares.eq(0)
     ? BigDecimal(1)
-    : basePool.totalValue.div(basePool.totalShares)
+    : basePool.totalValue.div(basePool.totalShares).round(12, 0)
   basePool.sharePrice = sharePrice
   basePool.withdrawingValue = basePool.withdrawingShares
     .times(sharePrice)
@@ -94,6 +94,7 @@ export function updateStakePoolAprMultiplier(
     : stakePool.idleWorkerShares
         .times(BigDecimal(1).minus(basePool.commission))
         .div(basePool.totalValue)
+        .round(6, 0)
 }
 
 export const updateVaultAprMultiplier = (
@@ -107,6 +108,7 @@ export const updateVaultAprMultiplier = (
       .times(account.stakePoolValue)
       .div(basePool.totalValue)
       .times(BigDecimal(1).minus(basePool.commission))
+      .round(6, 0)
   }
 }
 
@@ -136,6 +138,7 @@ export const getBasePoolAvgAprMultiplier = (
       BigDecimal(0)
     )
     .div(totalValue)
+    .round(6, 0)
 }
 
 export const updateGlobalAverageAprMultiplier = async (

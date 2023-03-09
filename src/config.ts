@@ -15,4 +15,7 @@ const config: {
   },
 }
 
+export const BASE_POOL_ACCOUNT =
+  '42qnPyfw3sbWMGGtTPPc2YFNZRKPGXswRszyQQjGs2FDxdim'
+
 export default config

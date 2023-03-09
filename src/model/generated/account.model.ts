@@ -43,4 +43,10 @@ export class Account {
 
     @OneToMany_(() => BasePool, e => e.owner)
     ownedPools!: BasePool[]
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    cumulativeStakePoolOwnerRewards!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    cumulativeVaultOwnerRewards!: BigDecimal
 }

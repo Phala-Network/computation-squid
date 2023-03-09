@@ -45,6 +45,8 @@ type Account @entity {
   vaultNftCount: Int!
   vaultAvgAprMultiplier: BigDecimal!
   ownedPools: [BasePool!] @derivedFrom(field: "owner")
+  cumulativeStakePoolOwnerRewards: BigDecimal!
+  cumulativeVaultOwnerRewards: BigDecimal!
 }
 
 enum BasePoolKind {
@@ -173,12 +175,14 @@ type Session @entity {
   coolingDownStartTime: DateTime
 }
 
-type AccountValueSnapshot @entity {
+type AccountSnapshot @entity {
   id: ID!
   "block time"
   updatedTime: DateTime!
   account: Account!
-  value: BigDecimal!
+  delegationValue: BigDecimal!
+  cumulativeStakePoolOwnerRewards: BigDecimal!
+  cumulativeVaultOwnerRewards: BigDecimal!
 }
 
 type BasePoolSnapshot @entity {
