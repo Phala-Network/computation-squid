@@ -3,6 +3,7 @@ import {
   SubstrateBatchProcessor,
   type BatchContext,
   type BatchProcessorItem,
+  SubstrateBlock,
 } from '@subsquid/substrate-processor'
 import {TypeormDatabase, type Store} from '@subsquid/typeorm-store'
 import assert from 'assert'
@@ -281,8 +282,24 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     })
     .then(toMap)
 
+  let processedBlockHeight = events[0].block.height
+  const sharePriceResetQueue: BasePool[] = []
+
   for (const {name, args, block} of events) {
     const blockTime = new Date(block.timestamp)
+    const blockHeight = block.height
+    // MEMO: reset share price after all events in a block are processed
+    if (blockHeight > processedBlockHeight) {
+      while (sharePriceResetQueue.length > 0) {
+        const basePool = sharePriceResetQueue.pop()
+        assert(basePool)
+        if (basePool.totalShares.eq(0)) {
+          basePool.sharePrice = BigDecimal(1)
+        }
+      }
+      processedBlockHeight = blockHeight
+    }
+
     switch (name) {
       case 'PhalaStakePoolv2.PoolCreated': {
         const {pid, owner, cid, poolAccountId} = args
@@ -547,7 +564,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           .times(basePool.sharePrice)
           .round(12, 0)
         if (basePool.totalShares.eq(0)) {
-          basePool.sharePrice = BigDecimal(1)
+          sharePriceResetQueue.push(basePool)
         }
         delegation.withdrawingShares =
           delegation.withdrawingShares.minus(shares)

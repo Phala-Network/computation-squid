@@ -1,6 +1,6 @@
 manifestVersion: subsquid.io/v0.1
 name: phala-computation
-version: 18
+version: 19
 description: 'Phala computation squid'
 build:
 deploy:
@@ -26,6 +26,7 @@ scale:
   dedicated: true
   addons:
     postgres:
+      storage: 1000G
       profile: large
   processor:
     profile: large
