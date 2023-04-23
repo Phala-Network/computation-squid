@@ -111,11 +111,9 @@ interface Dump {
 
 const importDump = async (ctx: Ctx): Promise<void> => {
   const fromHeight = config.blockRange.from
-  const dumpFile = await readFile(
-    path.join(__dirname, `../assets/dump_${fromHeight - 1}.json`),
-    'utf8'
-  )
-  const dump = JSON.parse(dumpFile) as Dump
+  const dump = await fetch(
+    'https://raw.githubusercontent.com/Phala-Network/computation-squid/main/assets/dump_3250000.json'
+  ).then(async (res) => (await res.json()) as Dump)
   const globalState = new GlobalState({
     id: '0',
     height: fromHeight - 1,
