@@ -18,6 +18,7 @@
     "@subsquid/typeorm-store": "0.2.2",
     "dotenv": "^10.0.0",
     "lodash": "^4.17.21",
+    "node-fetch": "^2.6.9",
     "pg": "8.10.0",
     "typeorm": "0.3.12"
   },
@@ -27,6 +28,7 @@
     "@subsquid/typeorm-codegen": "0.3.3",
     "@types/lodash": "^4.14.191",
     "@types/node": "16.11.56",
+    "@types/node-fetch": "^2.6.3",
     "@typescript-eslint/eslint-plugin": "^5.54.1",
     "eslint": "^8.35.0",
     "eslint-config-prettier": "^8.7.0",

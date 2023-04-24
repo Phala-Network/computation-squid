@@ -1,8 +1,9 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import assert from 'assert'
-import {readFile} from 'fs/promises'
+// import {readFile} from 'fs/promises'
 import {groupBy} from 'lodash'
-import path from 'path'
+// import path from 'path'
+import fetch from 'node-fetch'
 import config, {BASE_POOL_ACCOUNT} from './config'
 import {
   BasePoolKind,
