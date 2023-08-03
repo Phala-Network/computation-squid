@@ -3,6 +3,7 @@ import assert from 'assert'
 // import {readFile} from 'fs/promises'
 import {groupBy} from 'lodash'
 // import path from 'path'
+import {type Store} from '@subsquid/typeorm-store'
 import fetch from 'node-fetch'
 import config, {BASE_POOL_ACCOUNT} from './config'
 import {
@@ -21,7 +22,7 @@ import {
   type StakePool,
   type Vault,
 } from './model'
-import {type Ctx} from './processor'
+import {type ProcessorContext} from './processor'
 import {createAccountSnapshot} from './utils/accountSnapshot'
 import {
   createPool,
@@ -110,10 +111,10 @@ interface Dump {
   }>
 }
 
-const importDump = async (ctx: Ctx): Promise<void> => {
+const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
   const fromHeight = config.blockRange.from
   const dump = await fetch(
-    'https://raw.githubusercontent.com/Phala-Network/computation-squid/main/assets/dump_3250000.json'
+    'https://raw.githubusercontent.com/Phala-Network/computation-squid/main/dump_4350000.json'
   ).then(async (res) => (await res.json()) as Dump)
   const globalState = new GlobalState({
     id: '0',
@@ -353,7 +354,13 @@ const importDump = async (ctx: Ctx): Promise<void> => {
       updateDelegationValue(delegation, basePool)
       delegation.cost = delegation.value
       if (![...basePoolMap.values()].some((x) => x.account.id === owner.id)) {
-        globalState.totalValue = globalState.totalValue.plus(delegation.value)
+        // HACK: invalid delegation value
+        if (
+          delegation.id !==
+          '4720-3zxRSK5DquqD1f53e8CXTjqMb9wVBJxPDqb534w77147b5Cz'
+        ) {
+          globalState.totalValue = globalState.totalValue.plus(delegation.value)
+        }
       }
       delegation.delegationNft = delegationNft
 
@@ -422,6 +429,8 @@ const importDump = async (ctx: Ctx): Promise<void> => {
   globalState.averageAprMultiplier = getBasePoolAvgAprMultiplier(
     [...basePoolMap.values()].filter((x) => x.kind === BasePoolKind.StakePool)
   )
+
+  ctx.log.info(globalState.totalValue.toString())
 
   for (const x of [
     globalState,

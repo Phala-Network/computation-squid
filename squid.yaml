@@ -1,34 +1,37 @@
 manifestVersion: subsquid.io/v0.1
 name: khala-computation
-version: 1
+version: 2
 description: 'Phala computation squid'
 build:
+
 deploy:
   addons:
     postgres:
   processor:
-    cmd:
-      - node
-      - lib/processor
+    cmd: ['node', 'lib/main']
   api:
     cmd:
-      - npx
-      - squid-graphql-server
-      - '--dumb-cache'
-      - in-memory
-      - '--dumb-cache-ttl'
-      - '1000'
-      - '--dumb-cache-size'
-      - '100'
-      - '--dumb-cache-max-age'
-      - '1000'
+      [
+        'npx',
+        'squid-graphql-server',
+        '--dumb-cache',
+        'in-memory',
+        '--dumb-cache-ttl',
+        '1000',
+        '--dumb-cache-size',
+        '100',
+        '--dumb-cache-max-age',
+        '1000',
+      ]
+
 scale:
   dedicated: true
   addons:
     postgres:
-      storage: 1000G
+      storage: 500G
       profile: large
   processor:
     profile: large
   api:
     profile: large
+    replicas: 4

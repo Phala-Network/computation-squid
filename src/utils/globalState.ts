@@ -1,7 +1,8 @@
 import {type SubstrateBlock} from '@subsquid/substrate-processor'
+import {type Store} from '@subsquid/typeorm-store'
 import assert from 'assert'
 import {type GlobalState} from '../model'
-import {type Ctx} from '../processor'
+import {type ProcessorContext} from '../processor'
 import {PhalaComputationTokenomicParametersStorage} from '../types/storage'
 import {fromBits} from './converter'
 
@@ -20,7 +21,7 @@ export const updateAverageBlockTime = (
 }
 
 export const updateTokenomicParameters = async (
-  ctx: Ctx,
+  ctx: ProcessorContext<Store>,
   block: SubstrateBlock,
   globalState: GlobalState
 ): Promise<void> => {

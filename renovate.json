@@ -3,9 +3,17 @@
   "extends": ["config:base"],
   "packageRules": [
     {
-      "matchPackagePatterns": ["^@subsquid/"],
       "groupName": "@subsquid",
-      "automerge": true
+      "matchPackagePatterns": ["^@subsquid/"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"]
+    },
+    {
+      "matchPackagePatterns": ["*"],
+      "excludePackagePatterns": ["^@subsquid/"],
+      "enabled": false
     }
-  ]
+  ],
+  "automergeType": "pr",
+  "automergeStrategy": "squash",
+  "ignoreTests": true
 }

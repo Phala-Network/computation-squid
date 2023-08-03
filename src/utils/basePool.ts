@@ -1,13 +1,14 @@
 import {BigDecimal} from '@subsquid/big-decimal'
+import {type Store} from '@subsquid/typeorm-store'
 import {
   BasePool,
   BasePoolKind,
-  GlobalState,
+  type GlobalState,
   StakePool,
   Vault,
   type Account,
 } from '../model'
-import {type Ctx} from '../processor'
+import {type ProcessorContext} from '../processor'
 import {sum} from './common'
 
 export function createPool(
@@ -142,10 +143,10 @@ export const getBasePoolAvgAprMultiplier = (
 }
 
 export const updateGlobalAverageAprMultiplier = async (
-  ctx: Ctx
+  ctx: ProcessorContext<Store>,
+  globalState: GlobalState
 ): Promise<void> => {
   const lastBlock = ctx.blocks[ctx.blocks.length - 1]
-  const globalState = await ctx.store.findOneByOrFail(GlobalState, {id: '0'})
   const FIVE_MINUTES = 5 * 60 * 1000
   if (
     lastBlock.header.timestamp -
@@ -159,6 +160,5 @@ export const updateGlobalAverageAprMultiplier = async (
     globalState.averageAprMultiplierUpdatedTime = new Date(
       lastBlock.header.timestamp
     )
-    await ctx.store.save(globalState)
   }
 }

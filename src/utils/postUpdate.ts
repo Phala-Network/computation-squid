@@ -1,21 +1,22 @@
 import {BigDecimal} from '@subsquid/big-decimal'
+import {type Store} from '@subsquid/typeorm-store'
 import assert from 'assert'
 import {groupBy} from 'lodash'
 import {
   Account,
-  BasePool,
   BasePoolKind,
-  Delegation,
   GlobalRewardsSnapshot,
-  GlobalState,
   StakePool,
   Worker,
   type AccountSnapshot,
+  type BasePool,
   type BasePoolSnapshot,
+  type Delegation,
   type DelegationSnapshot,
+  type GlobalState,
   type WorkerSnapshot,
 } from '../model'
-import {type Ctx} from '../processor'
+import {type ProcessorContext} from '../processor'
 import {createAccountSnapshot} from './accountSnapshot'
 import {updateSharePrice, updateVaultAprMultiplier} from './basePool'
 import {createBasePoolSnapshot} from './basePoolSnapshot'
@@ -30,7 +31,12 @@ import {createWorkerSnapshot} from './workerSnapshot'
 const ONE_YEAR = 365 * 24 * 60 * 60 * 1000
 let lastRecordBlockHeight: number
 
-const postUpdate = async (ctx: Ctx): Promise<void> => {
+const postUpdate = async (
+  ctx: ProcessorContext<Store>,
+  globalState: GlobalState,
+  basePools: BasePool[],
+  delegations: Delegation[]
+): Promise<void> => {
   const latestBlock = ctx.blocks.at(-1)
   assert(latestBlock)
   const shouldRecord =
@@ -40,7 +46,6 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
     lastRecordBlockHeight = latestBlock.header.height
   }
   const updatedTime = new Date(latestBlock.header.timestamp)
-  const globalState = await ctx.store.findOneByOrFail(GlobalState, {id: '0'})
 
   const accountSnapshots: AccountSnapshot[] = []
   const delegationSnapshots: DelegationSnapshot[] = []
@@ -58,23 +63,12 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
     return value
   }
 
-  const basePools = await ctx.store.find(BasePool, {
-    relations: {owner: true, account: true},
-  })
   const stakePoolMap = toMap(await ctx.store.find(StakePool))
   const basePoolMap = toMap(basePools)
   for (const basePool of basePools) {
     basePool.delegatorCount = 0
   }
-  const delegations = await ctx.store.find(Delegation, {
-    relations: {
-      account: true,
-      basePool: true,
-      delegationNft: true,
-      withdrawalNft: true,
-    },
-  })
-  const delegationMap = toMap(delegations)
+
   const delegationAccountIdMap = groupBy(delegations, (x) => x.account.id)
 
   for (const delegation of delegations) {
@@ -159,12 +153,6 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
     )
   }
 
-  await ctx.store.save([...delegationMap.values()])
-  await ctx.store.save([...accountMap.values()])
-  await ctx.store.save(basePools)
-  await ctx.store.save(accountSnapshots)
-  await ctx.store.save(delegationSnapshots)
-
   if (shouldRecord) {
     const workerSnapshots: WorkerSnapshot[] = []
     const basePoolSnapshots: BasePoolSnapshot[] = []
@@ -200,6 +188,8 @@ const postUpdate = async (ctx: Ctx): Promise<void> => {
     await ctx.store.save(workerSnapshots)
     await ctx.store.save(basePoolSnapshots)
     await ctx.store.save(globalRewardsSnapshot)
+    await ctx.store.save(accountSnapshots)
+    await ctx.store.save(delegationSnapshots)
   }
 }
 

@@ -1,11 +1,12 @@
+import {type Store} from '@subsquid/typeorm-store'
 import {IdentityLevel, type Account} from '../model'
-import {type Ctx} from '../processor'
+import {type ProcessorContext} from '../processor'
 import {IdentityIdentityOfStorage} from '../types/storage'
 import {getAccount} from './common'
 import {decodeAddress} from './converter'
 
 export const queryIdentities = async (
-  ctx: Ctx,
+  ctx: ProcessorContext<Store>,
   accountIds: string[],
   accountMap: Map<string, Account>
 ): Promise<void> => {

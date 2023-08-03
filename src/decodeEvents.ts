@@ -1,6 +1,7 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import {toHex, type SubstrateBlock} from '@subsquid/substrate-processor'
-import {type Ctx} from './processor'
+import {Store} from '@subsquid/typeorm-store'
+import {type ProcessorContext} from './processor'
 import {
   IdentityIdentityClearedEvent,
   IdentityIdentitySetEvent,
@@ -43,11 +44,12 @@ import {
   RmrkCoreNftMintedEvent,
 } from './types/events'
 import {encodeAddress, fromBits, toBalance} from './utils/converter'
+// import {u8aToBigInt, u8aToString} from '@polkadot/util'
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const decodeEvent = (
-  ctx: Ctx,
-  item: Ctx['blocks'][number]['items'][number]
+  ctx: ProcessorContext<Store>,
+  item: ProcessorContext<Store>['blocks'][number]['items'][number]
 ) => {
   const {name} = item
   switch (name) {
@@ -379,11 +381,18 @@ const decodeEvent = (
     }
     // case 'RmrkCore.PropertySet': {
     //   const e = new RmrkCorePropertySetEvent(ctx, item.event)
-    //   const {collectionId, maybeNftId, key, value} = e.asV1193
-    //   if (maybeNftId === undefined) return
+    //   const {collectionId, maybeNftId, key, value} = e.asV1150
+    //   const keyString = u8aToString(key)
+    //   // MEMO: only filter stake-info event
+    //   if (maybeNftId === undefined || keyString !== 'stake-info') return
     //   return {
     //     name,
-    //     args: {cid: collectionId, nftId: maybeNftId, key, value},
+    //     args: {
+    //       cid: collectionId,
+    //       nftId: maybeNftId,
+    //       key: keyString,
+    //       value: u8aToBigInt(value, {isLe: true}),
+    //     },
     //   }
     // }
     case 'RmrkCore.NFTBurned': {
@@ -413,7 +422,7 @@ const decodeEvent = (
 }
 
 const decodeEvents = (
-  ctx: Ctx
+  ctx: ProcessorContext<Store>
 ): Array<
   Exclude<ReturnType<typeof decodeEvent>, undefined> & {
     block: SubstrateBlock
