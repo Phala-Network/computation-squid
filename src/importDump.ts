@@ -114,7 +114,7 @@ interface Dump {
 const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
   const fromHeight = config.blockRange.from
   const dump = await fetch(
-    'https://raw.githubusercontent.com/Phala-Network/computation-squid/main/dump_4350000.json'
+    'https://raw.githubusercontent.com/Phala-Network/computation-squid/main/dump_4396000.json'
   ).then(async (res) => (await res.json()) as Dump)
   const globalState = new GlobalState({
     id: '0',

@@ -165,10 +165,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   )
 
   const stakePoolMap = await ctx.store
-    .find(StakePool, {
-      where: {id: In([...basePoolIdSet])},
-      relations: {basePool: true},
-    })
+    .find(StakePool, {relations: {basePool: true}})
     .then(toMap)
   const vaultMap = await ctx.store
     .find(Vault, {
@@ -769,7 +766,14 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   // MEMO: identity events don't provide specific args, so query it directly
   await queryIdentities(ctx, [...identityUpdatedAccountIdSet], accountMap)
 
-  await postUpdate(ctx, globalState, basePools, delegations)
+  await postUpdate(
+    ctx,
+    globalState,
+    accountMap,
+    basePools,
+    stakePoolMap,
+    delegations
+  )
   await updateGlobalAverageAprMultiplier(ctx, globalState)
 
   for (const x of [

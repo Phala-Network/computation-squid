@@ -3,17 +3,17 @@ import {type Store} from '@subsquid/typeorm-store'
 import assert from 'assert'
 import {groupBy} from 'lodash'
 import {
-  Account,
   BasePoolKind,
   GlobalRewardsSnapshot,
-  StakePool,
   Worker,
+  type Account,
   type AccountSnapshot,
   type BasePool,
   type BasePoolSnapshot,
   type Delegation,
   type DelegationSnapshot,
   type GlobalState,
+  type StakePool,
   type WorkerSnapshot,
 } from '../model'
 import {type ProcessorContext} from '../processor'
@@ -34,7 +34,9 @@ let lastRecordBlockHeight: number
 const postUpdate = async (
   ctx: ProcessorContext<Store>,
   globalState: GlobalState,
+  accountMap: Map<string, Account>,
   basePools: BasePool[],
+  stakePoolMap: Map<string, StakePool>,
   delegations: Delegation[]
 ): Promise<void> => {
   const latestBlock = ctx.blocks.at(-1)
@@ -63,7 +65,6 @@ const postUpdate = async (
     return value
   }
 
-  const stakePoolMap = toMap(await ctx.store.find(StakePool))
   const basePoolMap = toMap(basePools)
   for (const basePool of basePools) {
     basePool.delegatorCount = 0
@@ -81,8 +82,6 @@ const postUpdate = async (
       }
     }
   }
-
-  const accountMap = await ctx.store.find(Account).then(toMap)
 
   for (const [, account] of accountMap) {
     const accountDelegations = delegationAccountIdMap[account.id]

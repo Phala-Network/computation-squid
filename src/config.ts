@@ -8,7 +8,7 @@ const config: {
   dataSource: DataSource
   blockRange: Exclude<BlockRangeOption['range'], undefined>
 } = {
-  blockRange: {from: 4350001},
+  blockRange: {from: 4396001},
   dataSource: {
     archive: lookupArchive('khala', {release: 'FireSquid'}),
     chain: 'wss://priv-api.phala.network/khala/ws',
