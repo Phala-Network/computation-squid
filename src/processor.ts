@@ -19,7 +19,7 @@ import {
 
 export const processor = new SubstrateBatchProcessor()
   .includeAllBlocks()
-  .setGateway(lookupArchive('khala', {release: 'ArrowSquid'}))
+  .setGateway(lookupArchive('phala', {release: 'ArrowSquid'}))
   .setRpcEndpoint(RPC_ENDPOINT)
   .setBlockRange({
     from: INITIAL_BLOCK + 1,

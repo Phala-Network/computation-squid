@@ -24,7 +24,7 @@ export const updateTokenomicParameters = async (
   block: SubstrateBlock,
   globalState: GlobalState,
 ): Promise<void> => {
-  const tokenomicParameters = await phalaComputation.tokenomicParameters.v1199
+  const tokenomicParameters = await phalaComputation.tokenomicParameters.v1240
     .get(block)
     .then((value) => {
       assert(value)
