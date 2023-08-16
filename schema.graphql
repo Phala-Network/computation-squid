@@ -6,8 +6,8 @@ type GlobalState @entity {
   averageBlockTimeUpdatedHeight: Int!
   averageBlockTimeUpdatedTime: DateTime!
   averageBlockTime: Int!
-  averageAprMultiplierUpdatedTime: DateTime!
   averageAprMultiplier: BigDecimal!
+  averageApr: BigDecimal!
   "for apr calculation"
   idleWorkerShares: BigDecimal!
   cumulativeRewards: BigDecimal!
@@ -18,6 +18,11 @@ type GlobalState @entity {
   treasuryRatio: BigDecimal!
   re: BigDecimal!
   k: BigDecimal!
+
+  workerCount: Int!
+  idleWorkerCount: Int!
+  budgetPerShare: BigDecimal!
+  delegatorCount: Int!
 }
 
 enum IdentityLevel {
@@ -201,11 +206,20 @@ type BasePoolSnapshot @entity {
   cumulativeOwnerRewards: BigDecimal!
 }
 
-type GlobalRewardsSnapshot @entity {
+type GlobalStateSnapshot @entity {
   id: ID!
   "block time"
   updatedTime: DateTime!
-  value: BigDecimal!
+
+  totalValue: BigDecimal!
+  averageBlockTime: Int!
+  averageApr: BigDecimal!
+  cumulativeRewards: BigDecimal!
+  budgetPerBlock: BigDecimal!
+  workerCount: Int!
+  idleWorkerCount: Int!
+  budgetPerShare: BigDecimal!
+  delegatorCount: Int!
 }
 
 type DelegationSnapshot @entity {

@@ -1,15 +1,5 @@
 import {BigDecimal} from '@subsquid/big-decimal'
-import {type Store} from '@subsquid/typeorm-store'
-import {
-  BasePool,
-  BasePoolKind,
-  type GlobalState,
-  StakePool,
-  Vault,
-  type Account,
-} from '../model'
-import {type ProcessorContext} from '../processor'
-import {sum} from './common'
+import {BasePool, BasePoolKind, StakePool, Vault, type Account} from '../model'
 
 export function createPool(
   kind: BasePoolKind.StakePool,
@@ -131,34 +121,17 @@ export const updateStakePoolDelegable = (
 export const getBasePoolAvgAprMultiplier = (
   basePools: BasePool[]
 ): BigDecimal => {
-  const totalValue = sum(...basePools.map((x) => x.totalValue))
-  if (totalValue.eq(0)) return BigDecimal(0)
-  return basePools
-    .reduce(
-      (a, b) => a.plus(b.totalValue.times(b.aprMultiplier)),
-      BigDecimal(0)
-    )
-    .div(totalValue)
-    .round(6, 0)
-}
-
-export const updateGlobalAverageAprMultiplier = async (
-  ctx: ProcessorContext<Store>,
-  globalState: GlobalState
-): Promise<void> => {
-  const lastBlock = ctx.blocks[ctx.blocks.length - 1]
-  const FIVE_MINUTES = 5 * 60 * 1000
-  if (
-    lastBlock.header.timestamp -
-      globalState.averageAprMultiplierUpdatedTime.getTime() >
-    FIVE_MINUTES
-  ) {
-    const stakePools = await ctx.store.find(BasePool, {
-      where: {kind: BasePoolKind.StakePool},
-    })
-    globalState.averageAprMultiplier = getBasePoolAvgAprMultiplier(stakePools)
-    globalState.averageAprMultiplierUpdatedTime = new Date(
-      lastBlock.header.timestamp
-    )
+  const weight = BigDecimal(0)
+  let totalValue = BigDecimal(0)
+  for (const basePool of basePools) {
+    if (basePool.kind === BasePoolKind.StakePool) {
+      totalValue = totalValue.add(basePool.totalValue)
+      return weight.plus(basePool.totalValue.times(basePool.aprMultiplier))
+    }
   }
+  if (totalValue.eq(0)) {
+    return BigDecimal(0)
+  }
+
+  return weight.div(totalValue).round(6, 0)
 }

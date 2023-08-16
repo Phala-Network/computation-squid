@@ -1,11 +1,11 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import assert from 'assert'
-// import {readFile} from 'fs/promises'
+import {readFile} from 'fs/promises'
 import {groupBy} from 'lodash'
-// import path from 'path'
+import path from 'path'
 import {type Store} from '@subsquid/typeorm-store'
 import fetch from 'node-fetch'
-import config, {BASE_POOL_ACCOUNT} from './config'
+import {BASE_POOL_ACCOUNT} from './config'
 import {
   BasePoolKind,
   BasePoolWhitelist,
@@ -23,10 +23,9 @@ import {
   type Vault,
 } from './model'
 import {type ProcessorContext} from './processor'
-import {createAccountSnapshot} from './utils/accountSnapshot'
+import {createAccountSnapshot} from './utils/snapshot'
 import {
   createPool,
-  getBasePoolAvgAprMultiplier,
   updateSharePrice,
   updateStakePoolAprMultiplier,
   updateStakePoolDelegable,
@@ -112,20 +111,35 @@ interface Dump {
 }
 
 const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
-  const fromHeight = config.blockRange.from
-  const dump = await fetch(
-    'https://raw.githubusercontent.com/Phala-Network/computation-squid/main/dump_4396000.json'
-  ).then(async (res) => (await res.json()) as Dump)
+  const dumpBlock = Number(process.env.DUMP_BLOCK)
+  let dump: Dump
+  try {
+    const dumpFile = await readFile(
+      path.join(__dirname, `../dump_${dumpBlock}.json`),
+      'utf8'
+    )
+    dump = JSON.parse(dumpFile)
+  } catch (e) {
+    dump = await fetch(
+      `https://raw.githubusercontent.com/Phala-Network/computation-squid/main/dump_${dumpBlock}.json`
+    ).then(async (res) => (await res.json()) as Dump)
+  }
+
   const globalState = new GlobalState({
     id: '0',
-    height: fromHeight - 1,
-    averageAprMultiplierUpdatedTime: new Date(dump.timestamp),
-    averageBlockTimeUpdatedHeight: fromHeight - 1,
+    height: dumpBlock,
+    averageApr: BigDecimal(0),
+    averageAprMultiplier: BigDecimal(0),
+    averageBlockTimeUpdatedHeight: dumpBlock,
     averageBlockTimeUpdatedTime: new Date(dump.timestamp),
     averageBlockTime: 12000,
     totalValue: BigDecimal(0),
     idleWorkerShares: BigDecimal(0),
     cumulativeRewards: BigDecimal(0),
+    workerCount: 0,
+    idleWorkerCount: 0,
+    budgetPerShare: BigDecimal(0),
+    delegatorCount: 0,
   })
   await updateTokenomicParameters(ctx, ctx.blocks[0].header, globalState)
   const accountMap = new Map<string, Account>()
@@ -187,10 +201,12 @@ const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
       session.worker = worker
       worker.session = session
       updateWorkerShares(worker, session)
+      globalState.workerCount++
       if (session.state === WorkerState.WorkerIdle) {
         globalState.idleWorkerShares = globalState.idleWorkerShares.plus(
           worker.shares
         )
+        globalState.idleWorkerCount++
       }
     }
     sessionMap.set(session.id, session)
@@ -425,12 +441,6 @@ const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
     account.vaultAvgAprMultiplier =
       getDelegationAvgAprMultiplier(vaultDelegations)
   }
-
-  globalState.averageAprMultiplier = getBasePoolAvgAprMultiplier(
-    [...basePoolMap.values()].filter((x) => x.kind === BasePoolKind.StakePool)
-  )
-
-  ctx.log.info(globalState.totalValue.toString())
 
   for (const x of [
     globalState,

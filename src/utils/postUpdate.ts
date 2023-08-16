@@ -4,7 +4,6 @@ import assert from 'assert'
 import {groupBy} from 'lodash'
 import {
   BasePoolKind,
-  GlobalRewardsSnapshot,
   Worker,
   type Account,
   type AccountSnapshot,
@@ -17,19 +16,26 @@ import {
   type WorkerSnapshot,
 } from '../model'
 import {type ProcessorContext} from '../processor'
-import {createAccountSnapshot} from './accountSnapshot'
-import {updateSharePrice, updateVaultAprMultiplier} from './basePool'
-import {createBasePoolSnapshot} from './basePoolSnapshot'
+import {
+  getBasePoolAvgAprMultiplier,
+  updateSharePrice,
+  updateVaultAprMultiplier,
+} from './basePool'
 import {assertGet, sum, toMap} from './common'
 import {
   getDelegationAvgAprMultiplier,
   updateDelegationValue,
 } from './delegation'
-import {createDelegationSnapshot} from './delegationSnapshot'
-import {createWorkerSnapshot} from './workerSnapshot'
+import {
+  createAccountSnapshot,
+  createBasePoolSnapshot,
+  createDelegationSnapshot,
+  createGlobalStateSnapshot,
+  createWorkerSnapshot,
+} from './snapshot'
 
 const ONE_YEAR = 365 * 24 * 60 * 60 * 1000
-let lastRecordBlockHeight: number
+let lastSnapshotTime: number
 
 const postUpdate = async (
   ctx: ProcessorContext<Store>,
@@ -41,36 +47,38 @@ const postUpdate = async (
 ): Promise<void> => {
   const latestBlock = ctx.blocks.at(-1)
   assert(latestBlock)
-  const shouldRecord =
-    lastRecordBlockHeight === undefined ||
-    latestBlock.header.height - lastRecordBlockHeight > 50
-  if (shouldRecord) {
-    lastRecordBlockHeight = latestBlock.header.height
-  }
   const updatedTime = new Date(latestBlock.header.timestamp)
+  updatedTime.setUTCMinutes(0, 0, 0)
+  const shouldTakeSnapshot =
+    lastSnapshotTime === undefined || updatedTime.getTime() !== lastSnapshotTime
+  if (shouldTakeSnapshot) {
+    lastSnapshotTime = updatedTime.getTime()
+  }
 
+  const delegatorSet = new Set<string>()
   const accountSnapshots: AccountSnapshot[] = []
   const delegationSnapshots: DelegationSnapshot[] = []
+  const basePoolMap = toMap(basePools)
+  const delegationAccountIdMap = groupBy(delegations, (x) => x.account.id)
 
-  const getApr = async (basePool: BasePool): Promise<BigDecimal> => {
+  const getApr = async (aprMultiplier: BigDecimal): Promise<BigDecimal> => {
     const {averageBlockTime, idleWorkerShares, budgetPerBlock, treasuryRatio} =
       globalState
-    const value = basePool.aprMultiplier
+    const value = aprMultiplier
       .times(budgetPerBlock)
       .times(BigDecimal(1).minus(treasuryRatio))
       .times(ONE_YEAR)
       .div(averageBlockTime)
       .div(idleWorkerShares)
+      .round(6, 0)
 
     return value
   }
 
-  const basePoolMap = toMap(basePools)
+  globalState.delegatorCount = 0
   for (const basePool of basePools) {
     basePool.delegatorCount = 0
   }
-
-  const delegationAccountIdMap = groupBy(delegations, (x) => x.account.id)
 
   for (const delegation of delegations) {
     if (delegation.basePool.kind === BasePoolKind.StakePool) {
@@ -125,7 +133,11 @@ const postUpdate = async (
       }
     }
 
-    if (shouldRecord && delegation.shares.gt(0)) {
+    if (delegation.value.gt(0) && !basePoolMap.has(delegation.account.id)) {
+      delegatorSet.add(delegation.account.id)
+    }
+
+    if (shouldTakeSnapshot && delegation.shares.gt(0)) {
       delegationSnapshots.push(
         createDelegationSnapshot({delegation, updatedTime})
       )
@@ -143,7 +155,7 @@ const postUpdate = async (
       x.shares.gt(0)
     ).length
 
-    if (shouldRecord) {
+    if (shouldTakeSnapshot) {
       accountSnapshots.push(createAccountSnapshot({account, updatedTime}))
     }
 
@@ -152,7 +164,16 @@ const postUpdate = async (
     )
   }
 
-  if (shouldRecord) {
+  globalState.averageAprMultiplier = getBasePoolAvgAprMultiplier(basePools)
+  globalState.budgetPerShare = globalState.budgetPerBlock
+    .div(globalState.idleWorkerShares)
+    .div(globalState.averageBlockTime)
+    .times(1e7 * 24 * 60 * 60)
+    .round(12, 0)
+  globalState.averageApr = await getApr(globalState.averageAprMultiplier)
+  globalState.delegatorCount = delegatorSet.size
+
+  if (shouldTakeSnapshot) {
     const workerSnapshots: WorkerSnapshot[] = []
     const basePoolSnapshots: BasePoolSnapshot[] = []
 
@@ -172,21 +193,20 @@ const postUpdate = async (
         createBasePoolSnapshot({
           basePool,
           updatedTime,
-          apr: await getApr(basePool),
+          apr: await getApr(basePool.aprMultiplier),
           stakePool: stakePoolMap.get(basePool.id),
         })
       )
     }
 
-    const globalRewardsSnapshot = new GlobalRewardsSnapshot({
-      id: updatedTime.toISOString(),
-      updatedTime,
-      value: globalState.cumulativeRewards,
-    })
+    const globalStateSnapshot = createGlobalStateSnapshot(
+      globalState,
+      updatedTime
+    )
 
     await ctx.store.save(workerSnapshots)
     await ctx.store.save(basePoolSnapshots)
-    await ctx.store.save(globalRewardsSnapshot)
+    await ctx.store.save(globalStateSnapshot)
     await ctx.store.save(accountSnapshots)
     await ctx.store.save(delegationSnapshots)
   }

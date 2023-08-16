@@ -1,6 +1,6 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import {toHex, type SubstrateBlock} from '@subsquid/substrate-processor'
-import {Store} from '@subsquid/typeorm-store'
+import {type Store} from '@subsquid/typeorm-store'
 import {type ProcessorContext} from './processor'
 import {
   IdentityIdentityClearedEvent,

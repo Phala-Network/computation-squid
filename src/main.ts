@@ -22,7 +22,6 @@ import {
 import {processor} from './processor'
 import {
   createPool,
-  updateGlobalAverageAprMultiplier,
   updateSharePrice,
   updateStakePoolAprMultiplier,
   updateStakePoolDelegable,
@@ -269,6 +268,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         assert(worker.session) // MEMO: SessionBound happens before PoolWorkerAdded
         const session = assertGet(sessionMap, worker.session.id)
         stakePool.workerCount++
+        globalState.workerCount++
         worker.stakePool = stakePool
         session.stakePool = stakePool
         break
@@ -280,6 +280,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         assert(worker.stakePool?.id === pid)
         worker.stakePool = null
         stakePool.workerCount--
+        globalState.workerCount--
         break
       }
       case 'PhalaStakePoolv2.WorkingStarted': {
@@ -608,6 +609,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const basePool = assertGet(basePoolMap, session.stakePool.id)
         const stakePool = assertGet(stakePoolMap, session.stakePool.id)
         stakePool.idleWorkerCount++
+        globalState.idleWorkerCount++
         session.pInit = initP
         session.ve = initV
         session.v = initV
@@ -641,6 +643,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           )
           updateStakePoolAprMultiplier(basePool, stakePool)
           stakePool.idleWorkerCount--
+          globalState.idleWorkerCount--
         }
         session.state = WorkerState.WorkerCoolingDown
         session.coolingDownStartTime = blockTime
@@ -657,6 +660,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         if (session.state === WorkerState.WorkerIdle) {
           session.state = WorkerState.WorkerUnresponsive
           stakePool.idleWorkerCount--
+          globalState.idleWorkerCount--
           const worker = assertGet(workerMap, session.worker.id)
           assert(worker.shares)
           globalState.idleWorkerShares = globalState.idleWorkerShares.minus(
@@ -678,6 +682,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const stakePool = assertGet(stakePoolMap, session.stakePool.id)
         if (session.state === WorkerState.WorkerUnresponsive) {
           stakePool.idleWorkerCount++
+          globalState.idleWorkerCount++
           const worker = assertGet(workerMap, session.worker.id)
           assert(worker.shares)
           globalState.idleWorkerShares = globalState.idleWorkerShares.plus(
@@ -774,7 +779,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     stakePoolMap,
     delegations
   )
-  await updateGlobalAverageAprMultiplier(ctx, globalState)
 
   for (const x of [
     globalState,

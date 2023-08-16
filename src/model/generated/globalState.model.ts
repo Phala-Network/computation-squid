@@ -29,11 +29,11 @@ export class GlobalState {
     @Column_("int4", {nullable: false})
     averageBlockTime!: number
 
-    @Column_("timestamp with time zone", {nullable: false})
-    averageAprMultiplierUpdatedTime!: Date
-
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     averageAprMultiplier!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    averageApr!: BigDecimal
 
     /**
      * for apr calculation
@@ -61,4 +61,16 @@ export class GlobalState {
 
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     k!: BigDecimal
+
+    @Column_("int4", {nullable: false})
+    workerCount!: number
+
+    @Column_("int4", {nullable: false})
+    idleWorkerCount!: number
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    budgetPerShare!: BigDecimal
+
+    @Column_("int4", {nullable: false})
+    delegatorCount!: number
 }
