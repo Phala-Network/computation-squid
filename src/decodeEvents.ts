@@ -21,9 +21,9 @@ const decodeEvent = (
   )
   switch (name) {
     case phalaStakePoolv2.poolCreated.name: {
-      if (phalaStakePoolv2.poolCreated.v1199.is(event)) {
+      if (phalaStakePoolv2.poolCreated.v1240.is(event)) {
         const {owner, pid, cid, poolAccountId} =
-          phalaStakePoolv2.poolCreated.v1199.decode(event)
+          phalaStakePoolv2.poolCreated.v1240.decode(event)
         return {
           name,
           args: {
@@ -37,9 +37,9 @@ const decodeEvent = (
       throw error
     }
     case phalaStakePoolv2.poolCommissionSet.name: {
-      if (phalaStakePoolv2.poolCommissionSet.v1199.is(event)) {
+      if (phalaStakePoolv2.poolCommissionSet.v1240.is(event)) {
         const {pid, commission} =
-          phalaStakePoolv2.poolCommissionSet.v1199.decode(event)
+          phalaStakePoolv2.poolCommissionSet.v1240.decode(event)
         return {
           name,
           args: {pid: String(pid), commission: BigDecimal(commission).div(1e6)},
@@ -48,16 +48,16 @@ const decodeEvent = (
       throw error
     }
     case phalaStakePoolv2.poolCapacitySet.name: {
-      if (phalaStakePoolv2.poolCapacitySet.v1199.is(event)) {
-        const {pid, cap} = phalaStakePoolv2.poolCapacitySet.v1199.decode(event)
+      if (phalaStakePoolv2.poolCapacitySet.v1240.is(event)) {
+        const {pid, cap} = phalaStakePoolv2.poolCapacitySet.v1240.decode(event)
         return {name, args: {pid: String(pid), cap: toBalance(cap)}}
       }
       throw error
     }
     case phalaStakePoolv2.poolWorkerAdded.name: {
-      if (phalaStakePoolv2.poolWorkerAdded.v1199.is(event)) {
+      if (phalaStakePoolv2.poolWorkerAdded.v1240.is(event)) {
         const {pid, worker} =
-          phalaStakePoolv2.poolWorkerAdded.v1199.decode(event)
+          phalaStakePoolv2.poolWorkerAdded.v1240.decode(event)
         return {
           name,
           args: {pid: String(pid), workerId: worker},
@@ -66,9 +66,9 @@ const decodeEvent = (
       throw error
     }
     case phalaStakePoolv2.poolWorkerRemoved.name: {
-      if (phalaStakePoolv2.poolWorkerRemoved.v1199.is(event)) {
+      if (phalaStakePoolv2.poolWorkerRemoved.v1240.is(event)) {
         const {pid, worker} =
-          phalaStakePoolv2.poolWorkerRemoved.v1199.decode(event)
+          phalaStakePoolv2.poolWorkerRemoved.v1240.decode(event)
 
         return {
           name,
@@ -78,9 +78,9 @@ const decodeEvent = (
       throw error
     }
     case phalaStakePoolv2.workingStarted.name: {
-      if (phalaStakePoolv2.workingStarted.v1199.is(event)) {
+      if (phalaStakePoolv2.workingStarted.v1240.is(event)) {
         const {pid, worker, amount} =
-          phalaStakePoolv2.workingStarted.v1199.decode(event)
+          phalaStakePoolv2.workingStarted.v1240.decode(event)
         return {
           name,
           args: {
@@ -93,9 +93,9 @@ const decodeEvent = (
       throw error
     }
     case phalaStakePoolv2.rewardReceived.name: {
-      if (phalaStakePoolv2.rewardReceived.v1199.is(event)) {
+      if (phalaStakePoolv2.rewardReceived.v1240.is(event)) {
         const {pid, toOwner, toStakers} =
-          phalaStakePoolv2.rewardReceived.v1199.decode(event)
+          phalaStakePoolv2.rewardReceived.v1240.decode(event)
         return {
           name,
           args: {
@@ -108,9 +108,9 @@ const decodeEvent = (
       throw error
     }
     case phalaStakePoolv2.ownerRewardsWithdrawn.name: {
-      if (phalaStakePoolv2.ownerRewardsWithdrawn.v1199.is(event)) {
+      if (phalaStakePoolv2.ownerRewardsWithdrawn.v1240.is(event)) {
         const {pid, user, amount} =
-          phalaStakePoolv2.ownerRewardsWithdrawn.v1199.decode(event)
+          phalaStakePoolv2.ownerRewardsWithdrawn.v1240.decode(event)
         return {
           name,
           args: {
@@ -123,9 +123,9 @@ const decodeEvent = (
       throw error
     }
     case phalaStakePoolv2.contribution.name: {
-      if (phalaStakePoolv2.contribution.v1199.is(event)) {
+      if (phalaStakePoolv2.contribution.v1240.is(event)) {
         const {pid, user, amount, shares, asVault} =
-          phalaStakePoolv2.contribution.v1199.decode(event)
+          phalaStakePoolv2.contribution.v1240.decode(event)
         return {
           name,
           args: {
@@ -140,9 +140,9 @@ const decodeEvent = (
       throw error
     }
     case phalaStakePoolv2.workerReclaimed.name: {
-      if (phalaStakePoolv2.workerReclaimed.v1199.is(event)) {
+      if (phalaStakePoolv2.workerReclaimed.v1240.is(event)) {
         const {pid, worker} =
-          phalaStakePoolv2.workerReclaimed.v1199.decode(event)
+          phalaStakePoolv2.workerReclaimed.v1240.decode(event)
         return {
           name,
           args: {pid: String(pid), workerId: worker},
@@ -151,9 +151,9 @@ const decodeEvent = (
       throw error
     }
     case phalaVault.poolCreated.name: {
-      if (phalaVault.poolCreated.v1199.is(event)) {
+      if (phalaVault.poolCreated.v1240.is(event)) {
         const {owner, pid, cid, poolAccountId} =
-          phalaVault.poolCreated.v1199.decode(event)
+          phalaVault.poolCreated.v1240.decode(event)
         return {
           name,
           args: {
@@ -167,9 +167,9 @@ const decodeEvent = (
       throw error
     }
     case phalaVault.vaultCommissionSet.name: {
-      if (phalaVault.vaultCommissionSet.v1199.is(event)) {
+      if (phalaVault.vaultCommissionSet.v1240.is(event)) {
         const {pid, commission} =
-          phalaVault.vaultCommissionSet.v1199.decode(event)
+          phalaVault.vaultCommissionSet.v1240.decode(event)
         return {
           name,
           args: {pid: String(pid), commission: BigDecimal(commission).div(1e6)},
@@ -178,16 +178,16 @@ const decodeEvent = (
       throw error
     }
     case phalaVault.ownerSharesGained.name: {
-      if (phalaVault.ownerSharesGained.v1199.is(event)) {
-        const {pid, shares} = phalaVault.ownerSharesGained.v1199.decode(event)
+      if (phalaVault.ownerSharesGained.v1240.is(event)) {
+        const {pid, shares} = phalaVault.ownerSharesGained.v1240.decode(event)
         return {name, args: {pid: String(pid), shares: toBalance(shares)}}
       }
       throw error
     }
     case phalaVault.ownerSharesClaimed.name: {
-      if (phalaVault.ownerSharesClaimed.v1199.is(event)) {
+      if (phalaVault.ownerSharesClaimed.v1240.is(event)) {
         const {pid, user, shares} =
-          phalaVault.ownerSharesClaimed.v1199.decode(event)
+          phalaVault.ownerSharesClaimed.v1240.decode(event)
         return {
           name,
           args: {
@@ -200,9 +200,9 @@ const decodeEvent = (
       throw error
     }
     case phalaVault.contribution.name: {
-      if (phalaVault.contribution.v1199.is(event)) {
+      if (phalaVault.contribution.v1240.is(event)) {
         const {pid, user, amount, shares} =
-          phalaVault.contribution.v1199.decode(event)
+          phalaVault.contribution.v1240.decode(event)
         return {
           name,
           args: {
@@ -216,9 +216,9 @@ const decodeEvent = (
       throw error
     }
     case phalaBasePool.nftCreated.name: {
-      if (phalaBasePool.nftCreated.v1199.is(event)) {
+      if (phalaBasePool.nftCreated.v1240.is(event)) {
         const {pid, cid, nftId, owner, shares} =
-          phalaBasePool.nftCreated.v1199.decode(event)
+          phalaBasePool.nftCreated.v1240.decode(event)
         return {
           name,
           args: {
@@ -247,9 +247,9 @@ const decodeEvent = (
           },
         }
       }
-      if (phalaBasePool.withdrawal.v1199.is(event)) {
+      if (phalaBasePool.withdrawal.v1240.is(event)) {
         const {pid, user, amount, shares} =
-          phalaBasePool.withdrawal.v1199.decode(event)
+          phalaBasePool.withdrawal.v1240.decode(event)
         return {
           name,
           args: {
@@ -278,9 +278,9 @@ const decodeEvent = (
           },
         }
       }
-      if (phalaBasePool.withdrawalQueued.v1199.is(event)) {
+      if (phalaBasePool.withdrawalQueued.v1240.is(event)) {
         const {pid, user, shares, nftId, asVault} =
-          phalaBasePool.withdrawalQueued.v1199.decode(event)
+          phalaBasePool.withdrawalQueued.v1240.decode(event)
 
         return {
           name,
@@ -296,23 +296,23 @@ const decodeEvent = (
       throw error
     }
     case phalaBasePool.poolWhitelistCreated.name: {
-      if (phalaBasePool.poolWhitelistCreated.v1199.is(event)) {
-        const {pid} = phalaBasePool.poolWhitelistCreated.v1199.decode(event)
+      if (phalaBasePool.poolWhitelistCreated.v1240.is(event)) {
+        const {pid} = phalaBasePool.poolWhitelistCreated.v1240.decode(event)
         return {name, args: {pid: String(pid)}}
       }
       throw error
     }
     case phalaBasePool.poolWhitelistDeleted.name: {
-      if (phalaBasePool.poolWhitelistDeleted.v1199.is(event)) {
-        const {pid} = phalaBasePool.poolWhitelistDeleted.v1199.decode(event)
+      if (phalaBasePool.poolWhitelistDeleted.v1240.is(event)) {
+        const {pid} = phalaBasePool.poolWhitelistDeleted.v1240.decode(event)
         return {name, args: {pid: String(pid)}}
       }
       throw error
     }
     case phalaBasePool.poolWhitelistStakerAdded.name: {
-      if (phalaBasePool.poolWhitelistStakerAdded.v1199.is(event)) {
+      if (phalaBasePool.poolWhitelistStakerAdded.v1240.is(event)) {
         const {pid, staker} =
-          phalaBasePool.poolWhitelistStakerAdded.v1199.decode(event)
+          phalaBasePool.poolWhitelistStakerAdded.v1240.decode(event)
         return {
           name,
           args: {pid: String(pid), accountId: encodeAddress(staker)},
@@ -321,9 +321,9 @@ const decodeEvent = (
       throw error
     }
     case phalaBasePool.poolWhitelistStakerRemoved.name: {
-      if (phalaBasePool.poolWhitelistStakerRemoved.v1199.is(event)) {
+      if (phalaBasePool.poolWhitelistStakerRemoved.v1240.is(event)) {
         const {pid, staker} =
-          phalaBasePool.poolWhitelistStakerRemoved.v1199.decode(event)
+          phalaBasePool.poolWhitelistStakerRemoved.v1240.decode(event)
         return {
           name,
           args: {pid: String(pid), accountId: encodeAddress(staker)},
@@ -332,9 +332,9 @@ const decodeEvent = (
       throw error
     }
     case phalaComputation.sessionBound.name: {
-      if (phalaComputation.sessionBound.v1199.is(event)) {
+      if (phalaComputation.sessionBound.v1240.is(event)) {
         const {session, worker} =
-          phalaComputation.sessionBound.v1199.decode(event)
+          phalaComputation.sessionBound.v1240.decode(event)
         return {
           name,
           args: {sessionId: encodeAddress(session), workerId: worker},
@@ -343,9 +343,9 @@ const decodeEvent = (
       throw error
     }
     case phalaComputation.sessionUnbound.name: {
-      if (phalaComputation.sessionUnbound.v1199.is(event)) {
+      if (phalaComputation.sessionUnbound.v1240.is(event)) {
         const {session, worker} =
-          phalaComputation.sessionUnbound.v1199.decode(event)
+          phalaComputation.sessionUnbound.v1240.decode(event)
         return {
           name,
           args: {sessionId: encodeAddress(session), workerId: worker},
@@ -354,9 +354,9 @@ const decodeEvent = (
       throw error
     }
     case phalaComputation.sessionSettled.name: {
-      if (phalaComputation.sessionSettled.v1199.is(event)) {
+      if (phalaComputation.sessionSettled.v1240.is(event)) {
         const {session, vBits, payoutBits} =
-          phalaComputation.sessionSettled.v1199.decode(event)
+          phalaComputation.sessionSettled.v1240.decode(event)
         return {
           name,
           args: {
@@ -369,9 +369,9 @@ const decodeEvent = (
       throw error
     }
     case phalaComputation.workerStarted.name: {
-      if (phalaComputation.workerStarted.v1199.is(event)) {
+      if (phalaComputation.workerStarted.v1240.is(event)) {
         const {session, initV, initP} =
-          phalaComputation.workerStarted.v1199.decode(event)
+          phalaComputation.workerStarted.v1240.decode(event)
         return {
           name,
           args: {
@@ -384,16 +384,16 @@ const decodeEvent = (
       throw error
     }
     case phalaComputation.workerStopped.name: {
-      if (phalaComputation.workerStopped.v1199.is(event)) {
-        const {session} = phalaComputation.workerStopped.v1199.decode(event)
+      if (phalaComputation.workerStopped.v1240.is(event)) {
+        const {session} = phalaComputation.workerStopped.v1240.decode(event)
         return {name, args: {sessionId: encodeAddress(session)}}
       }
       throw error
     }
     case phalaComputation.workerReclaimed.name: {
-      if (phalaComputation.workerReclaimed.v1199.is(event)) {
+      if (phalaComputation.workerReclaimed.v1240.is(event)) {
         const {session, originalStake, slashed} =
-          phalaComputation.workerReclaimed.v1199.decode(event)
+          phalaComputation.workerReclaimed.v1240.decode(event)
         return {
           name,
           args: {
@@ -406,25 +406,25 @@ const decodeEvent = (
       throw error
     }
     case phalaComputation.workerEnterUnresponsive.name: {
-      if (phalaComputation.workerEnterUnresponsive.v1199.is(event)) {
+      if (phalaComputation.workerEnterUnresponsive.v1240.is(event)) {
         const {session} =
-          phalaComputation.workerEnterUnresponsive.v1199.decode(event)
+          phalaComputation.workerEnterUnresponsive.v1240.decode(event)
         return {name, args: {sessionId: encodeAddress(session)}}
       }
       throw error
     }
     case phalaComputation.workerExitUnresponsive.name: {
-      if (phalaComputation.workerExitUnresponsive.v1199.is(event)) {
+      if (phalaComputation.workerExitUnresponsive.v1240.is(event)) {
         const {session} =
-          phalaComputation.workerExitUnresponsive.v1199.decode(event)
+          phalaComputation.workerExitUnresponsive.v1240.decode(event)
         return {name, args: {sessionId: encodeAddress(session)}}
       }
       throw error
     }
     case phalaComputation.benchmarkUpdated.name: {
-      if (phalaComputation.benchmarkUpdated.v1199.is(event)) {
+      if (phalaComputation.benchmarkUpdated.v1240.is(event)) {
         const {session, pInstant} =
-          phalaComputation.benchmarkUpdated.v1199.decode(event)
+          phalaComputation.benchmarkUpdated.v1240.decode(event)
         return {name, args: {sessionId: encodeAddress(session), pInstant}}
       }
       throw error
@@ -441,9 +441,9 @@ const decodeEvent = (
           args: {workerId: pubkey, confidenceLevel},
         }
       }
-      if (phalaRegistry.workerAdded.v1199.is(event)) {
+      if (phalaRegistry.workerAdded.v1240.is(event)) {
         const {pubkey, confidenceLevel} =
-          phalaRegistry.workerAdded.v1199.decode(event)
+          phalaRegistry.workerAdded.v1240.decode(event)
         return {
           name,
           args: {workerId: pubkey, confidenceLevel},
@@ -460,9 +460,9 @@ const decodeEvent = (
           args: {workerId: pubkey, confidenceLevel},
         }
       }
-      if (phalaRegistry.workerUpdated.v1199.is(event)) {
+      if (phalaRegistry.workerUpdated.v1240.is(event)) {
         const {pubkey, confidenceLevel} =
-          phalaRegistry.workerUpdated.v1199.decode(event)
+          phalaRegistry.workerUpdated.v1240.decode(event)
         return {
           name,
           args: {workerId: pubkey, confidenceLevel},
@@ -471,9 +471,9 @@ const decodeEvent = (
       throw error
     }
     case phalaRegistry.initialScoreSet.name: {
-      if (phalaRegistry.initialScoreSet.v1182.is(event)) {
+      if (phalaRegistry.initialScoreSet.v1240.is(event)) {
         const {pubkey, initScore} =
-          phalaRegistry.initialScoreSet.v1182.decode(event)
+          phalaRegistry.initialScoreSet.v1240.decode(event)
         return {
           name,
           args: {workerId: pubkey, initialScore: initScore},
@@ -482,10 +482,10 @@ const decodeEvent = (
       throw error
     }
     case rmrkCore.nftMinted.name: {
-      // if (rmrkCore.nftMinted.v1170.is(event)) {
-      // FIXME: v1170 is not supported
+      // if (rmrkCore.nftMinted.v1240.is(event)) {
+      // FIXME: v1240 is not supported
       const {owner, collectionId, nftId} =
-        rmrkCore.nftMinted.v1170.decode(event)
+        rmrkCore.nftMinted.v1240.decode(event)
       if (owner.__kind !== 'AccountId') return
       return {
         name,
@@ -495,9 +495,9 @@ const decodeEvent = (
       // throw error
     }
     case rmrkCore.nftBurned.name: {
-      if (rmrkCore.nftBurned.v1181.is(event)) {
+      if (rmrkCore.nftBurned.v1240.is(event)) {
         const {owner, collectionId, nftId} =
-          rmrkCore.nftBurned.v1181.decode(event)
+          rmrkCore.nftBurned.v1240.decode(event)
         return {
           name,
           args: {owner: encodeAddress(owner), cid: collectionId, nftId},

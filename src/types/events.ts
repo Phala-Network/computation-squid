@@ -1,7 +1,7 @@
 export * as identity from './identity/events'
-export * as rmrkCore from './rmrk-core/events'
 export * as phalaRegistry from './phala-registry/events'
 export * as phalaComputation from './phala-computation/events'
 export * as phalaStakePoolv2 from './phala-stake-poolv2/events'
 export * as phalaVault from './phala-vault/events'
 export * as phalaBasePool from './phala-base-pool/events'
+export * as rmrkCore from './rmrk-core/events'

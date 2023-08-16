@@ -12,7 +12,7 @@ export const queryIdentities = async (
   accountIds: string[],
   accountMap: Map<string, Account>,
 ): Promise<void> => {
-  const res = await identity.identityOf.v1.getMany(
+  const res = await identity.identityOf.v1090.getMany(
     block,
     accountIds.map(decodeAddress),
   )

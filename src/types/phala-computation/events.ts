@@ -1,5 +1,5 @@
 import {sts, Block, Bytes, Option, Result, EventType, RuntimeCtx} from '../support'
-import * as v1199 from '../v1199'
+import * as v1240 from '../v1240'
 
 export const workerStarted =  {
     name: 'PhalaComputation.WorkerStarted' as const,
@@ -12,10 +12,10 @@ export const workerStarted =  {
      * - [`Stakes`] for the session is updated
      * - [`OnlineWorkers`] is incremented
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaComputation.WorkerStarted',
         sts.struct({
-            session: v1199.AccountId32,
+            session: v1240.AccountId32,
             initV: sts.bigint(),
             initP: sts.number(),
         })
@@ -31,10 +31,10 @@ export const workerStopped =  {
      * - the worker info at [`Sessions`] is updated with `WorkerCoolingDown` state
      * - [`OnlineWorkers`] is decremented
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaComputation.WorkerStopped',
         sts.struct({
-            session: v1199.AccountId32,
+            session: v1240.AccountId32,
         })
     ),
 }
@@ -44,10 +44,10 @@ export const workerReclaimed =  {
     /**
      * Worker is reclaimed, with its slash settled.
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaComputation.WorkerReclaimed',
         sts.struct({
-            session: v1199.AccountId32,
+            session: v1240.AccountId32,
             originalStake: sts.bigint(),
             slashed: sts.bigint(),
         })
@@ -64,11 +64,11 @@ export const sessionBound =  {
      * - [`WorkerBindings`] for the worker is pointed to the session account
      * - the worker info at [`Sessions`] is updated with `Ready` state
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaComputation.SessionBound',
         sts.struct({
-            session: v1199.AccountId32,
-            worker: v1199.Public,
+            session: v1240.AccountId32,
+            worker: v1240.Public,
         })
     ),
 }
@@ -82,11 +82,11 @@ export const sessionUnbound =  {
      * - [`SessionBindings`] for the session account is removed
      * - [`WorkerBindings`] for the worker is removed
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaComputation.SessionUnbound',
         sts.struct({
-            session: v1199.AccountId32,
-            worker: v1199.Public,
+            session: v1240.AccountId32,
+            worker: v1240.Public,
         })
     ),
 }
@@ -99,10 +99,10 @@ export const workerEnterUnresponsive =  {
      * Affected states:
      * - the worker info at [`Sessions`] is updated from `WorkerIdle` to `WorkerUnresponsive`
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaComputation.WorkerEnterUnresponsive',
         sts.struct({
-            session: v1199.AccountId32,
+            session: v1240.AccountId32,
         })
     ),
 }
@@ -115,10 +115,10 @@ export const workerExitUnresponsive =  {
      * Affected states:
      * - the worker info at [`Sessions`] is updated from `WorkerUnresponsive` to `WorkerIdle`
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaComputation.WorkerExitUnresponsive',
         sts.struct({
-            session: v1199.AccountId32,
+            session: v1240.AccountId32,
         })
     ),
 }
@@ -132,10 +132,10 @@ export const sessionSettled =  {
      * stake pool has received the computing reward (payout), and the treasury has received the
      * tax.
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaComputation.SessionSettled',
         sts.struct({
-            session: v1199.AccountId32,
+            session: v1240.AccountId32,
             vBits: sts.bigint(),
             payoutBits: sts.bigint(),
         })
@@ -150,7 +150,7 @@ export const tokenomicParametersChanged =  {
      * Affected states:
      * - [`TokenomicParameters`] is updated.
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaComputation.TokenomicParametersChanged',
         sts.unit()
     ),
@@ -161,10 +161,10 @@ export const benchmarkUpdated =  {
     /**
      * Benchmark Updated
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaComputation.BenchmarkUpdated',
         sts.struct({
-            session: v1199.AccountId32,
+            session: v1240.AccountId32,
             pInstant: sts.number(),
         })
     ),

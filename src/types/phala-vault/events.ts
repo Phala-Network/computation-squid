@@ -1,5 +1,5 @@
 import {sts, Block, Bytes, Option, Result, EventType, RuntimeCtx} from '../support'
-import * as v1199 from '../v1199'
+import * as v1240 from '../v1240'
 
 export const poolCreated =  {
     name: 'PhalaVault.PoolCreated' as const,
@@ -9,13 +9,13 @@ export const poolCreated =  {
      * Affected states:
      * - a new entry in [`Pools`] with the pid
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaVault.PoolCreated',
         sts.struct({
-            owner: v1199.AccountId32,
+            owner: v1240.AccountId32,
             pid: sts.bigint(),
             cid: sts.number(),
-            poolAccountId: v1199.AccountId32,
+            poolAccountId: v1240.AccountId32,
         })
     ),
 }
@@ -31,7 +31,7 @@ export const vaultCommissionSet =  {
      * Affected states:
      * - the `commission` field in [`Pools`] is updated
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaVault.VaultCommissionSet',
         sts.struct({
             pid: sts.bigint(),
@@ -48,11 +48,11 @@ export const ownerSharesClaimed =  {
      * - the shares related fields in [`Pools`]
      * - the nft related storages in rmrk and pallet unique
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaVault.OwnerSharesClaimed',
         sts.struct({
             pid: sts.bigint(),
-            user: v1199.AccountId32,
+            user: v1240.AccountId32,
             shares: sts.bigint(),
         })
     ),
@@ -67,7 +67,7 @@ export const ownerSharesGained =  {
      * - the shares related fields in [`Pools`]
      * - last_share_price_checkpoint in [`Pools`]
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaVault.OwnerSharesGained',
         sts.struct({
             pid: sts.bigint(),
@@ -89,11 +89,11 @@ export const contribution =  {
      * - when there was any request in the withdraw queue, the action may trigger withdrawals
      *   ([`Withdrawal`](#variant.Withdrawal) event)
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaVault.Contribution',
         sts.struct({
             pid: sts.bigint(),
-            user: v1199.AccountId32,
+            user: v1240.AccountId32,
             amount: sts.bigint(),
             shares: sts.bigint(),
         })
