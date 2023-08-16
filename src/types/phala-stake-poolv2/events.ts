@@ -1,5 +1,5 @@
 import {sts, Block, Bytes, Option, Result, EventType, RuntimeCtx} from '../support'
-import * as v1199 from '../v1199'
+import * as v1240 from '../v1240'
 
 export const poolCreated =  {
     name: 'PhalaStakePoolv2.PoolCreated' as const,
@@ -9,13 +9,13 @@ export const poolCreated =  {
      * Affected states:
      * - a new entry in [`Pools`] with the pid
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaStakePoolv2.PoolCreated',
         sts.struct({
-            owner: v1199.AccountId32,
+            owner: v1240.AccountId32,
             pid: sts.bigint(),
             cid: sts.number(),
-            poolAccountId: v1199.AccountId32,
+            poolAccountId: v1240.AccountId32,
         })
     ),
 }
@@ -31,7 +31,7 @@ export const poolCommissionSet =  {
      * Affected states:
      * - the `payout_commission` field in [`Pools`] is updated
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaStakePoolv2.PoolCommissionSet',
         sts.struct({
             pid: sts.bigint(),
@@ -48,7 +48,7 @@ export const poolCapacitySet =  {
      * Affected states:
      * - the `cap` field in [`Pools`] is updated
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaStakePoolv2.PoolCapacitySet',
         sts.struct({
             pid: sts.bigint(),
@@ -68,12 +68,12 @@ export const poolWorkerAdded =  {
      * - the worker-session binding is updated in `computation` pallet ([`WorkerBindings`](computation::pallet::WorkerBindings),
      *   [`SessionBindings`](computation::pallet::SessionBindings))
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaStakePoolv2.PoolWorkerAdded',
         sts.struct({
             pid: sts.bigint(),
-            worker: v1199.Public,
-            session: v1199.AccountId32,
+            worker: v1240.Public,
+            session: v1240.AccountId32,
         })
     ),
 }
@@ -90,11 +90,11 @@ export const contribution =  {
      * - when there was any request in the withdraw queue, the action may trigger withdrawals
      *   ([`Withdrawal`](#variant.Withdrawal) event)
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaStakePoolv2.Contribution',
         sts.struct({
             pid: sts.bigint(),
-            user: v1199.AccountId32,
+            user: v1240.AccountId32,
             amount: sts.bigint(),
             shares: sts.bigint(),
             asVault: sts.option(() => sts.bigint()),
@@ -111,11 +111,11 @@ export const ownerRewardsWithdrawn =  {
      * - the stake related fields in [`Pools`]
      * - the owner asset account
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaStakePoolv2.OwnerRewardsWithdrawn',
         sts.struct({
             pid: sts.bigint(),
-            user: v1199.AccountId32,
+            user: v1240.AccountId32,
             amount: sts.bigint(),
         })
     ),
@@ -130,11 +130,11 @@ export const poolWorkerRemoved =  {
      * - the worker item in [`WorkerAssignments`] is removed
      * - the worker is removed from the [`Pools`] item
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaStakePoolv2.PoolWorkerRemoved',
         sts.struct({
             pid: sts.bigint(),
-            worker: v1199.Public,
+            worker: v1240.Public,
         })
     ),
 }
@@ -144,11 +144,11 @@ export const workerReclaimed =  {
     /**
      * A worker is reclaimed from the pool
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaStakePoolv2.WorkerReclaimed',
         sts.struct({
             pid: sts.bigint(),
-            worker: v1199.Public,
+            worker: v1240.Public,
         })
     ),
 }
@@ -158,7 +158,7 @@ export const rewardReceived =  {
     /**
      * The amount of reward that distributed to owner and stakers
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaStakePoolv2.RewardReceived',
         sts.struct({
             pid: sts.bigint(),
@@ -173,11 +173,11 @@ export const workingStarted =  {
     /**
      * The amount of stakes for a worker to start computing
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaStakePoolv2.WorkingStarted',
         sts.struct({
             pid: sts.bigint(),
-            worker: v1199.Public,
+            worker: v1240.Public,
             amount: sts.bigint(),
         })
     ),

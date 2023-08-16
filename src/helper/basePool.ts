@@ -190,7 +190,7 @@ export const fixBasePool = async (
   }
 
   if (basePool.totalShares.gt(1e10)) {
-    const res = await phalaBasePool.pools.v1199.get(block, BigInt(basePool.id))
+    const res = await phalaBasePool.pools.v1240.get(block, BigInt(basePool.id))
     if (res != null) {
       basePool.totalShares = toBalance(res.value.basepool.totalShares)
       updateSharePrice(basePool)

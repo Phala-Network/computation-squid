@@ -17,7 +17,7 @@ import {
 } from './types/events'
 
 export const processor = new SubstrateBatchProcessor()
-  .setGateway('https://v2.archive.subsquid.io/network/khala')
+  .setGateway('https://v2.archive.subsquid.io/network/phala')
   .setRpcEndpoint(RPC_ENDPOINT)
   .setBlockRange({
     from: INITIAL_BLOCK + 1,

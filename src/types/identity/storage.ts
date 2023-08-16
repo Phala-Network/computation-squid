@@ -1,5 +1,5 @@
 import {sts, Block, Bytes, Option, Result, StorageType, RuntimeCtx} from '../support'
-import * as v1 from '../v1'
+import * as v1090 from '../v1090'
 
 export const identityOf =  {
     /**
@@ -7,7 +7,7 @@ export const identityOf =  {
      * 
      *  TWOX-NOTE: OK ― `AccountId` is a secure hash.
      */
-    v1: new StorageType('Identity.IdentityOf', 'Optional', [v1.AccountId], v1.Registration) as IdentityOfV1,
+    v1090: new StorageType('Identity.IdentityOf', 'Optional', [v1090.AccountId32], v1090.Registration) as IdentityOfV1090,
 }
 
 /**
@@ -15,16 +15,16 @@ export const identityOf =  {
  * 
  *  TWOX-NOTE: OK ― `AccountId` is a secure hash.
  */
-export interface IdentityOfV1  {
+export interface IdentityOfV1090  {
     is(block: RuntimeCtx): boolean
-    get(block: Block, key: v1.AccountId): Promise<(v1.Registration | undefined)>
-    getMany(block: Block, keys: v1.AccountId[]): Promise<(v1.Registration | undefined)[]>
-    getKeys(block: Block): Promise<v1.AccountId[]>
-    getKeys(block: Block, key: v1.AccountId): Promise<v1.AccountId[]>
-    getKeysPaged(pageSize: number, block: Block): AsyncIterable<v1.AccountId[]>
-    getKeysPaged(pageSize: number, block: Block, key: v1.AccountId): AsyncIterable<v1.AccountId[]>
-    getPairs(block: Block): Promise<[k: v1.AccountId, v: (v1.Registration | undefined)][]>
-    getPairs(block: Block, key: v1.AccountId): Promise<[k: v1.AccountId, v: (v1.Registration | undefined)][]>
-    getPairsPaged(pageSize: number, block: Block): AsyncIterable<[k: v1.AccountId, v: (v1.Registration | undefined)][]>
-    getPairsPaged(pageSize: number, block: Block, key: v1.AccountId): AsyncIterable<[k: v1.AccountId, v: (v1.Registration | undefined)][]>
+    get(block: Block, key: v1090.AccountId32): Promise<(v1090.Registration | undefined)>
+    getMany(block: Block, keys: v1090.AccountId32[]): Promise<(v1090.Registration | undefined)[]>
+    getKeys(block: Block): Promise<v1090.AccountId32[]>
+    getKeys(block: Block, key: v1090.AccountId32): Promise<v1090.AccountId32[]>
+    getKeysPaged(pageSize: number, block: Block): AsyncIterable<v1090.AccountId32[]>
+    getKeysPaged(pageSize: number, block: Block, key: v1090.AccountId32): AsyncIterable<v1090.AccountId32[]>
+    getPairs(block: Block): Promise<[k: v1090.AccountId32, v: (v1090.Registration | undefined)][]>
+    getPairs(block: Block, key: v1090.AccountId32): Promise<[k: v1090.AccountId32, v: (v1090.Registration | undefined)][]>
+    getPairsPaged(pageSize: number, block: Block): AsyncIterable<[k: v1090.AccountId32, v: (v1090.Registration | undefined)][]>
+    getPairsPaged(pageSize: number, block: Block, key: v1090.AccountId32): AsyncIterable<[k: v1090.AccountId32, v: (v1090.Registration | undefined)][]>
 }

@@ -1,5 +1,5 @@
 import {sts, Block, Bytes, Option, Result, EventType, RuntimeCtx} from '../support'
-import * as v1199 from '../v1199'
+import * as v1240 from '../v1240'
 import * as v1254 from '../v1254'
 
 export const nftCreated =  {
@@ -7,13 +7,13 @@ export const nftCreated =  {
     /**
      * A Nft is created to contain pool shares
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaBasePool.NftCreated',
         sts.struct({
             pid: sts.bigint(),
             cid: sts.number(),
             nftId: sts.number(),
-            owner: v1199.AccountId32,
+            owner: v1240.AccountId32,
             shares: sts.bigint(),
         })
     ),
@@ -28,11 +28,11 @@ export const withdrawalQueued =  {
      * - a new item is inserted to or an old item is being replaced by the new item in the
      *   withdraw queue in [`Pools`]
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaBasePool.WithdrawalQueued',
         sts.struct({
             pid: sts.bigint(),
-            user: v1199.AccountId32,
+            user: v1240.AccountId32,
             shares: sts.bigint(),
             nftId: sts.number(),
             asVault: sts.option(() => sts.bigint()),
@@ -76,11 +76,11 @@ export const withdrawal =  {
      * - the stake related fields in [`Pools`]
      * - the user staking asset account
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaBasePool.Withdrawal',
         sts.struct({
             pid: sts.bigint(),
-            user: v1199.AccountId32,
+            user: v1240.AccountId32,
             amount: sts.bigint(),
             shares: sts.bigint(),
         })
@@ -114,7 +114,7 @@ export const poolWhitelistCreated =  {
      * 
      * - lazy operated when the first staker is added to the whitelist
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaBasePool.PoolWhitelistCreated',
         sts.struct({
             pid: sts.bigint(),
@@ -129,7 +129,7 @@ export const poolWhitelistDeleted =  {
      * 
      * - lazy operated when the last staker is removed from the whitelist
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaBasePool.PoolWhitelistDeleted',
         sts.struct({
             pid: sts.bigint(),
@@ -142,11 +142,11 @@ export const poolWhitelistStakerAdded =  {
     /**
      * A staker is added to the pool contribution whitelist
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaBasePool.PoolWhitelistStakerAdded',
         sts.struct({
             pid: sts.bigint(),
-            staker: v1199.AccountId32,
+            staker: v1240.AccountId32,
         })
     ),
 }
@@ -156,11 +156,11 @@ export const poolWhitelistStakerRemoved =  {
     /**
      * A staker is removed from the pool contribution whitelist
      */
-    v1199: new EventType(
+    v1240: new EventType(
         'PhalaBasePool.PoolWhitelistStakerRemoved',
         sts.struct({
             pid: sts.bigint(),
-            staker: v1199.AccountId32,
+            staker: v1240.AccountId32,
         })
     ),
 }
