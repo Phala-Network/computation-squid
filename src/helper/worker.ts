@@ -17,13 +17,13 @@ export function updateSessionShares(
   session: Session,
   worker: Worker,
 ): asserts session is Session & {shares: BigDecimal} {
-  const {v, pInstant} = session
+  const {v, pInit} = session
   const {confidenceLevel} = worker
   if (validateConfidenceLevel(confidenceLevel)) {
     const confidenceScore = confidenceScoreMap[confidenceLevel]
     const shares = v
       .pow(2)
-      .plus(BigDecimal(2).mul(pInstant).mul(confidenceScore).pow(2))
+      .plus(BigDecimal(2).mul(pInit).mul(confidenceScore).pow(2))
       .sqrt()
       .round(12)
     session.shares = shares
