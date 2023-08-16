@@ -1,4 +1,4 @@
-export const INITIAL_BLOCK = 3000000
+export const INITIAL_BLOCK = 2426198
 
 export const TO_BLOCK =
   process.env.TO_BLOCK != null
@@ -9,7 +9,7 @@ export const BASE_POOL_ACCOUNT =
   '42qnPyfw3sbWMGGtTPPc2YFNZRKPGXswRszyQQjGs2FDxdim'
 
 export const RPC_ENDPOINT =
-  process.env.RPC_ENDPOINT || 'https://khala-rpc.dwellir.com'
+  process.env.RPC_ENDPOINT || 'https://phala-rpc.dwellir.com'
 
 export const ENABLE_SNAPSHOT = process.env.ENABLE_SNAPSHOT === '1'
 
