@@ -1,8 +1,8 @@
-module.exports = class Data1692189178436 {
-    name = 'Data1692189178436'
+module.exports = class Data1692263127912 {
+    name = 'Data1692263127912'
 
     async up(db) {
-        await db.query(`CREATE TABLE "global_state" ("id" character varying NOT NULL, "height" integer NOT NULL, "total_value" numeric NOT NULL, "average_block_time_updated_height" integer NOT NULL, "average_block_time_updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "average_block_time" integer NOT NULL, "average_apr_multiplier" numeric NOT NULL, "average_apr" numeric NOT NULL, "idle_worker_shares" numeric NOT NULL, "cumulative_rewards" numeric NOT NULL, "pha_rate" numeric NOT NULL, "budget_per_block" numeric NOT NULL, "v_max" numeric NOT NULL, "treasury_ratio" numeric NOT NULL, "re" numeric NOT NULL, "k" numeric NOT NULL, "worker_count" integer NOT NULL, "idle_worker_count" integer NOT NULL, "budget_per_share" numeric NOT NULL, "delegator_count" integer NOT NULL, CONSTRAINT "PK_8b4db1150cf49bfd067e2572c74" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "global_state" ("id" character varying NOT NULL, "total_value" numeric NOT NULL, "average_block_time_updated_height" integer NOT NULL, "average_block_time_updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "average_block_time" integer NOT NULL, "average_apr_multiplier" numeric NOT NULL, "average_apr" numeric NOT NULL, "idle_worker_shares" numeric NOT NULL, "cumulative_rewards" numeric NOT NULL, "pha_rate" numeric NOT NULL, "budget_per_block" numeric NOT NULL, "v_max" numeric NOT NULL, "treasury_ratio" numeric NOT NULL, "re" numeric NOT NULL, "k" numeric NOT NULL, "worker_count" integer NOT NULL, "idle_worker_count" integer NOT NULL, "budget_per_share" numeric NOT NULL, "delegator_count" integer NOT NULL, CONSTRAINT "PK_8b4db1150cf49bfd067e2572c74" PRIMARY KEY ("id"))`)
         await db.query(`CREATE TABLE "base_pool_whitelist" ("id" character varying NOT NULL, "create_time" TIMESTAMP WITH TIME ZONE NOT NULL, "account_id" character varying, "base_pool_id" character varying, CONSTRAINT "PK_1a86621574257deb7a2b7b4d7d7" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_57aaf3859a02333f595bd5bd22" ON "base_pool_whitelist" ("account_id") `)
         await db.query(`CREATE INDEX "IDX_993eea06189ccb1817da97adab" ON "base_pool_whitelist" ("base_pool_id") `)

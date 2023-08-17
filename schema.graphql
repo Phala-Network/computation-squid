@@ -1,7 +1,6 @@
 type GlobalState @entity {
   "constant 0"
   id: ID!
-  height: Int!
   totalValue: BigDecimal!
   averageBlockTimeUpdatedHeight: Int!
   averageBlockTimeUpdatedTime: DateTime!

@@ -127,7 +127,6 @@ const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
 
   const globalState = new GlobalState({
     id: '0',
-    height: dumpBlock,
     averageApr: BigDecimal(0),
     averageAprMultiplier: BigDecimal(0),
     averageBlockTimeUpdatedHeight: dumpBlock,

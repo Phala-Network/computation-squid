@@ -14,9 +14,6 @@ export class GlobalState {
     @PrimaryColumn_()
     id!: string
 
-    @Column_("int4", {nullable: false})
-    height!: number
-
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     totalValue!: BigDecimal
 

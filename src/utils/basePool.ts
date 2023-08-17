@@ -121,12 +121,12 @@ export const updateStakePoolDelegable = (
 export const getBasePoolAvgAprMultiplier = (
   basePools: BasePool[]
 ): BigDecimal => {
-  const weight = BigDecimal(0)
+  let weight = BigDecimal(0)
   let totalValue = BigDecimal(0)
   for (const basePool of basePools) {
     if (basePool.kind === BasePoolKind.StakePool) {
-      totalValue = totalValue.add(basePool.totalValue)
-      return weight.plus(basePool.totalValue.times(basePool.aprMultiplier))
+      totalValue = totalValue.plus(basePool.totalValue)
+      weight = weight.plus(basePool.totalValue.times(basePool.aprMultiplier))
     }
   }
   if (totalValue.eq(0)) {
