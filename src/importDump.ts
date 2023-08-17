@@ -125,12 +125,15 @@ const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
     ).then(async (res) => (await res.json()) as Dump)
   }
 
+  const updatedTime = new Date(dump.timestamp)
+
   const globalState = new GlobalState({
     id: '0',
     averageApr: BigDecimal(0),
     averageAprMultiplier: BigDecimal(0),
     averageBlockTimeUpdatedHeight: dumpBlock,
-    averageBlockTimeUpdatedTime: new Date(dump.timestamp),
+    averageBlockTimeUpdatedTime: updatedTime,
+    snapshotUpdatedTime: updatedTime,
     averageBlockTime: 12000,
     totalValue: BigDecimal(0),
     idleWorkerShares: BigDecimal(0),

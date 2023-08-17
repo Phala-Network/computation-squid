@@ -23,6 +23,9 @@ export class GlobalState {
     @Column_("timestamp with time zone", {nullable: false})
     averageBlockTimeUpdatedTime!: Date
 
+    @Column_("timestamp with time zone", {nullable: false})
+    snapshotUpdatedTime!: Date
+
     @Column_("int4", {nullable: false})
     averageBlockTime!: number
 

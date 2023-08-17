@@ -4,6 +4,7 @@ type GlobalState @entity {
   totalValue: BigDecimal!
   averageBlockTimeUpdatedHeight: Int!
   averageBlockTimeUpdatedTime: DateTime!
+  snapshotUpdatedTime: DateTime!
   averageBlockTime: Int!
   averageAprMultiplier: BigDecimal!
   averageApr: BigDecimal!
