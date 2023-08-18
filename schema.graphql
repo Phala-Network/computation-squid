@@ -214,6 +214,7 @@ type GlobalStateSnapshot @entity {
   totalValue: BigDecimal!
   averageBlockTime: Int!
   averageApr: BigDecimal!
+  idleWorkerShares: BigDecimal!
   cumulativeRewards: BigDecimal!
   budgetPerBlock: BigDecimal!
   workerCount: Int!

@@ -1,6 +1,6 @@
 manifestVersion: subsquid.io/v0.1
 name: khala-computation
-version: 3
+version: 4
 description: 'Khala computation squid'
 build:
 

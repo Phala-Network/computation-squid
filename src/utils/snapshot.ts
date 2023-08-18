@@ -124,5 +124,6 @@ export const createGlobalStateSnapshot = (
     idleWorkerCount: globalState.idleWorkerCount,
     budgetPerShare: globalState.budgetPerShare,
     delegatorCount: globalState.delegatorCount,
+    idleWorkerShares: globalState.idleWorkerShares,
   })
 }

@@ -27,6 +27,9 @@ export class GlobalStateSnapshot {
     averageApr!: BigDecimal
 
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    idleWorkerShares!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     cumulativeRewards!: BigDecimal
 
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
