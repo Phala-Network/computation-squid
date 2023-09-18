@@ -36,4 +36,3 @@ scale:
     profile: large
   api:
     profile: large
-    replicas: 4
