@@ -8,7 +8,7 @@ import {fromBits} from './converter'
 
 export const updateAverageBlockTime = (
   block: SubstrateBlock,
-  globalState: GlobalState
+  globalState: GlobalState,
 ): void => {
   const blockCount = block.height - globalState.averageBlockTimeUpdatedHeight
   if (blockCount < 100) return
@@ -23,7 +23,7 @@ export const updateAverageBlockTime = (
 export const updateTokenomicParameters = async (
   ctx: ProcessorContext<Store>,
   block: SubstrateBlock,
-  globalState: GlobalState
+  globalState: GlobalState,
 ): Promise<void> => {
   const tokenomicParameters =
     await new PhalaComputationTokenomicParametersStorage(ctx, block).asV1199

@@ -42,7 +42,7 @@ const postUpdate = async (
   accountMap: Map<string, Account>,
   basePools: BasePool[],
   stakePoolMap: Map<string, StakePool>,
-  delegations: Delegation[]
+  delegations: Delegation[],
 ): Promise<void> => {
   const latestBlock = ctx.blocks.at(-1)
   assert(latestBlock)
@@ -91,16 +91,16 @@ const postUpdate = async (
     const accountDelegations = delegationAccountIdMap[account.id]
     if (accountDelegations === undefined) continue
     const accountStakePoolDelegations = accountDelegations.filter(
-      (x) => x.basePool.kind === BasePoolKind.StakePool
+      (x) => x.basePool.kind === BasePoolKind.StakePool,
     )
     account.stakePoolNftCount = accountStakePoolDelegations.filter((x) =>
-      x.shares.gt(0)
+      x.shares.gt(0),
     ).length
     account.stakePoolValue = sum(
-      ...accountStakePoolDelegations.map((x) => x.value)
+      ...accountStakePoolDelegations.map((x) => x.value),
     )
     account.stakePoolAvgAprMultiplier = getDelegationAvgAprMultiplier(
-      accountStakePoolDelegations
+      accountStakePoolDelegations,
     )
   }
 
@@ -113,7 +113,7 @@ const postUpdate = async (
       const delegations = delegationAccountIdMap[account.id]
       if (delegations !== undefined) {
         basePool.releasingValue = sum(
-          ...delegations.map((x) => x.withdrawingValue)
+          ...delegations.map((x) => x.withdrawingValue),
         )
       }
     }
@@ -135,7 +135,7 @@ const postUpdate = async (
 
     if (shouldTakeSnapshot && delegation.shares.gt(0)) {
       delegationSnapshots.push(
-        createDelegationSnapshot({delegation, updatedTime})
+        createDelegationSnapshot({delegation, updatedTime}),
       )
     }
   }
@@ -144,11 +144,11 @@ const postUpdate = async (
     const accountDelegations = delegationAccountIdMap[account.id]
     if (accountDelegations === undefined) continue
     const accountVaultDelegations = accountDelegations.filter(
-      (x) => x.basePool.kind === BasePoolKind.Vault
+      (x) => x.basePool.kind === BasePoolKind.Vault,
     )
     account.vaultValue = sum(...accountVaultDelegations.map((x) => x.value))
     account.vaultNftCount = accountVaultDelegations.filter((x) =>
-      x.shares.gt(0)
+      x.shares.gt(0),
     ).length
 
     if (shouldTakeSnapshot) {
@@ -156,7 +156,7 @@ const postUpdate = async (
     }
 
     account.vaultAvgAprMultiplier = getDelegationAvgAprMultiplier(
-      accountVaultDelegations
+      accountVaultDelegations,
     )
   }
 
@@ -194,13 +194,13 @@ const postUpdate = async (
           updatedTime,
           apr: getApr(basePool.aprMultiplier),
           stakePool: stakePoolMap.get(basePool.id),
-        })
+        }),
       )
     }
 
     const globalStateSnapshot = createGlobalStateSnapshot(
       globalState,
-      updatedTime
+      updatedTime,
     )
 
     await ctx.store.save(workerSnapshots)

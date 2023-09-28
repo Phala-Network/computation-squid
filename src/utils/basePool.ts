@@ -3,14 +3,24 @@ import {BasePool, BasePoolKind, StakePool, Vault, type Account} from '../model'
 
 export function createPool(
   kind: BasePoolKind.StakePool,
-  props: {pid: string; cid: number; ownerAccount: Account; poolAccount: Account}
+  props: {
+    pid: string
+    cid: number
+    ownerAccount: Account
+    poolAccount: Account
+  },
 ): {
   basePool: BasePool
   stakePool: StakePool
 }
 export function createPool(
   kind: BasePoolKind.Vault,
-  props: {pid: string; cid: number; ownerAccount: Account; poolAccount: Account}
+  props: {
+    pid: string
+    cid: number
+    ownerAccount: Account
+    poolAccount: Account
+  },
 ): {
   basePool: BasePool
   vault: Vault
@@ -22,7 +32,7 @@ export function createPool(
     cid,
     ownerAccount,
     poolAccount,
-  }: {pid: string; cid: number; ownerAccount: Account; poolAccount: Account}
+  }: {pid: string; cid: number; ownerAccount: Account; poolAccount: Account},
 ): {basePool: BasePool; stakePool?: StakePool; vault?: Vault} {
   const basePool = new BasePool({
     id: pid,
@@ -78,7 +88,7 @@ export function updateSharePrice(basePool: BasePool): void {
 
 export function updateStakePoolAprMultiplier(
   basePool: BasePool,
-  stakePool: StakePool
+  stakePool: StakePool,
 ): void {
   basePool.aprMultiplier = basePool.totalValue.eq(0)
     ? BigDecimal(0)
@@ -90,7 +100,7 @@ export function updateStakePoolAprMultiplier(
 
 export const updateVaultAprMultiplier = (
   basePool: BasePool,
-  account: Account
+  account: Account,
 ): void => {
   if (basePool.totalValue.eq(0)) {
     basePool.aprMultiplier = BigDecimal(0)
@@ -105,7 +115,7 @@ export const updateVaultAprMultiplier = (
 
 export const updateStakePoolDelegable = (
   basePool: BasePool,
-  stakePool: StakePool
+  stakePool: StakePool,
 ): void => {
   if (stakePool.capacity != null) {
     stakePool.delegable = basePool.totalValue.gt(stakePool.capacity)
@@ -119,7 +129,7 @@ export const updateStakePoolDelegable = (
 }
 
 export const getBasePoolAvgAprMultiplier = (
-  basePools: BasePool[]
+  basePools: BasePool[],
 ): BigDecimal => {
   let weight = BigDecimal(0)
   let totalValue = BigDecimal(0)

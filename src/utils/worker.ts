@@ -15,7 +15,7 @@ const confidenceScoreMap: Record<ConfidenceLevel, string> = {
 
 export function updateWorkerShares(
   worker: Worker,
-  session: Session
+  session: Session,
 ): asserts worker is Worker & {shares: BigDecimal} {
   const {v, pInstant} = session
   const {confidenceLevel} = worker

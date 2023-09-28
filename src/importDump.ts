@@ -5,7 +5,7 @@ import {groupBy} from 'lodash'
 import path from 'path'
 import {type Store} from '@subsquid/typeorm-store'
 import fetch from 'node-fetch'
-import {BASE_POOL_ACCOUNT} from './config'
+import {BASE_POOL_ACCOUNT, DUMP_BLOCK} from './config'
 import {
   BasePoolKind,
   BasePoolWhitelist,
@@ -111,17 +111,16 @@ interface Dump {
 }
 
 const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
-  const dumpBlock = Number(process.env.DUMP_BLOCK)
   let dump: Dump
   try {
     const dumpFile = await readFile(
-      path.join(__dirname, `../dump_${dumpBlock}.json`),
-      'utf8'
+      path.join(__dirname, `../dump_${DUMP_BLOCK}.json`),
+      'utf8',
     )
     dump = JSON.parse(dumpFile)
   } catch (e) {
     dump = await fetch(
-      `https://raw.githubusercontent.com/Phala-Network/computation-squid/main/dump_${dumpBlock}.json`
+      `https://raw.githubusercontent.com/Phala-Network/computation-squid/main/dump_${DUMP_BLOCK}.json`,
     ).then(async (res) => (await res.json()) as Dump)
   }
 
@@ -131,7 +130,7 @@ const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
     id: '0',
     averageApr: BigDecimal(0),
     averageAprMultiplier: BigDecimal(0),
-    averageBlockTimeUpdatedHeight: dumpBlock,
+    averageBlockTimeUpdatedHeight: DUMP_BLOCK,
     averageBlockTimeUpdatedTime: updatedTime,
     snapshotUpdatedTime: updatedTime,
     averageBlockTime: 12000,
@@ -206,7 +205,7 @@ const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
       globalState.workerCount++
       if (session.state === WorkerState.WorkerIdle) {
         globalState.idleWorkerShares = globalState.idleWorkerShares.plus(
-          worker.shares
+          worker.shares,
         )
         globalState.idleWorkerCount++
       }
@@ -235,7 +234,7 @@ const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
       assert('vault' in pool)
       const {vault} = pool
       vault.lastSharePriceCheckpoint = toBalance(
-        b.vault.lastSharePriceCheckpoint
+        b.vault.lastSharePriceCheckpoint,
       )
       vault.claimableOwnerShares = toBalance(b.vault.ownerShares)
       vaultMap.set(b.pid, vault)
@@ -259,12 +258,12 @@ const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
           assert(worker.shares)
           stakePool.idleWorkerCount++
           stakePool.idleWorkerShares = stakePool.idleWorkerShares.plus(
-            worker.shares
+            worker.shares,
           )
         }
         if (worker.session.state === WorkerState.WorkerCoolingDown) {
           basePool.releasingValue = basePool.releasingValue.plus(
-            worker.session.stake
+            worker.session.stake,
           )
         }
       }
@@ -285,7 +284,7 @@ const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
           basePool,
           // MEMO: keep the order of whitelists
           createTime: new Date(dump.timestamp - whitelists.length + i),
-        })
+        }),
       )
     }
 
@@ -399,19 +398,19 @@ const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
 
   const accountDelegationMap = groupBy(
     [...delegationMap.values()],
-    (x) => x.account.id
+    (x) => x.account.id,
   )
 
   for (const account of accountMap.values()) {
     const delegations = accountDelegationMap[account.id] ?? []
     const stakePoolDelegations = delegations.filter(
-      (x) => x.basePool.kind === BasePoolKind.StakePool
+      (x) => x.basePool.kind === BasePoolKind.StakePool,
     )
     account.stakePoolAvgAprMultiplier =
       getDelegationAvgAprMultiplier(stakePoolDelegations)
 
     accountValueSnapshots.push(
-      createAccountSnapshot({account, updatedTime: new Date(dump.timestamp)})
+      createAccountSnapshot({account, updatedTime: new Date(dump.timestamp)}),
     )
   }
 
@@ -420,10 +419,10 @@ const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
       updateVaultAprMultiplier(basePool, basePool.account)
       const delegations = accountDelegationMap[basePool.account.id] ?? []
       const stakePoolDelegations = delegations.filter(
-        (x) => x.basePool.kind === BasePoolKind.StakePool
+        (x) => x.basePool.kind === BasePoolKind.StakePool,
       )
       basePool.releasingValue = sum(
-        ...stakePoolDelegations.map((x) => x.withdrawingValue)
+        ...stakePoolDelegations.map((x) => x.withdrawingValue),
       )
     }
     basePool.withdrawingValue = basePool.withdrawingShares
@@ -438,7 +437,7 @@ const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
   for (const account of accountMap.values()) {
     const delegations = accountDelegationMap[account.id] ?? []
     const vaultDelegations = delegations.filter(
-      (x) => x.basePool.kind === BasePoolKind.Vault
+      (x) => x.basePool.kind === BasePoolKind.Vault,
     )
     account.vaultAvgAprMultiplier =
       getDelegationAvgAprMultiplier(vaultDelegations)

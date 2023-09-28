@@ -34,7 +34,7 @@ export const createAccountSnapshot = ({
       account.cumulativeStakePoolOwnerRewards.round(2, 0),
     cumulativeVaultOwnerRewards: account.cumulativeVaultOwnerRewards.round(
       2,
-      0
+      0,
     ),
   })
 }
@@ -110,7 +110,7 @@ export const createWorkerSnapshot = ({
 
 export const createGlobalStateSnapshot = (
   globalState: GlobalState,
-  updatedTime: Date
+  updatedTime: Date,
 ): GlobalStateSnapshot => {
   return new GlobalStateSnapshot({
     id: updatedTime.toISOString(),

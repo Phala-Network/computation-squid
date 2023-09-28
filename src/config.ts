@@ -4,11 +4,13 @@ import {
   type DataSource,
 } from '@subsquid/substrate-processor'
 
+export const DUMP_BLOCK = 3000000
+
 const config: {
   dataSource: DataSource
   blockRange: Exclude<BlockRangeOption['range'], undefined>
 } = {
-  blockRange: {from: Number(process.env.DUMP_BLOCK) + 1},
+  blockRange: {from: DUMP_BLOCK + 1},
   dataSource: {
     archive: lookupArchive('khala', {release: 'FireSquid'}),
     chain: 'wss://priv-api.phala.network/khala/ws',

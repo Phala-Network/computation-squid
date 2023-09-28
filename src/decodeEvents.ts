@@ -44,12 +44,11 @@ import {
   RmrkCoreNftMintedEvent,
 } from './types/events'
 import {encodeAddress, fromBits, toBalance} from './utils/converter'
-// import {u8aToBigInt, u8aToString} from '@polkadot/util'
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const decodeEvent = (
   ctx: ProcessorContext<Store>,
-  item: ProcessorContext<Store>['blocks'][number]['items'][number]
+  item: ProcessorContext<Store>['blocks'][number]['items'][number],
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 ) => {
   const {name} = item
   switch (name) {
@@ -263,7 +262,7 @@ const decodeEvent = (
     case 'PhalaBasePool.PoolWhitelistStakerRemoved': {
       const e = new PhalaBasePoolPoolWhitelistStakerRemovedEvent(
         ctx,
-        item.event
+        item.event,
       )
       const {pid, staker} = e.asV1199
       return {name, args: {pid: String(pid), accountId: encodeAddress(staker)}}
@@ -328,7 +327,7 @@ const decodeEvent = (
     case 'PhalaComputation.WorkerEnterUnresponsive': {
       const e = new PhalaComputationWorkerEnterUnresponsiveEvent(
         ctx,
-        item.event
+        item.event,
       )
       const {session} = e.asV1199
       return {name, args: {sessionId: encodeAddress(session)}}
@@ -422,7 +421,7 @@ const decodeEvent = (
 }
 
 const decodeEvents = (
-  ctx: ProcessorContext<Store>
+  ctx: ProcessorContext<Store>,
 ): Array<
   Exclude<ReturnType<typeof decodeEvent>, undefined> & {
     block: SubstrateBlock

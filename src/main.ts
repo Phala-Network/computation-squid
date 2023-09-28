@@ -160,7 +160,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   const basePoolMap = toMap(basePools)
   const basePoolAccountIdMap = toMap(
     basePools,
-    (basePool) => basePool.account.id
+    (basePool) => basePool.account.id,
   )
 
   const stakePoolMap = await ctx.store
@@ -469,7 +469,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           delegation.shares = shares.plus(delegation.withdrawingShares)
           updateDelegationValue(delegation, basePool)
           delegation.cost = delegation.cost.plus(
-            delegation.shares.minus(prevShares).times(basePool.sharePrice)
+            delegation.shares.minus(prevShares).times(basePool.sharePrice),
           )
           delegationMap.set(delegationId, delegation)
         }
@@ -485,7 +485,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         basePool.freeValue = basePool.freeValue.minus(amount)
         basePool.withdrawingShares = max(
           basePool.withdrawingShares.minus(shares),
-          BigDecimal(0)
+          BigDecimal(0),
         )
         basePool.withdrawingValue = basePool.withdrawingShares
           .times(basePool.sharePrice)
@@ -617,10 +617,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const worker = assertGet(workerMap, session.worker.id)
         updateWorkerShares(worker, session)
         globalState.idleWorkerShares = globalState.idleWorkerShares.plus(
-          worker.shares
+          worker.shares,
         )
         stakePool.idleWorkerShares = stakePool.idleWorkerShares.plus(
-          worker.shares
+          worker.shares,
         )
         updateStakePoolAprMultiplier(basePool, stakePool)
         break
@@ -636,10 +636,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         assert(worker.shares)
         if (session.state === WorkerState.WorkerIdle) {
           globalState.idleWorkerShares = globalState.idleWorkerShares.minus(
-            worker.shares
+            worker.shares,
           )
           stakePool.idleWorkerShares = stakePool.idleWorkerShares.minus(
-            worker.shares
+            worker.shares,
           )
           updateStakePoolAprMultiplier(basePool, stakePool)
           stakePool.idleWorkerCount--
@@ -664,10 +664,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           const worker = assertGet(workerMap, session.worker.id)
           assert(worker.shares)
           globalState.idleWorkerShares = globalState.idleWorkerShares.minus(
-            worker.shares
+            worker.shares,
           )
           stakePool.idleWorkerShares = stakePool.idleWorkerShares.minus(
-            worker.shares
+            worker.shares,
           )
           updateStakePoolAprMultiplier(basePool, stakePool)
         }
@@ -686,10 +686,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           const worker = assertGet(workerMap, session.worker.id)
           assert(worker.shares)
           globalState.idleWorkerShares = globalState.idleWorkerShares.plus(
-            worker.shares
+            worker.shares,
           )
           stakePool.idleWorkerShares = stakePool.idleWorkerShares.plus(
-            worker.shares
+            worker.shares,
           )
           updateStakePoolAprMultiplier(basePool, stakePool)
         }
@@ -777,7 +777,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     accountMap,
     basePools,
     stakePoolMap,
-    delegations
+    delegations,
   )
 
   for (const x of [

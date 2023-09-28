@@ -32,7 +32,7 @@ export const join = (...args: Array<string | number | bigint>): string =>
 
 export const toMap = <T extends {id: string}>(
   a: T[],
-  fn: (a: T) => string = (a) => a.id
+  fn: (a: T) => string = (a) => a.id,
 ): Map<string, T> => new Map(a.map((a) => [fn(a), a]))
 
 export const max = (a: BigDecimal, b: BigDecimal): BigDecimal =>

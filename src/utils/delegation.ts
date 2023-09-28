@@ -4,7 +4,7 @@ import {sum} from './common'
 
 export const updateDelegationValue = (
   delegation: Delegation,
-  basePool: BasePool
+  basePool: BasePool,
 ): void => {
   delegation.value = delegation.shares.times(basePool.sharePrice).round(12, 0)
   delegation.withdrawingValue = delegation.withdrawingShares
@@ -13,14 +13,14 @@ export const updateDelegationValue = (
 }
 
 export const getDelegationAvgAprMultiplier = (
-  delegations: Delegation[]
+  delegations: Delegation[],
 ): BigDecimal => {
   const totalValue = sum(...delegations.map((x) => x.value))
   if (totalValue.eq(0)) return BigDecimal(0)
   return delegations
     .reduce(
       (a, b) => a.plus(b.value.times(b.basePool.aprMultiplier)),
-      BigDecimal(0)
+      BigDecimal(0),
     )
     .div(totalValue)
 }
