@@ -17,7 +17,7 @@ export class StakePool {
     id!: string
 
     @Index_({unique: true})
-    @OneToOne_(() => BasePool, {nullable: false})
+    @OneToOne_(() => BasePool, {nullable: true})
     @JoinColumn_()
     basePool!: BasePool
 

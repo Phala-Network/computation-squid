@@ -1,65 +1,83 @@
 import {
   SubstrateBatchProcessor,
-  type BatchContext,
-  type BatchProcessorCallItem,
-  type BatchProcessorEventItem,
-  type BatchProcessorItem,
+  type BlockHeader,
+  type DataHandlerContext,
+  type SubstrateBatchProcessorFields,
 } from '@subsquid/substrate-processor'
+import {type Store} from '@subsquid/typeorm-store'
 import config from './config'
+import {
+  identity,
+  phalaBasePool,
+  phalaComputation,
+  phalaRegistry,
+  phalaStakePoolv2,
+  phalaVault,
+  rmrkCore,
+} from './types/events'
 
 export const processor = new SubstrateBatchProcessor()
   .setDataSource(config.dataSource)
   .setBlockRange(config.blockRange)
 
-  .addEvent('PhalaStakePoolv2.PoolCreated')
-  .addEvent('PhalaStakePoolv2.PoolCommissionSet')
-  .addEvent('PhalaStakePoolv2.PoolCapacitySet')
-  .addEvent('PhalaStakePoolv2.PoolWorkerAdded')
-  .addEvent('PhalaStakePoolv2.PoolWorkerRemoved')
-  .addEvent('PhalaStakePoolv2.WorkingStarted')
-  .addEvent('PhalaStakePoolv2.RewardReceived')
-  .addEvent('PhalaStakePoolv2.OwnerRewardsWithdrawn')
-  .addEvent('PhalaStakePoolv2.Contribution')
-  .addEvent('PhalaStakePoolv2.WorkerReclaimed')
+  .addEvent({
+    name: [
+      phalaStakePoolv2.poolCreated.name,
+      phalaStakePoolv2.poolCommissionSet.name,
+      phalaStakePoolv2.poolCapacitySet.name,
+      phalaStakePoolv2.poolWorkerAdded.name,
+      phalaStakePoolv2.poolWorkerRemoved.name,
+      phalaStakePoolv2.workingStarted.name,
+      phalaStakePoolv2.rewardReceived.name,
+      phalaStakePoolv2.ownerRewardsWithdrawn.name,
+      phalaStakePoolv2.contribution.name,
+      phalaStakePoolv2.workerReclaimed.name,
 
-  .addEvent('PhalaVault.PoolCreated')
-  .addEvent('PhalaVault.VaultCommissionSet')
-  .addEvent('PhalaVault.OwnerSharesGained')
-  .addEvent('PhalaVault.OwnerSharesClaimed')
-  .addEvent('PhalaVault.Contribution')
+      phalaVault.poolCreated.name,
+      phalaVault.vaultCommissionSet.name,
+      phalaVault.ownerSharesGained.name,
+      phalaVault.ownerSharesClaimed.name,
+      phalaVault.contribution.name,
 
-  .addEvent('PhalaBasePool.NftCreated')
-  .addEvent('PhalaBasePool.Withdrawal')
-  .addEvent('PhalaBasePool.WithdrawalQueued')
-  .addEvent('PhalaBasePool.PoolWhitelistCreated')
-  .addEvent('PhalaBasePool.PoolWhitelistDeleted')
-  .addEvent('PhalaBasePool.PoolWhitelistStakerAdded')
-  .addEvent('PhalaBasePool.PoolWhitelistStakerRemoved')
+      phalaBasePool.nftCreated.name,
+      phalaBasePool.withdrawal.name,
+      phalaBasePool.withdrawalQueued.name,
+      phalaBasePool.poolWhitelistCreated.name,
+      phalaBasePool.poolWhitelistDeleted.name,
+      phalaBasePool.poolWhitelistStakerAdded.name,
+      phalaBasePool.poolWhitelistStakerRemoved.name,
 
-  .addEvent('PhalaComputation.SessionBound')
-  .addEvent('PhalaComputation.SessionUnbound')
-  .addEvent('PhalaComputation.SessionSettled')
-  .addEvent('PhalaComputation.WorkerStarted')
-  .addEvent('PhalaComputation.WorkerStopped')
-  .addEvent('PhalaComputation.WorkerReclaimed')
-  .addEvent('PhalaComputation.WorkerEnterUnresponsive')
-  .addEvent('PhalaComputation.WorkerExitUnresponsive')
-  .addEvent('PhalaComputation.BenchmarkUpdated')
-  .addEvent('PhalaComputation.TokenomicParametersChanged')
+      phalaComputation.workerStarted.name,
+      phalaComputation.workerStopped.name,
+      phalaComputation.workerReclaimed.name,
+      phalaComputation.sessionBound.name,
+      phalaComputation.sessionUnbound.name,
+      phalaComputation.workerEnterUnresponsive.name,
+      phalaComputation.workerExitUnresponsive.name,
+      phalaComputation.sessionSettled.name,
+      phalaComputation.benchmarkUpdated.name,
+      phalaComputation.tokenomicParametersChanged.name,
 
-  .addEvent('PhalaRegistry.WorkerAdded')
-  .addEvent('PhalaRegistry.WorkerUpdated')
-  .addEvent('PhalaRegistry.InitialScoreSet')
+      phalaRegistry.workerAdded.name,
+      phalaRegistry.workerUpdated.name,
+      phalaRegistry.initialScoreSet.name,
 
-  .addEvent('RmrkCore.NftMinted')
-  // .addEvent('RmrkCore.PropertySet')
-  .addEvent('RmrkCore.NFTBurned')
+      // rmrkCore.collectionCreated.name,
+      rmrkCore.nftMinted.name,
+      // rmrkCore.propertySet.name,
+      rmrkCore.nftBurned.name,
 
-  .addEvent('Identity.IdentitySet')
-  .addEvent('Identity.IdentityCleared')
-  .addEvent('Identity.JudgementGiven')
+      identity.identitySet.name,
+      identity.identityCleared.name,
+      identity.judgementGiven.name,
+    ],
+  })
 
-export type Item = BatchProcessorItem<typeof processor>
-export type EventItem = BatchProcessorEventItem<typeof processor>
-export type CallItem = BatchProcessorCallItem<typeof processor>
-export type ProcessorContext<Store> = BatchContext<Store, Item>
+  .setFields({
+    block: {timestamp: true},
+    event: {name: true, args: true},
+  })
+
+export type Fields = SubstrateBatchProcessorFields<typeof processor>
+export type Ctx = DataHandlerContext<Store, Fields>
+export type SubstrateBlock = BlockHeader<Fields>

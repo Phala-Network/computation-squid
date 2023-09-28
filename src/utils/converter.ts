@@ -17,8 +17,8 @@ export const toBalance = (value: JsonBigInt | bigint): BigDecimal =>
 export const fromBits = (value: JsonBigInt | bigint): BigDecimal =>
   toBigDecimal(value).div(BigDecimal(2).pow(64)).round(18, 1)
 
-export const encodeAddress = (bytes: Uint8Array): string =>
+export const encodeAddress = (bytes: ss58.Bytes | Uint8Array): string =>
   ss58.codec('phala').encode(bytes)
 
-export const decodeAddress = (address: string): Uint8Array =>
+export const decodeAddress = (address: string): ss58.Bytes =>
   ss58.codec('phala').decode(address)

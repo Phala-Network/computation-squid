@@ -1,9 +1,7 @@
-import {type SubstrateBlock} from '@subsquid/substrate-processor'
-import {type Store} from '@subsquid/typeorm-store'
 import assert from 'assert'
 import {type GlobalState} from '../model'
-import {type ProcessorContext} from '../processor'
-import {PhalaComputationTokenomicParametersStorage} from '../types/storage'
+import {type SubstrateBlock} from '../processor'
+import {phalaComputation} from '../types/storage'
 import {fromBits} from './converter'
 
 export const updateAverageBlockTime = (
@@ -12,6 +10,7 @@ export const updateAverageBlockTime = (
 ): void => {
   const blockCount = block.height - globalState.averageBlockTimeUpdatedHeight
   if (blockCount < 100) return
+  assert(block.timestamp)
   const duration =
     block.timestamp - globalState.averageBlockTimeUpdatedTime.getTime()
 
@@ -21,24 +20,22 @@ export const updateAverageBlockTime = (
 }
 
 export const updateTokenomicParameters = async (
-  ctx: ProcessorContext<Store>,
   block: SubstrateBlock,
   globalState: GlobalState,
 ): Promise<void> => {
-  const tokenomicParameters =
-    await new PhalaComputationTokenomicParametersStorage(ctx, block).asV1199
-      .get()
-      .then((value) => {
-        assert(value)
-        return {
-          phaRate: fromBits(value.phaRate),
-          budgetPerBlock: fromBits(value.budgetPerBlock),
-          vMax: fromBits(value.vMax),
-          treasuryRatio: fromBits(value.treasuryRatio),
-          re: fromBits(value.re),
-          k: fromBits(value.k),
-        }
-      })
+  const tokenomicParameters = await phalaComputation.tokenomicParameters.v1199
+    .get(block)
+    .then((value) => {
+      assert(value)
+      return {
+        phaRate: fromBits(value.phaRate),
+        budgetPerBlock: fromBits(value.budgetPerBlock),
+        vMax: fromBits(value.vMax),
+        treasuryRatio: fromBits(value.treasuryRatio),
+        re: fromBits(value.re),
+        k: fromBits(value.k),
+      }
+    })
 
   Object.assign(globalState, tokenomicParameters)
 }

@@ -6,7 +6,6 @@ It accumulates [kusama](https://kusama.network) account transfers and serves the
 ## Summary
 
 - [Quickstart](#quickly-running-the-sample)
-- [Migrate to FireSquid](#migrate-to-firesquid)
 - [Public archives for Parachains](#public-archives-for-parachains)
 - [Self-hosted archive](#self-hosted-archive)
 - [Development flow](#dev-flow)
@@ -26,45 +25,31 @@ It accumulates [kusama](https://kusama.network) account transfers and serves the
 
 ## Quickly running the sample
 
-Example commands below use [make(1)](https://www.gnu.org/software/make/).
-Please, have a look at commands in [Makefile](Makefile) if your platform doesn't support it.
-On Windows we recommend to use [WSL](https://docs.microsoft.com/en-us/windows/wsl/).
+Example commands below use [sqd](https://docs.subsquid.io/squid-cli/).
+Please [install](https://docs.subsquid.io/squid-cli/installation/) it before proceeding.
 
 ```bash
 # 1. Install dependencies
 npm ci
 
-# 2. Compile typescript files
-make build
+# 2. Start target Postgres database and detach
+sqd up
 
-# 3. Start target Postgres database and detach
-make up
+# 3. Build the project
+sqd build
 
-# 4. Start the processor
-make process
-
-# 5. The command above will block the terminal
-#    being busy with fetching the chain data, 
-#    transforming and storing it in the target database.
-#
-#    To start the graphql server open the separate terminal
-#    and run
-make serve
+# 4. Start both the squid processor and the GraphQL server
+sqd run .
 ```
-
-## Migrate to FireSquid
-
-To migrate old (v5) Squids to FireSquid, follow the [Migration Guide](https://docs.subsquid.io/migrate/migrate-to-fire-squid)
+A GraphiQL playground will be available at [localhost:4350/graphql](http://localhost:4350/graphql).
 
 ## Public archives for Parachains
 
-Subsquid provides archive data sources for most parachains, with API playgrounds available on the [Aquarium Archive](https://app.subsquid.io/aquarium/archives) page.
-
-The list of public archive data source endpoints is also maintained in the `@subsquid/archive-registry` npm package for programmatic access. Use `lookupArchive(<network name>, <lookup filters>)` to look up the archive endpoint by the network name, e.g.
+Subsquid provides archive data sources [for most parachains](https://docs.subsquid.io/substrate-indexing/supported-networks/). Use `lookupArchive(<network name>, <lookup filters>)` from `@subsquid/archive-registry` to look up the archive endpoint by the network name, e.g.
 
 ```typescript
 processor.setDataSource({
-  archive: lookupArchive("kusama", { release: "FireSquid" })
+  archive: lookupArchive("kusama", { release: "ArrowSquid" })
   //...
 });
 ```
@@ -74,40 +59,20 @@ To make sure you're indexing the right chain one can additionally filter by the 
 ```typescript
 processor.setDataSource({
   archive: lookupArchive("kusama", { 
-    release: "FireSquid", 
+    release: "ArrowSquid",
     genesis: "0xb0a8d493285c2df73290dfb7e61f870f17b41801197a149ca93654499ea3dafe" 
   }),
   //...
 });
 ```
 
-If the chain is not yet supported, 
-please fill out the [form](https://forms.gle/Vhr3exPs4HrF4Zt36) to submit a request.
+If the chain is not yet supported, you can still index it using [RPC ingestion](https://docs.subsquid.io/substrate-indexing/setup/general/#set-data-source). If you take this route, use [metadata exporer](https://github.com/subsquid/squid-sdk/tree/master/substrate/substrate-metadata-explorer) with [Substrate typegen](https://docs.subsquid.io/substrate-indexing/squid-substrate-typegen/) for help with decoding.
+
+You can also fill out this [form](https://forms.gle/Vhr3exPs4HrF4Zt36) to submit a request for an Archive/Subsquid Network dataset.
 
 ## Self-hosted archive
 
-To run an archive locally, inspect [archive/docker-compose.yml](archive/docker-compose.yml) 
-and provide the WebSocket endpoint for your node, then start it with
-
-```bash
-docker compose -f archive/docker-compose.yml up
-```
-
-To drop the archive, run
-
-```bash
-docker compose -f archive/docker-compose.yml down -v
-```
-
-The archive gateway will be started at port `8888` and it can immediately be used with the processor (even if it's not in sync):
-
-```typescript
-processor.setDataSource({
-  archive: `http://localhost:8888/graphql`,
-});
-```
-
-Additionally, an explorer GraphQL API and a playground will be started at `http://localhost:4350/graphql`. While optional, it's a useful tool for debugging and on-chain data exploration.
+Self-hosted Archives are deprecated by the ArrowSquid release. Keep an eye on updates on [Subsquid Network](https://docs.subsquid.io/subsquid-network/) and use it instead once it is released.
 
 ## Dev flow
 
@@ -115,14 +80,14 @@ Additionally, an explorer GraphQL API and a playground will be started at `http:
 
 Start development by defining the schema of the target database via `schema.graphql`.
 Schema definition consists of regular graphql type declarations annotated with custom directives.
-Full description of `schema.graphql` dialect is available [here](https://docs.subsquid.io/docs/develop-a-squid/define-a-squid-schema).
+Full description of `schema.graphql` dialect is available [here](https://docs.subsquid.io/store/postgres/schema-file/).
 
 ### 2. Generate TypeORM classes
 
 Mapping developers use [TypeORM](https://typeorm.io) entities
 to interact with the target database during data processing. All necessary entity classes are
-generated by the squid framework from `schema.graphql`. This is done by running `npx squid-typeorm-codegen`
-command.
+[generated](https://docs.subsquid.io/store/postgres/schema-file/intro/) by the squid framework from `schema.graphql`. This is done by running `npx squid-typeorm-codegen`
+or (equivalently) `sqd codegen` command.
 
 ### 3. Generate database migration
 
@@ -145,6 +110,14 @@ npx squid-typeorm-migration apply
 # Revert the last performed migration
 npx squid-typeorm-migration revert         
 ```
+Available `sqd` shortcuts:
+```bash
+# Build the project, remove any old migrations, then run `npx squid-typeorm-migration generate`
+sqd migration:generate
+
+# Run npx squid-typeorm-migration apply
+sqd migration:apply
+```
 
 ### 4. Generate TypeScript definitions for substrate events, calls and storage 
 
@@ -154,70 +127,12 @@ Event, call and runtime storage data come to mapping handlers as raw untyped jso
 While it is possible to work with raw untyped json data, 
 it's extremely error-prone and the json structure may change over time due to runtime upgrades.
 
-Squid framework provides tools for generating type-safe wrappers around events, calls and runtime storage items for
-each historical change in the spec version.
-
-Typical usage looks as follows:
-
-```typescript
-function getTransferEvent(ctx: EventHandlerContext) {
-    // instantiate the autogenerated type-safe class for Balances.Transfer event
-    const event = new BalancesTransferEvent(ctx);
-    // for each runtime version, reduce the data to a common interface
-    if (event.isV1020) {
-        const [from, to, amount, fee] = event.asV1020;
-        return {from, to, amount};
-    } else if (event.isV1050) {
-        const [from, to, amount] = event.asV1050;
-        return {from, to, amount};
-    } else {
-        return event.asV9130;
-    }
-}
-``` 
-
-To generate type-safe wrappers for events, calls and storage items, use `squid-substrate-typegen(1)`. It expects a
-config file of the following structure:
-
-```json5
-{
-  "outDir": "src/types",
-  // List of chain spec versions.
-  // Can be given as:
-  //    1. Squid archive URL
-  //    2. JSON lines file created by `squid-substrate-metadata-explorer(1)`
-  "specVersions": "https://kusama.archive.subsquid.io/graphql",
-  "events": [ // list of events to generate. To generate all events, set "events": true.
-    "Balances.Transfer"
-  ],
-  "calls": [ // list of calls to generate. To generate all calls, set "calls": true.   
-    "Timestamp.set"
-  ],
-  "storage": [
-    "System.Account" // list of storage items. To all storage items, set "storage": true
-  ]
-}
-```
-
-In the [current template](typegen.json), the list of spec versions is
-specified as an archive URL. However, one can do without archive 
-or simply pre-download spec versions via `squid-substrate-metadata-explorer(1)` tool.
-
-```bash
-# Explore the chain (may take some time)
-npx squid-substrate-metadata-explorer \
-  --chain wss://kusama-rpc.polkadot.io \
-  --out kusamaVersions.jsonl
-  
-# Download spec versions from archive
-npx squid-substrate-metadata-explorer \
-  --archive https://kusama.archive.subsquid.io/graphql \
-  --out kusamaVersions.jsonl
-```
+Squid framework provides a tool for generating type-safe wrappers around events, calls and runtime storage items for
+each historical change in the spec version. See the [Substrate typegen](https://docs.subsquid.io/substrate-indexing/squid-substrate-typegen/) documentation page.
 
 ## Deploy the Squid
 
-After a local run, obtain a deployment key by signing into [Aquarium](https://app.subsquid.io/start) and run 
+After a local run, obtain a deployment key by signing into [Subsquid Cloud](https://app.subsquid.io) and run
 
 ```sh
 npx sqd auth -k YOUR_DEPLOYMENT_KEY
@@ -229,7 +144,7 @@ Next, inspect the Squid CLI help to deploy and manage your squid:
 npx sqd squid --help
 ```
 
-For more information, consult the [Deployment Guide](https://docs.subsquid.io/docs/deploy-squid/).
+For more information, consult the [Deployment Guide](https://docs.subsquid.io/deploy-squid/).
 
 ## Project conventions
 
@@ -241,6 +156,8 @@ The layout of `lib` must reflect `src`.
 * Database schema must be defined in `schema.graphql`.
 * Database migrations must reside in `db/migrations` and must be plain js files.
 * `squid-*(1)` executables consult `.env` file for a number of environment variables.
+
+See the [full desription](https://docs.subsquid.io/basics/squid-structure/) in the documentation.
 
 ## Types bundle
 
@@ -300,10 +217,8 @@ For instance, account data is passed to the handler context as a plain byte arra
     to: ss58.codec('kusama').encode(rec.to),
 ```
 
-
-
 ## Graphql server extensions
 
 It is possible to extend `squid-graphql-server(1)` with custom
 [type-graphql](https://typegraphql.com) resolvers and to add request validation.
-For more details, consult [Docs](https://docs.subsquid.io/reference/api-extensions)
+For more details, consult [docs](https://docs.subsquid.io/graphql-api/).

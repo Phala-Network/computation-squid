@@ -45,7 +45,7 @@ export class Delegation {
     withdrawalStartTime!: Date | undefined | null
 
     @Index_({unique: true})
-    @OneToOne_(() => Nft, {nullable: false})
+    @OneToOne_(() => Nft, {nullable: true})
     @JoinColumn_()
     delegationNft!: Nft
 

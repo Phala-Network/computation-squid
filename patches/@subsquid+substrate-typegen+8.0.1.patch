@@ -1,0 +1,44 @@
+diff --git a/node_modules/@subsquid/substrate-typegen/lib/typegen.js b/node_modules/@subsquid/substrate-typegen/lib/typegen.js
+index 631781c..6a5d23f 100644
+--- a/node_modules/@subsquid/substrate-typegen/lib/typegen.js
++++ b/node_modules/@subsquid/substrate-typegen/lib/typegen.js
+@@ -71,7 +71,7 @@ class Typegen {
+             for (let [name, versions] of (0, util_1.groupBy)(palletItems, it => it.def.name)) {
+                 out.line();
+                 out.block(`export const ${(0, util_1.toJsName)(name)} = `, () => {
+-                    out.line(`name: '${pallet}.${name}',`);
++                    out.line(`name: '${pallet}.${name}' as const,`);
+                     for (let it of versions) {
+                         let useSts = file.useSts(it.runtime);
+                         out.blockComment(it.def.docs);
+diff --git a/node_modules/@subsquid/substrate-typegen/src/support.ts b/node_modules/@subsquid/substrate-typegen/src/support.ts
+index 456dfc2..e61662a 100644
+--- a/node_modules/@subsquid/substrate-typegen/src/support.ts
++++ b/node_modules/@subsquid/substrate-typegen/src/support.ts
+@@ -44,7 +44,7 @@ export class EventType<T extends sts.Type> {
+     }
+ 
+     decode(event: Event): sts.GetType<T> {
+-        assert(this.is(event))
++        // assert(this.is(event))
+         return event.block._runtime.decodeJsonEventRecordArguments(event)
+     }
+ }
+@@ -95,7 +95,7 @@ export class StorageType {
+     }
+ 
+     async get(block: Block, ...key: any[]): Promise<any> {
+-        assert(this.is(block))
++        // assert(this.is(block))
+         return block._runtime.getStorage(block.hash, this.name, ...key)
+     }
+ 
+@@ -105,7 +105,7 @@ export class StorageType {
+     }
+ 
+     async getMany(block: Block, keys: any[]): Promise<any[]> {
+-        assert(this.is(block))
++        // assert(this.is(block))
+         return block._runtime.queryStorage(block.hash, this.name, keys)
+     }
+ 

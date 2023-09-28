@@ -1,57 +1,66 @@
 {
   "$schema": "https://raw.githubusercontent.com/subsquid/squid-sdk/master/substrate/substrate-typegen/src/config.schema.json",
   "outDir": "src/types",
-  "specVersions": "https://khala.archive.subsquid.io/graphql",
-  "events": [
-    "PhalaStakePoolv2.PoolCreated",
-    "PhalaStakePoolv2.PoolCommissionSet",
-    "PhalaStakePoolv2.PoolCapacitySet",
-    "PhalaStakePoolv2.PoolWorkerAdded",
-    "PhalaStakePoolv2.PoolWorkerRemoved",
-    "PhalaStakePoolv2.WorkingStarted",
-    "PhalaStakePoolv2.RewardReceived",
-    "PhalaStakePoolv2.OwnerRewardsWithdrawn",
-    "PhalaStakePoolv2.Contribution",
-    "PhalaStakePoolv2.WorkerReclaimed",
-
-    "PhalaVault.PoolCreated",
-    "PhalaVault.VaultCommissionSet",
-    "PhalaVault.OwnerSharesGained",
-    "PhalaVault.OwnerSharesClaimed",
-    "PhalaVault.Contribution",
-
-    "PhalaBasePool.NftCreated",
-    "PhalaBasePool.Withdrawal",
-    "PhalaBasePool.WithdrawalQueued",
-    "PhalaBasePool.PoolWhitelistCreated",
-    "PhalaBasePool.PoolWhitelistDeleted",
-    "PhalaBasePool.PoolWhitelistStakerAdded",
-    "PhalaBasePool.PoolWhitelistStakerRemoved",
-
-    "PhalaComputation.WorkerStarted",
-    "PhalaComputation.WorkerStopped",
-    "PhalaComputation.WorkerReclaimed",
-    "PhalaComputation.SessionBound",
-    "PhalaComputation.SessionUnbound",
-    "PhalaComputation.WorkerEnterUnresponsive",
-    "PhalaComputation.WorkerExitUnresponsive",
-    "PhalaComputation.SessionSettled",
-    "PhalaComputation.BenchmarkUpdated",
-    "PhalaComputation.TokenomicParametersChanged",
-
-    "PhalaRegistry.WorkerAdded",
-    "PhalaRegistry.WorkerUpdated",
-    "PhalaRegistry.InitialScoreSet",
-
-    "RmrkCore.CollectionCreated",
-    "RmrkCore.NftMinted",
-    "RmrkCore.PropertySet",
-    "RmrkCore.NFTBurned",
-
-    "Identity.IdentitySet",
-    "Identity.IdentityCleared",
-    "Identity.JudgementGiven"
-  ],
-  "calls": [],
-  "storage": ["Identity.IdentityOf", "PhalaComputation.TokenomicParameters"]
+  "specVersions": "https://v2.archive.subsquid.io/metadata/khala",
+  "pallets": {
+    "PhalaStakePoolv2": {
+      "events": [
+        "PoolCreated",
+        "PoolCommissionSet",
+        "PoolCapacitySet",
+        "PoolWorkerAdded",
+        "PoolWorkerRemoved",
+        "WorkingStarted",
+        "RewardReceived",
+        "OwnerRewardsWithdrawn",
+        "Contribution",
+        "WorkerReclaimed"
+      ]
+    },
+    "PhalaVault": {
+      "events": [
+        "PoolCreated",
+        "VaultCommissionSet",
+        "OwnerSharesGained",
+        "OwnerSharesClaimed",
+        "Contribution"
+      ]
+    },
+    "PhalaBasePool": {
+      "events": [
+        "NftCreated",
+        "Withdrawal",
+        "WithdrawalQueued",
+        "PoolWhitelistCreated",
+        "PoolWhitelistDeleted",
+        "PoolWhitelistStakerAdded",
+        "PoolWhitelistStakerRemoved"
+      ]
+    },
+    "PhalaComputation": {
+      "events": [
+        "WorkerStarted",
+        "WorkerStopped",
+        "WorkerReclaimed",
+        "SessionBound",
+        "SessionUnbound",
+        "WorkerEnterUnresponsive",
+        "WorkerExitUnresponsive",
+        "SessionSettled",
+        "BenchmarkUpdated",
+        "TokenomicParametersChanged"
+      ],
+      "storage": ["TokenomicParameters"]
+    },
+    "PhalaRegistry": {
+      "events": ["WorkerAdded", "WorkerUpdated", "InitialScoreSet"]
+    },
+    "RmrkCore": {
+      "events": ["CollectionCreated", "NftMinted", "PropertySet", "NFTBurned"]
+    },
+    "Identity": {
+      "events": ["IdentitySet", "IdentityCleared", "JudgementGiven"],
+      "storage": ["IdentityOf"]
+    }
+  }
 }

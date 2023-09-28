@@ -1,14 +1,12 @@
 import {lookupArchive} from '@subsquid/archive-registry'
-import {
-  type BlockRangeOption,
-  type DataSource,
-} from '@subsquid/substrate-processor'
+import {assertNotNull, type DataSource} from '@subsquid/substrate-processor'
+import {type Range} from '@subsquid/util-internal-processor-tools'
 
 export const DUMP_BLOCK = 3000000
 
 const config: {
   dataSource: DataSource
-  blockRange: Exclude<BlockRangeOption['range'], undefined>
+  blockRange: Range
 } = {
   blockRange: {
     from: DUMP_BLOCK + 1,
@@ -16,8 +14,11 @@ const config: {
       process.env.TO_BLOCK != null ? parseInt(process.env.TO_BLOCK) : undefined,
   },
   dataSource: {
-    archive: lookupArchive('khala', {release: 'FireSquid'}),
-    chain: 'wss://priv-api.phala.network/khala/ws',
+    archive: lookupArchive('khala', {release: 'ArrowSquid'}),
+    chain: {
+      url: assertNotNull(process.env.RPC_ENDPOINT),
+      rateLimit: 100,
+    },
   },
 }
 

@@ -3,7 +3,6 @@ import assert from 'assert'
 import {readFile} from 'fs/promises'
 import {groupBy} from 'lodash'
 import path from 'path'
-import {type Store} from '@subsquid/typeorm-store'
 import {BASE_POOL_ACCOUNT, DUMP_BLOCK} from './config'
 import {
   BasePoolKind,
@@ -21,8 +20,7 @@ import {
   type StakePool,
   type Vault,
 } from './model'
-import {type ProcessorContext} from './processor'
-import {createAccountSnapshot} from './utils/snapshot'
+import {type Ctx} from './processor'
 import {
   createPool,
   updateSharePrice,
@@ -37,6 +35,7 @@ import {
   updateDelegationValue,
 } from './utils/delegation'
 import {updateTokenomicParameters} from './utils/globalState'
+import {createAccountSnapshot} from './utils/snapshot'
 import {updateWorkerShares} from './utils/worker'
 
 interface IBasePool {
@@ -109,7 +108,7 @@ interface Dump {
   }>
 }
 
-const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
+const importDump = async (ctx: Ctx): Promise<void> => {
   const dumpFile = await readFile(
     path.join(__dirname, `../dump_${DUMP_BLOCK}.json`),
     'utf8',
@@ -132,7 +131,7 @@ const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
     budgetPerShare: BigDecimal(0),
     delegatorCount: 0,
   })
-  await updateTokenomicParameters(ctx, ctx.blocks[0].header, globalState)
+  await updateTokenomicParameters(ctx.blocks[0].header, globalState)
   const accountMap = new Map<string, Account>()
   const workerMap = new Map<string, Worker>()
   const basePoolMap = new Map<string, BasePool>()
@@ -455,7 +454,6 @@ const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
     } else if (Array.isArray(x)) {
       await ctx.store.save([...x])
     } else {
-      // bypass type check
       await ctx.store.save(x)
     }
   }

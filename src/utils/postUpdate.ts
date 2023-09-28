@@ -1,5 +1,4 @@
 import {BigDecimal} from '@subsquid/big-decimal'
-import {type Store} from '@subsquid/typeorm-store'
 import assert from 'assert'
 import {groupBy} from 'lodash'
 import {
@@ -15,7 +14,7 @@ import {
   type StakePool,
   type WorkerSnapshot,
 } from '../model'
-import {type ProcessorContext} from '../processor'
+import {type Ctx} from '../processor'
 import {
   getBasePoolAvgAprMultiplier,
   updateSharePrice,
@@ -37,7 +36,7 @@ import {
 const ONE_YEAR = 365 * 24 * 60 * 60 * 1000
 
 const postUpdate = async (
-  ctx: ProcessorContext<Store>,
+  ctx: Ctx,
   globalState: GlobalState,
   accountMap: Map<string, Account>,
   basePools: BasePool[],
@@ -45,7 +44,7 @@ const postUpdate = async (
   delegations: Delegation[],
 ): Promise<void> => {
   const latestBlock = ctx.blocks.at(-1)
-  assert(latestBlock)
+  assert(latestBlock?.header.timestamp)
   const updatedTime = new Date(latestBlock.header.timestamp)
   updatedTime.setUTCMinutes(0, 0, 0)
   const shouldTakeSnapshot =
