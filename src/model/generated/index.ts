@@ -1,6 +1,6 @@
 export * from "./globalState.model"
 export * from "./account.model"
-export * from "./_identityLevel"
+export * from "./_identityJudgement"
 export * from "./basePool.model"
 export * from "./_basePoolKind"
 export * from "./vault.model"

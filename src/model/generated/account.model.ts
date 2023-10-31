@@ -2,7 +2,7 @@ import {BigDecimal} from "@subsquid/big-decimal"
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
 import {BasePool} from "./basePool.model"
-import {IdentityLevel} from "./_identityLevel"
+import {IdentityJudgement} from "./_identityJudgement"
 
 @Entity_()
 export class Account {
@@ -21,7 +21,10 @@ export class Account {
     identityDisplay!: string | undefined | null
 
     @Column_("varchar", {length: 10, nullable: true})
-    identityLevel!: IdentityLevel | undefined | null
+    identityLevel!: IdentityJudgement | undefined | null
+
+    @Column_("varchar", {length: 10, array: true, nullable: true})
+    identityJudgements!: (IdentityJudgement)[] | undefined | null
 
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     stakePoolValue!: BigDecimal

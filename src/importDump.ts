@@ -4,7 +4,6 @@ import {readFile} from 'fs/promises'
 import {groupBy} from 'lodash'
 import path from 'path'
 import {type Store} from '@subsquid/typeorm-store'
-import fetch from 'node-fetch'
 import {BASE_POOL_ACCOUNT, DUMP_BLOCK} from './config'
 import {
   BasePoolKind,
@@ -18,7 +17,7 @@ import {
   type Account,
   type AccountSnapshot,
   type BasePool,
-  type IdentityLevel,
+  type IdentityJudgement,
   type StakePool,
   type Vault,
 } from './model'
@@ -97,7 +96,7 @@ interface Dump {
   identities: Array<{
     id: string
     identity: string | null
-    judgement: IdentityLevel | null
+    judgements: IdentityJudgement[]
     // superId: string | null
     // subIdentity: string | null
   }>
@@ -111,21 +110,12 @@ interface Dump {
 }
 
 const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
-  let dump: Dump
-  try {
-    const dumpFile = await readFile(
-      path.join(__dirname, `../dump_${DUMP_BLOCK}.json`),
-      'utf8',
-    )
-    dump = JSON.parse(dumpFile)
-  } catch (e) {
-    dump = await fetch(
-      `https://raw.githubusercontent.com/Phala-Network/computation-squid/main/dump_${DUMP_BLOCK}.json`,
-    ).then(async (res) => (await res.json()) as Dump)
-  }
-
+  const dumpFile = await readFile(
+    path.join(__dirname, `../dump_${DUMP_BLOCK}.json`),
+    'utf8',
+  )
+  const dump: Dump = JSON.parse(dumpFile)
   const updatedTime = new Date(dump.timestamp)
-
   const globalState = new GlobalState({
     id: '0',
     averageApr: BigDecimal(0),
@@ -160,7 +150,10 @@ const importDump = async (ctx: ProcessorContext<Store>): Promise<void> => {
   for (const i of dump.identities) {
     const account = getAccount(accountMap, i.id)
     account.identityDisplay = i.identity
-    account.identityLevel = i.judgement
+    if (i.judgements.length > 0) {
+      account.identityLevel = i.judgements[i.judgements.length - 1]
+      account.identityJudgements = i.judgements
+    }
     // account.subIdentity = i.subIdentity
     // if (i.superId != null) {
     //   account.super = getAccount(accountMap, i.superId)

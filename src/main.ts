@@ -768,8 +768,12 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     updateAverageBlockTime(block, globalState)
   }
 
-  // MEMO: identity events don't provide specific args, so query it directly
-  await queryIdentities(ctx, [...identityUpdatedAccountIdSet], accountMap)
+  if (process.env.REFRESH_IDENTITY === '1') {
+    await queryIdentities(ctx, [...accountMap.keys()], accountMap)
+  } else {
+    // MEMO: identity events don't provide specific args, so query it directly
+    await queryIdentities(ctx, [...identityUpdatedAccountIdSet], accountMap)
+  }
 
   await postUpdate(
     ctx,

@@ -1,5 +1,5 @@
 import {type Store} from '@subsquid/typeorm-store'
-import {IdentityLevel, type Account} from '../model'
+import {IdentityJudgement, type Account} from '../model'
 import {type ProcessorContext} from '../processor'
 import {IdentityIdentityOfStorage} from '../types/storage'
 import {getAccount} from './common'
@@ -29,12 +29,16 @@ export const queryIdentities = async (
         account.identityDisplay = null
       }
       if (registration.judgements.length > 0) {
-        account.identityLevel =
-          IdentityLevel[registration.judgements[0][1].__kind]
+        const judgements = registration.judgements.map(
+          (j) => IdentityJudgement[j[1].__kind],
+        )
+        account.identityJudgements = judgements
+        account.identityLevel = judgements[judgements.length - 1]
       }
     } else {
       account.identityLevel = null
       account.identityDisplay = null
+      account.identityJudgements = null
     }
   }
 }

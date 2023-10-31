@@ -25,7 +25,7 @@ type GlobalState @entity {
   delegatorCount: Int!
 }
 
-enum IdentityLevel {
+enum IdentityJudgement {
   Unknown
   FeePaid
   Reasonable
@@ -40,7 +40,8 @@ type Account @entity {
   id: ID!
   basePool: BasePool @derivedFrom(field: "account")
   identityDisplay: String
-  identityLevel: IdentityLevel
+  identityLevel: IdentityJudgement
+  identityJudgements: [IdentityJudgement!]
   # subIdentity: String
   # super: Account
   stakePoolValue: BigDecimal!
