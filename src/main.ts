@@ -476,15 +476,19 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         break
       }
       case 'PhalaBasePool.Withdrawal': {
-        const {pid, accountId, amount, shares} = args
+        const {pid, accountId, amount, shares, burntShares} = args
+        let removedShares = shares
+        if (burntShares != null) {
+          removedShares = shares.plus(burntShares)
+        }
         const basePool = assertGet(basePoolMap, pid)
         const delegationId = join(pid, accountId)
         const delegation = assertGet(delegationMap, delegationId)
-        basePool.totalShares = basePool.totalShares.minus(shares)
+        basePool.totalShares = basePool.totalShares.minus(removedShares)
         basePool.totalValue = basePool.totalValue.minus(amount)
         basePool.freeValue = basePool.freeValue.minus(amount)
         basePool.withdrawingShares = max(
-          basePool.withdrawingShares.minus(shares),
+          basePool.withdrawingShares.minus(removedShares),
           BigDecimal(0),
         )
         basePool.withdrawingValue = basePool.withdrawingShares
@@ -494,8 +498,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           sharePriceResetQueue.push(basePool)
         }
         delegation.withdrawingShares =
-          delegation.withdrawingShares.minus(shares)
-        delegation.shares = delegation.shares.minus(shares)
+          delegation.withdrawingShares.minus(removedShares)
+        delegation.shares = delegation.shares.minus(removedShares)
         updateDelegationValue(delegation, basePool)
         delegation.cost = delegation.cost.minus(amount)
         if (delegation.withdrawingShares.eq(0)) {
@@ -517,7 +521,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         break
       }
       case 'PhalaBasePool.WithdrawalQueued': {
-        const {pid, accountId, shares} = args
+        const {pid, accountId, shares, withdrawingNftId} = args
         const delegationId = join(pid, accountId)
         const basePool = assertGet(basePoolMap, pid)
         const delegation = assertGet(delegationMap, delegationId)
@@ -532,11 +536,14 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         // Replace previous withdrawal
         delegation.withdrawingShares = shares
         delegation.withdrawalStartTime = blockTime
-        // const withdrawalNftId = join(basePool.cid, nftId)
-        // const withdrawalNft =
-        //   nftMap.get(withdrawalNftId) ??
-        //   (await ctx.store.findOneBy(Nft, {id: join(basePool.cid, nftId)}))
-        // delegation.withdrawalNft = withdrawalNft
+        if (withdrawingNftId != null) {
+          const withdrawalNftId = join(basePool.cid, withdrawingNftId)
+          const withdrawalNft =
+            nftMap.get(withdrawalNftId) ??
+            (await ctx.store.findOneBy(Nft, {id: withdrawalNftId}))
+          delegation.withdrawalNft = withdrawalNft
+        }
+
         if (stakePool != null) {
           updateStakePoolDelegable(basePool, stakePool)
         }

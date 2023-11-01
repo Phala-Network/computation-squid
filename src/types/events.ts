@@ -329,6 +329,35 @@ export class PhalaBasePoolWithdrawalEvent {
         assert(this.isV1199)
         return this._chain.decodeEvent(this.event)
     }
+
+    /**
+     * Some stake was withdrawn from a pool
+     * 
+     * The lock in [`Balances`](pallet_balances::pallet::Pallet) is updated to release the
+     * locked stake.
+     * 
+     * Affected states:
+     * - the stake related fields in [`Pools`]
+     * - the user staking asset account
+     */
+    get isV1254(): boolean {
+        return this._chain.getEventHash('PhalaBasePool.Withdrawal') === 'c4bb9e12d0ae06124b669433d7deecac7b4beaf5a8966d3185e71820082521a2'
+    }
+
+    /**
+     * Some stake was withdrawn from a pool
+     * 
+     * The lock in [`Balances`](pallet_balances::pallet::Pallet) is updated to release the
+     * locked stake.
+     * 
+     * Affected states:
+     * - the stake related fields in [`Pools`]
+     * - the user staking asset account
+     */
+    get asV1254(): {pid: bigint, user: Uint8Array, amount: bigint, shares: bigint, burntShares: bigint} {
+        assert(this.isV1254)
+        return this._chain.decodeEvent(this.event)
+    }
 }
 
 export class PhalaBasePoolWithdrawalQueuedEvent {
@@ -364,6 +393,29 @@ export class PhalaBasePoolWithdrawalQueuedEvent {
      */
     get asV1199(): {pid: bigint, user: Uint8Array, shares: bigint, nftId: number, asVault: (bigint | undefined)} {
         assert(this.isV1199)
+        return this._chain.decodeEvent(this.event)
+    }
+
+    /**
+     * A withdrawal request is inserted to a queue
+     * 
+     * Affected states:
+     * - a new item is inserted to or an old item is being replaced by the new item in the
+     *   withdraw queue in [`Pools`]
+     */
+    get isV1254(): boolean {
+        return this._chain.getEventHash('PhalaBasePool.WithdrawalQueued') === 'c1ec2a28aeed74bf88fa6905e850a2663a46a6a013ef0302a10794ed0c697f02'
+    }
+
+    /**
+     * A withdrawal request is inserted to a queue
+     * 
+     * Affected states:
+     * - a new item is inserted to or an old item is being replaced by the new item in the
+     *   withdraw queue in [`Pools`]
+     */
+    get asV1254(): {pid: bigint, user: Uint8Array, shares: bigint, nftId: number, asVault: (bigint | undefined), withdrawingNftId: number} {
+        assert(this.isV1254)
         return this._chain.decodeEvent(this.event)
     }
 }

@@ -219,29 +219,62 @@ const decodeEvent = (
     }
     case 'PhalaBasePool.Withdrawal': {
       const e = new PhalaBasePoolWithdrawalEvent(ctx, item.event)
-      const {pid, user, amount, shares} = e.asV1199
-      return {
-        name,
-        args: {
-          pid: String(pid),
-          accountId: encodeAddress(user),
-          amount: toBalance(amount),
-          shares: toBalance(shares),
-        },
+      if (e.isV1199) {
+        const {pid, user, amount, shares} = e.asV1199
+        return {
+          name,
+          args: {
+            pid: String(pid),
+            accountId: encodeAddress(user),
+            amount: toBalance(amount),
+            shares: toBalance(shares),
+          },
+        }
+      } else if (e.isV1254) {
+        const {pid, user, amount, shares, burntShares} = e.asV1254
+        return {
+          name,
+          args: {
+            pid: String(pid),
+            accountId: encodeAddress(user),
+            amount: toBalance(amount),
+            shares: toBalance(shares),
+            burntShares: toBalance(burntShares),
+          },
+        }
+      } else {
+        throw new Error('Unexpected Event')
       }
     }
     case 'PhalaBasePool.WithdrawalQueued': {
       const e = new PhalaBasePoolWithdrawalQueuedEvent(ctx, item.event)
-      const {pid, user, shares, nftId, asVault} = e.asV1199
-      return {
-        name,
-        args: {
-          pid: String(pid),
-          accountId: encodeAddress(user),
-          shares: toBalance(shares),
-          nftId,
-          asVault: asVault?.toString(),
-        },
+      if (e.isV1199) {
+        const {pid, user, shares, nftId, asVault} = e.asV1199
+        return {
+          name,
+          args: {
+            pid: String(pid),
+            accountId: encodeAddress(user),
+            shares: toBalance(shares),
+            nftId,
+            asVault: asVault?.toString(),
+          },
+        }
+      } else if (e.isV1254) {
+        const {pid, user, shares, nftId, asVault, withdrawingNftId} = e.asV1254
+        return {
+          name,
+          args: {
+            pid: String(pid),
+            accountId: encodeAddress(user),
+            shares: toBalance(shares),
+            nftId,
+            asVault: asVault?.toString(),
+            withdrawingNftId,
+          },
+        }
+      } else {
+        throw new Error('Unexpected Event')
       }
     }
     case 'PhalaBasePool.PoolWhitelistCreated': {
