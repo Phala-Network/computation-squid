@@ -77,12 +77,17 @@ export function createPool(
 }
 
 export function updateSharePrice(basePool: BasePool): void {
-  const sharePrice = basePool.totalShares.eq(0)
-    ? BigDecimal(1)
-    : basePool.totalValue.div(basePool.totalShares).round(12, 0)
-  basePool.sharePrice = sharePrice
+  if (basePool.totalShares.eq(0)) {
+    basePool.sharePrice = BigDecimal(1)
+    basePool.totalValue = BigDecimal(0)
+    basePool.freeValue = BigDecimal(0)
+  } else {
+    basePool.sharePrice = basePool.totalValue
+      .div(basePool.totalShares)
+      .round(12, 0)
+  }
   basePool.withdrawingValue = basePool.withdrawingShares
-    .times(sharePrice)
+    .times(basePool.sharePrice)
     .round(12, 0)
 }
 

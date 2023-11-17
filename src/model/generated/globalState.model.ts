@@ -73,4 +73,7 @@ export class GlobalState {
 
     @Column_("int4", {nullable: false})
     delegatorCount!: number
+
+    @Column_("bool", {nullable: true})
+    withdrawalDustCleared!: boolean | undefined | null
 }

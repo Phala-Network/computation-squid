@@ -218,9 +218,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       while (sharePriceResetQueue.length > 0) {
         const basePool = sharePriceResetQueue.pop()
         assert(basePool)
-        if (basePool.totalShares.eq(0)) {
-          basePool.sharePrice = BigDecimal(1)
-        }
+        updateSharePrice(basePool)
       }
       processedBlockHeight = blockHeight
     }

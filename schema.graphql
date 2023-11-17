@@ -23,6 +23,8 @@ type GlobalState @entity {
   idleWorkerCount: Int!
   budgetPerShare: BigDecimal!
   delegatorCount: Int!
+
+  withdrawalDustCleared: Boolean
 }
 
 enum IdentityJudgement {
