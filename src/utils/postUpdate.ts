@@ -35,8 +35,6 @@ import {
 } from './snapshot'
 
 const ONE_YEAR = 365 * 24 * 60 * 60 * 1000
-const CLEAR_WITHDRAWAL_THRESHOLD = '0.01'
-const CLEAR_WITHDRAWAL_DATE = new Date('2023-10-23T00:00:00Z')
 
 const postUpdate = async (
   ctx: ProcessorContext<Store>,
@@ -59,31 +57,44 @@ const postUpdate = async (
   const basePoolMap = toMap(basePools)
   const delegationAccountIdMap = groupBy(delegations, (x) => x.account.id)
 
-  if (
-    globalState.withdrawalDustCleared !== true &&
-    latestBlock.header.timestamp >= CLEAR_WITHDRAWAL_DATE.getTime()
-  ) {
-    for (const delegation of delegations) {
-      const basePool = assertGet(basePoolMap, delegation.basePool.id)
-      const prevWithdrawingShares = delegation.withdrawingShares
-      if (
-        prevWithdrawingShares.gt(0) &&
-        prevWithdrawingShares.lte(CLEAR_WITHDRAWAL_THRESHOLD) &&
-        delegation.withdrawalStartTime != null &&
-        delegation.withdrawalStartTime.getTime() <
-          CLEAR_WITHDRAWAL_DATE.getTime()
-      ) {
-        delegation.withdrawingShares = BigDecimal(0)
-        delegation.shares = delegation.shares.minus(prevWithdrawingShares)
-        basePool.totalShares = basePool.totalShares.minus(prevWithdrawingShares)
-        basePool.withdrawingShares = max(
-          basePool.withdrawingShares.minus(prevWithdrawingShares),
-          BigDecimal(0),
-        )
-        updateSharePrice(basePool)
-      }
+  if (globalState.withdrawalDustCleared !== true) {
+    let clearWithdrawalDate
+    try {
+      clearWithdrawalDate = new Date(
+        process.env.CLEAR_WITHDRAWAL_DATE as string,
+      ).getTime()
+    } catch (err) {
+      // noop
     }
-    globalState.withdrawalDustCleared = true
+    if (
+      clearWithdrawalDate != null &&
+      latestBlock.header.timestamp >= clearWithdrawalDate
+    ) {
+      const clearWithdrawalThreshold =
+        process.env.CLEAR_WITHDRAWAL_THRESHOLD ?? '0.01'
+      for (const delegation of delegations) {
+        const basePool = assertGet(basePoolMap, delegation.basePool.id)
+        const prevWithdrawingShares = delegation.withdrawingShares
+        if (
+          prevWithdrawingShares.gt(0) &&
+          prevWithdrawingShares.lte(clearWithdrawalThreshold) &&
+          delegation.withdrawalStartTime != null &&
+          delegation.withdrawalStartTime.getTime() < clearWithdrawalDate
+        ) {
+          delegation.withdrawingShares = BigDecimal(0)
+          delegation.shares = delegation.shares.minus(prevWithdrawingShares)
+          basePool.totalShares = basePool.totalShares.minus(
+            prevWithdrawingShares,
+          )
+          basePool.withdrawingShares = max(
+            basePool.withdrawingShares.minus(prevWithdrawingShares),
+            BigDecimal(0),
+          )
+          updateSharePrice(basePool)
+        }
+      }
+      globalState.withdrawalDustCleared = true
+    }
   }
 
   const getApr = (aprMultiplier: BigDecimal): BigDecimal => {
