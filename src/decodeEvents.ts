@@ -380,7 +380,7 @@ const decodeEvent = (
     }
     case 'PhalaRegistry.WorkerAdded': {
       const e = new PhalaRegistryWorkerAddedEvent(ctx, item.event)
-      const {pubkey, confidenceLevel} = e.asV1199
+      const {pubkey, confidenceLevel} = e.isV1199 ? e.asV1199 : e.asV1260
       return {
         name,
         args: {workerId: toHex(pubkey), confidenceLevel},
@@ -388,7 +388,7 @@ const decodeEvent = (
     }
     case 'PhalaRegistry.WorkerUpdated': {
       const e = new PhalaRegistryWorkerUpdatedEvent(ctx, item.event)
-      const {pubkey, confidenceLevel} = e.asV1199
+      const {pubkey, confidenceLevel} = e.isV1199 ? e.asV1199 : e.asV1260
       return {
         name,
         args: {workerId: toHex(pubkey), confidenceLevel},
