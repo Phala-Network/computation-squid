@@ -44,7 +44,7 @@ export class EventType<T extends sts.Type> {
     }
 
     decode(event: Event): sts.GetType<T> {
-        // assert(this.is(event))
+        assert(this.is(event))
         return event.block._runtime.decodeJsonEventRecordArguments(event)
     }
 }
@@ -95,7 +95,7 @@ export class StorageType {
     }
 
     async get(block: Block, ...key: any[]): Promise<any> {
-        // assert(this.is(block))
+        assert(this.is(block))
         return block._runtime.getStorage(block.hash, this.name, ...key)
     }
 
@@ -105,7 +105,7 @@ export class StorageType {
     }
 
     async getMany(block: Block, keys: any[]): Promise<any[]> {
-        // assert(this.is(block))
+        assert(this.is(block))
         return block._runtime.queryStorage(block.hash, this.name, keys)
     }
 

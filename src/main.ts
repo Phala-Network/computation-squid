@@ -2,7 +2,7 @@ import {BigDecimal} from '@subsquid/big-decimal'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import assert from 'assert'
 import {In} from 'typeorm'
-import {BASE_POOL_ACCOUNT} from './config'
+import {BASE_POOL_ACCOUNT} from './constants'
 import decodeEvents from './decodeEvents'
 import importDump from './importDump'
 import {

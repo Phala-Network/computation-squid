@@ -1,11 +1,11 @@
 import {
   SubstrateBatchProcessor,
+  assertNotNull,
   type BlockHeader,
   type DataHandlerContext,
   type SubstrateBatchProcessorFields,
 } from '@subsquid/substrate-processor'
 import {type Store} from '@subsquid/typeorm-store'
-import config from './config'
 import {
   identity,
   phalaBasePool,
@@ -15,10 +15,17 @@ import {
   phalaVault,
   rmrkCore,
 } from './types/events'
+import {lookupArchive} from '@subsquid/archive-registry'
+import {DUMP_BLOCK} from './constants'
 
 export const processor = new SubstrateBatchProcessor()
-  .setDataSource(config.dataSource)
-  .setBlockRange(config.blockRange)
+  .setGateway(lookupArchive('khala', {release: 'ArrowSquid'}))
+  .setRpcEndpoint(assertNotNull(process.env.RPC_ENDPOINT))
+  .setBlockRange({
+    from: DUMP_BLOCK + 1,
+    to:
+      process.env.TO_BLOCK != null ? parseInt(process.env.TO_BLOCK) : undefined,
+  })
 
   .addEvent({
     name: [

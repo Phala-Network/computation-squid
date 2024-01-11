@@ -3,7 +3,7 @@ import assert from 'assert'
 import {readFile} from 'fs/promises'
 import {groupBy} from 'lodash'
 import path from 'path'
-import {BASE_POOL_ACCOUNT, DUMP_BLOCK} from './config'
+import {BASE_POOL_ACCOUNT, DUMP_BLOCK} from './constants'
 import {
   BasePoolKind,
   BasePoolWhitelist,
