@@ -200,10 +200,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   })
   const delegationMap = toMap(delegations)
 
-  // const delegationWithdrawalNftIdMap = toMap(
-  //   delegations.filter((d) => d.withdrawalNft != null),
-  //   (d) => (d.withdrawalNft as Nft).id
-  // )
   const nftMap = await ctx.store
     .find(Nft, {
       where: {id: In([...nftIdSet])},
@@ -216,23 +212,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     })
     .then(toMap)
 
-  let processedBlockHeight = events[0].block.height
-  const sharePriceResetQueue: BasePool[] = []
-
   for (const {name, args, block} of events) {
     assert(block.timestamp)
     const blockTime = new Date(block.timestamp)
-    const blockHeight = block.height
-    // MEMO: reset share price after all events in a block are processed
-    if (blockHeight > processedBlockHeight) {
-      while (sharePriceResetQueue.length > 0) {
-        const basePool = sharePriceResetQueue.pop()
-        assert(basePool)
-        updateSharePrice(basePool)
-      }
-      processedBlockHeight = blockHeight
-    }
-
     switch (name) {
       case phalaStakePoolv2.poolCreated.name: {
         const {pid, owner, cid, poolAccountId} = args
@@ -476,9 +458,11 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           const prevShares = delegation.shares
           delegation.shares = shares.plus(delegation.withdrawingShares)
           updateDelegationValue(delegation, basePool)
-          delegation.cost = delegation.cost.plus(
-            delegation.shares.minus(prevShares).times(basePool.sharePrice),
-          )
+          delegation.cost = delegation.cost
+            .plus(
+              delegation.shares.minus(prevShares).times(basePool.sharePrice),
+            )
+            .round(12, 0)
           delegationMap.set(delegationId, delegation)
         }
         break
@@ -503,7 +487,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           .times(basePool.sharePrice)
           .round(12, 0)
         if (basePool.totalShares.eq(0)) {
-          sharePriceResetQueue.push(basePool)
+          updateSharePrice(basePool) // MEMO: reset share price
         }
         delegation.withdrawingShares =
           delegation.withdrawingShares.minus(removedShares)
