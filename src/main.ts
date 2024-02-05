@@ -334,7 +334,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         assert(worker.session)
         const session = assertGet(sessionMap, worker.session.id)
         basePool.releasingValue = basePool.releasingValue.minus(session.stake)
-        basePool.freeValue = basePool.freeValue.plus(session.stake)
+        // MEMO: freeValue is reset to 0 when pool is empty
+        if (basePool.totalShares.gt(0)) {
+          basePool.freeValue = basePool.freeValue.plus(session.stake)
+        }
         session.state = WorkerState.Ready
         session.coolingDownStartTime = null
         session.stake = BigDecimal(0)
