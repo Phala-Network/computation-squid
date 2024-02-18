@@ -1,8 +1,9 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
 import * as marshal from "./marshal"
 import {Delegation} from "./delegation.model"
 
+@Index_(["delegation", "updatedTime"], {unique: true})
 @Entity_()
 export class DelegationSnapshot {
     constructor(props?: Partial<DelegationSnapshot>) {
@@ -18,7 +19,6 @@ export class DelegationSnapshot {
     @Column_("timestamp with time zone", {nullable: false})
     updatedTime!: Date
 
-    @Index_()
     @ManyToOne_(() => Delegation, {nullable: true})
     delegation!: Delegation
 

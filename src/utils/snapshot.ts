@@ -54,8 +54,8 @@ export const createBasePoolSnapshot = ({
     id: join(basePool.id, updatedTime.toISOString()),
     basePool,
     commission: basePool.commission,
-    totalValue: basePool.totalValue,
-    sharePrice: basePool.sharePrice.round(12, 0),
+    totalValue: basePool.totalValue.round(2, 0),
+    sharePrice: basePool.sharePrice,
     delegatorCount: basePool.delegatorCount,
     apr,
     updatedTime,
@@ -63,7 +63,7 @@ export const createBasePoolSnapshot = ({
     idleWorkerCount: stakePool?.idleWorkerCount,
     stakePoolCount:
       stakePool == null ? basePool.account.stakePoolNftCount : undefined,
-    cumulativeOwnerRewards: basePool.cumulativeOwnerRewards,
+    cumulativeOwnerRewards: basePool.cumulativeOwnerRewards.round(2, 0),
   })
 }
 
@@ -77,8 +77,8 @@ export const createDelegationSnapshot = ({
   return new DelegationSnapshot({
     id: join(delegation.id, updatedTime.toISOString()),
     delegation,
-    cost: delegation.cost,
-    value: delegation.value,
+    cost: delegation.cost.round(2, 0),
+    value: delegation.value.round(2, 0),
     updatedTime,
   })
 }
@@ -98,13 +98,13 @@ export const createWorkerSnapshot = ({
     sessionId: worker.session?.id,
     confidenceLevel: worker.confidenceLevel,
     initialScore: worker.initialScore,
-    stake: worker.session?.stake,
+    stake: worker.session?.stake.round(2, 0),
     state: worker.session?.state,
-    v: worker.session?.v,
-    ve: worker.session?.ve,
+    v: worker.session?.v.round(2, 0),
+    ve: worker.session?.ve.round(2, 0),
     pInit: worker.session?.pInit,
     pInstant: worker.session?.pInstant,
-    totalReward: worker.session?.totalReward,
+    totalReward: worker.session?.totalReward.round(2, 0),
   })
 }
 

@@ -1,5 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
 import {BasePool} from "./basePool.model"
 import {IdentityJudgement} from "./_identityJudgement"
@@ -17,6 +17,7 @@ export class Account {
     id!: string
 
 
+    @Index_()
     @Column_("text", {nullable: true})
     identityDisplay!: string | undefined | null
 

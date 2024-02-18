@@ -1,7 +1,8 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
 import {Account} from "./account.model"
 import {BasePool} from "./basePool.model"
 
+@Index_(["basePool", "createTime"], {unique: false})
 @Entity_()
 export class BasePoolWhitelist {
     constructor(props?: Partial<BasePoolWhitelist>) {
@@ -18,7 +19,6 @@ export class BasePoolWhitelist {
     @ManyToOne_(() => Account, {nullable: true})
     account!: Account
 
-    @Index_()
     @ManyToOne_(() => BasePool, {nullable: true})
     basePool!: BasePool
 

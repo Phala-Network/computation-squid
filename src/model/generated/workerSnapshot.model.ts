@@ -1,9 +1,10 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
 import * as marshal from "./marshal"
 import {Worker} from "./worker.model"
 import {WorkerState} from "./_workerState"
 
+@Index_(["worker", "updatedTime"], {unique: true})
 @Entity_()
 export class WorkerSnapshot {
     constructor(props?: Partial<WorkerSnapshot>) {
@@ -19,7 +20,6 @@ export class WorkerSnapshot {
     @Column_("timestamp with time zone", {nullable: false})
     updatedTime!: Date
 
-    @Index_()
     @ManyToOne_(() => Worker, {nullable: true})
     worker!: Worker
 

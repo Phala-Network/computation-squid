@@ -1,5 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToOne as OneToOne_, JoinColumn as JoinColumn_, OneToMany as OneToMany_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_, OneToOne as OneToOne_, JoinColumn as JoinColumn_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
 import {Account} from "./account.model"
 import {BasePoolKind} from "./_basePoolKind"
@@ -23,6 +23,7 @@ export class BasePool {
     /**
      * numeric pid for sorting
      */
+    @Index_()
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     pid!: bigint
 
@@ -41,6 +42,7 @@ export class BasePool {
     @JoinColumn_()
     account!: Account
 
+    @Index_()
     @Column_("varchar", {length: 9, nullable: false})
     kind!: BasePoolKind
 
@@ -52,12 +54,14 @@ export class BasePool {
 
 
 
+    @Index_()
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     aprMultiplier!: BigDecimal
 
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     totalShares!: BigDecimal
 
+    @Index_()
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     totalValue!: BigDecimal
 
@@ -79,6 +83,7 @@ export class BasePool {
     @Column_("int4", {nullable: false})
     delegatorCount!: number
 
+    @Index_()
     @Column_("bool", {nullable: false})
     whitelistEnabled!: boolean
 

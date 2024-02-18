@@ -1,5 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_} from "typeorm"
 import * as marshal from "./marshal"
 
 @Entity_()
@@ -14,6 +14,7 @@ export class GlobalStateSnapshot {
     /**
      * block time
      */
+    @Index_()
     @Column_("timestamp with time zone", {nullable: false})
     updatedTime!: Date
 

@@ -1,8 +1,9 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
 import * as marshal from "./marshal"
 import {BasePool} from "./basePool.model"
 
+@Index_(["basePool", "updatedTime"], {unique: true})
 @Entity_()
 export class BasePoolSnapshot {
     constructor(props?: Partial<BasePoolSnapshot>) {
@@ -18,7 +19,6 @@ export class BasePoolSnapshot {
     @Column_("timestamp with time zone", {nullable: false})
     updatedTime!: Date
 
-    @Index_()
     @ManyToOne_(() => BasePool, {nullable: true})
     basePool!: BasePool
 

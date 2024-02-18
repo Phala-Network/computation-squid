@@ -26,6 +26,7 @@ export const processor = new SubstrateBatchProcessor()
     to:
       process.env.TO_BLOCK != null ? parseInt(process.env.TO_BLOCK) : undefined,
   })
+  .includeAllBlocks()
 
   .addEvent({
     name: [

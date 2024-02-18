@@ -41,7 +41,7 @@ type Account @entity {
   "account address"
   id: ID!
   basePool: BasePool @derivedFrom(field: "account")
-  identityDisplay: String
+  identityDisplay: String @index
   identityLevel: IdentityJudgement
   identityJudgements: [IdentityJudgement!]
   # subIdentity: String
@@ -66,26 +66,26 @@ type BasePool @entity {
   "pid"
   id: ID!
   "numeric pid for sorting"
-  pid: BigInt!
+  pid: BigInt! @index
   "NFT collection id"
   cid: Int!
   owner: Account!
   account: Account! @unique
-  kind: BasePoolKind!
+  kind: BasePoolKind! @index
   "decimal percentage, 1 means 100%"
   commission: BigDecimal!
   vault: Vault @derivedFrom(field: "basePool")
   stakePool: StakePool @derivedFrom(field: "basePool")
-  aprMultiplier: BigDecimal!
+  aprMultiplier: BigDecimal! @index
   totalShares: BigDecimal!
-  totalValue: BigDecimal!
+  totalValue: BigDecimal! @index
   sharePrice: BigDecimal!
   freeValue: BigDecimal!
   releasingValue: BigDecimal!
   withdrawingValue: BigDecimal!
   withdrawingShares: BigDecimal!
   delegatorCount: Int!
-  whitelistEnabled: Boolean!
+  whitelistEnabled: Boolean! @index
   whitelists: [BasePoolWhitelist!] @derivedFrom(field: "basePool")
   delegations: [Delegation!] @derivedFrom(field: "basePool")
   cumulativeOwnerRewards: BigDecimal!
@@ -115,7 +115,7 @@ type StakePool @entity {
   workers: [Worker!]! @derivedFrom(field: "stakePool")
 }
 
-type Delegation @entity {
+type Delegation @entity @index(fields: ["basePool", "account"], unique: true) {
   "${pid}-${accountId}"
   id: ID!
   account: Account!
@@ -142,7 +142,7 @@ type Nft @entity {
   delegation: Delegation @derivedFrom(field: "delegationNft")
 }
 
-type BasePoolWhitelist @entity {
+type BasePoolWhitelist @entity @index(fields: ["basePool", "createTime"]) {
   "${pid}-${accountId}"
   id: ID!
   account: Account!
@@ -183,7 +183,9 @@ type Session @entity {
   coolingDownStartTime: DateTime
 }
 
-type AccountSnapshot @entity {
+type AccountSnapshot
+  @entity
+  @index(fields: ["account", "updatedTime"], unique: true) {
   id: ID!
   "block time"
   updatedTime: DateTime!
@@ -193,7 +195,9 @@ type AccountSnapshot @entity {
   cumulativeVaultOwnerRewards: BigDecimal!
 }
 
-type BasePoolSnapshot @entity {
+type BasePoolSnapshot
+  @entity
+  @index(fields: ["basePool", "updatedTime"], unique: true) {
   id: ID!
   "block time"
   updatedTime: DateTime!
@@ -212,7 +216,7 @@ type BasePoolSnapshot @entity {
 type GlobalStateSnapshot @entity {
   id: ID!
   "block time"
-  updatedTime: DateTime!
+  updatedTime: DateTime! @index
 
   totalValue: BigDecimal!
   averageBlockTime: Int!
@@ -226,7 +230,9 @@ type GlobalStateSnapshot @entity {
   delegatorCount: Int!
 }
 
-type DelegationSnapshot @entity {
+type DelegationSnapshot
+  @entity
+  @index(fields: ["delegation", "updatedTime"], unique: true) {
   id: ID!
   "block time"
   updatedTime: DateTime!
@@ -235,7 +241,9 @@ type DelegationSnapshot @entity {
   value: BigDecimal!
 }
 
-type WorkerSnapshot @entity {
+type WorkerSnapshot
+  @entity
+  @index(fields: ["worker", "updatedTime"], unique: true) {
   id: ID!
   "block time"
   updatedTime: DateTime!

@@ -1,11 +1,12 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToOne as OneToOne_, JoinColumn as JoinColumn_, OneToMany as OneToMany_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_, OneToOne as OneToOne_, JoinColumn as JoinColumn_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
 import {Account} from "./account.model"
 import {BasePool} from "./basePool.model"
 import {Nft} from "./nft.model"
 import {DelegationSnapshot} from "./delegationSnapshot.model"
 
+@Index_(["basePool", "account"], {unique: true})
 @Entity_()
 export class Delegation {
     constructor(props?: Partial<Delegation>) {
@@ -22,7 +23,6 @@ export class Delegation {
     @ManyToOne_(() => Account, {nullable: true})
     account!: Account
 
-    @Index_()
     @ManyToOne_(() => BasePool, {nullable: true})
     basePool!: BasePool
 
