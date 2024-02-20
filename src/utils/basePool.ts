@@ -1,5 +1,5 @@
 import {BigDecimal} from '@subsquid/big-decimal'
-import {BasePool, BasePoolKind, StakePool, Vault, type Account} from '../model'
+import {type Account, BasePool, BasePoolKind, StakePool, Vault} from '../model'
 
 export function createPool(
   kind: BasePoolKind.StakePool,
@@ -149,4 +149,16 @@ export const getBasePoolAvgAprMultiplier = (
   }
 
   return weight.div(totalValue).round(6, 0)
+}
+
+export const updateFreeValue = (
+  basePool: BasePool,
+  value: BigDecimal,
+): void => {
+  // free value is wPHA with minBalance
+  if (value.lt('0.0001')) {
+    basePool.freeValue = BigDecimal(0)
+  } else {
+    basePool.freeValue = value
+  }
 }

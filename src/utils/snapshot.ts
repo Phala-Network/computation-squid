@@ -1,18 +1,18 @@
+import {type BigDecimal} from '@subsquid/big-decimal'
 import {
-  AccountSnapshot,
   type Account,
-  BasePoolSnapshot,
+  AccountSnapshot,
   type BasePool,
-  type StakePool,
-  DelegationSnapshot,
+  BasePoolSnapshot,
   type Delegation,
-  WorkerSnapshot,
-  type Worker,
+  DelegationSnapshot,
   type GlobalState,
   GlobalStateSnapshot,
+  type StakePool,
+  type Worker,
+  WorkerSnapshot,
 } from '../model'
 import {join} from './common'
-import {type BigDecimal} from '@subsquid/big-decimal'
 
 export const createAccountSnapshot = ({
   account,

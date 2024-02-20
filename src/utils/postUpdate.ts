@@ -1,17 +1,17 @@
-import {BigDecimal} from '@subsquid/big-decimal'
 import assert from 'assert'
+import {BigDecimal} from '@subsquid/big-decimal'
 import {groupBy} from 'lodash'
 import {
-  BasePoolKind,
-  Worker,
   type Account,
   type AccountSnapshot,
   type BasePool,
+  BasePoolKind,
   type BasePoolSnapshot,
   type Delegation,
   type DelegationSnapshot,
   type GlobalState,
   type StakePool,
+  Worker,
   type WorkerSnapshot,
 } from '../model'
 import {type Ctx} from '../processor'
@@ -57,7 +57,7 @@ const postUpdate = async (
   const delegationAccountIdMap = groupBy(delegations, (x) => x.account.id)
 
   if (globalState.withdrawalDustCleared !== true) {
-    let clearWithdrawalDate
+    let clearWithdrawalDate: number | undefined
     try {
       clearWithdrawalDate = new Date(
         process.env.CLEAR_WITHDRAWAL_DATE as string,

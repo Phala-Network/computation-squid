@@ -1,5 +1,5 @@
-import {BigDecimal} from '@subsquid/big-decimal'
 import assert from 'assert'
+import {BigDecimal} from '@subsquid/big-decimal'
 import {Account} from '../model'
 
 export const getAccount = (m: Map<string, Account>, id: string): Account => {

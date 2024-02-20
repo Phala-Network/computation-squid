@@ -5,10 +5,11 @@ import {isHex} from '@subsquid/util-internal-hex'
 export type JsonBigInt = string | number // Polkadot.js toJSON() BigInt type
 
 export const toBigDecimal = (value: JsonBigInt | bigint): BigDecimal => {
+  let convertedValue = value
   if (isHex(value)) {
-    value = BigInt(value)
+    convertedValue = BigInt(value)
   }
-  return BigDecimal(value)
+  return BigDecimal(convertedValue)
 }
 
 export const toBalance = (value: JsonBigInt | bigint): BigDecimal =>

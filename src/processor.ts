@@ -1,11 +1,13 @@
+import {lookupArchive} from '@subsquid/archive-registry'
 import {
-  SubstrateBatchProcessor,
-  assertNotNull,
   type BlockHeader,
   type DataHandlerContext,
+  SubstrateBatchProcessor,
   type SubstrateBatchProcessorFields,
+  assertNotNull,
 } from '@subsquid/substrate-processor'
 import {type Store} from '@subsquid/typeorm-store'
+import {DUMP_BLOCK} from './constants'
 import {
   identity,
   phalaBasePool,
@@ -15,8 +17,6 @@ import {
   phalaVault,
   rmrkCore,
 } from './types/events'
-import {lookupArchive} from '@subsquid/archive-registry'
-import {DUMP_BLOCK} from './constants'
 
 export const processor = new SubstrateBatchProcessor()
   .setGateway(lookupArchive('khala', {release: 'ArrowSquid'}))
@@ -70,9 +70,7 @@ export const processor = new SubstrateBatchProcessor()
       phalaRegistry.workerUpdated.name,
       phalaRegistry.initialScoreSet.name,
 
-      // rmrkCore.collectionCreated.name,
       rmrkCore.nftMinted.name,
-      // rmrkCore.propertySet.name,
       rmrkCore.nftBurned.name,
 
       identity.identitySet.name,

@@ -1,15 +1,15 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import {type Ctx, type SubstrateBlock} from './processor'
-import {encodeAddress, fromBits, toBalance} from './utils/converter'
 import {
-  phalaStakePoolv2,
   identity,
   phalaBasePool,
   phalaComputation,
   phalaRegistry,
+  phalaStakePoolv2,
   phalaVault,
   rmrkCore,
 } from './types/events'
+import {encodeAddress, fromBits, toBalance} from './utils/converter'
 
 const decodeEvent = (
   event: Ctx['blocks'][number]['events'][number],
@@ -33,9 +33,8 @@ const decodeEvent = (
             poolAccountId: encodeAddress(poolAccountId),
           },
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaStakePoolv2.poolCommissionSet.name: {
       if (phalaStakePoolv2.poolCommissionSet.v1199.is(event)) {
@@ -45,17 +44,15 @@ const decodeEvent = (
           name,
           args: {pid: String(pid), commission: BigDecimal(commission).div(1e6)},
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaStakePoolv2.poolCapacitySet.name: {
       if (phalaStakePoolv2.poolCapacitySet.v1199.is(event)) {
         const {pid, cap} = phalaStakePoolv2.poolCapacitySet.v1199.decode(event)
         return {name, args: {pid: String(pid), cap: toBalance(cap)}}
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaStakePoolv2.poolWorkerAdded.name: {
       if (phalaStakePoolv2.poolWorkerAdded.v1199.is(event)) {
@@ -65,9 +62,8 @@ const decodeEvent = (
           name,
           args: {pid: String(pid), workerId: worker},
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaStakePoolv2.poolWorkerRemoved.name: {
       if (phalaStakePoolv2.poolWorkerRemoved.v1199.is(event)) {
@@ -78,9 +74,8 @@ const decodeEvent = (
           name,
           args: {pid: String(pid), workerId: worker},
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaStakePoolv2.workingStarted.name: {
       if (phalaStakePoolv2.workingStarted.v1199.is(event)) {
@@ -94,9 +89,8 @@ const decodeEvent = (
             amount: toBalance(amount),
           },
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaStakePoolv2.rewardReceived.name: {
       if (phalaStakePoolv2.rewardReceived.v1199.is(event)) {
@@ -110,9 +104,8 @@ const decodeEvent = (
             toStakers: toBalance(toStakers),
           },
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaStakePoolv2.ownerRewardsWithdrawn.name: {
       if (phalaStakePoolv2.ownerRewardsWithdrawn.v1199.is(event)) {
@@ -126,9 +119,8 @@ const decodeEvent = (
             amount: toBalance(amount),
           },
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaStakePoolv2.contribution.name: {
       if (phalaStakePoolv2.contribution.v1199.is(event)) {
@@ -144,9 +136,8 @@ const decodeEvent = (
             asVault: asVault?.toString(),
           },
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaStakePoolv2.workerReclaimed.name: {
       if (phalaStakePoolv2.workerReclaimed.v1199.is(event)) {
@@ -156,9 +147,8 @@ const decodeEvent = (
           name,
           args: {pid: String(pid), workerId: worker},
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaVault.poolCreated.name: {
       if (phalaVault.poolCreated.v1199.is(event)) {
@@ -173,9 +163,8 @@ const decodeEvent = (
             poolAccountId: encodeAddress(poolAccountId),
           },
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaVault.vaultCommissionSet.name: {
       if (phalaVault.vaultCommissionSet.v1199.is(event)) {
@@ -185,17 +174,15 @@ const decodeEvent = (
           name,
           args: {pid: String(pid), commission: BigDecimal(commission).div(1e6)},
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaVault.ownerSharesGained.name: {
       if (phalaVault.ownerSharesGained.v1199.is(event)) {
         const {pid, shares} = phalaVault.ownerSharesGained.v1199.decode(event)
         return {name, args: {pid: String(pid), shares: toBalance(shares)}}
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaVault.ownerSharesClaimed.name: {
       if (phalaVault.ownerSharesClaimed.v1199.is(event)) {
@@ -209,9 +196,8 @@ const decodeEvent = (
             shares: toBalance(shares),
           },
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaVault.contribution.name: {
       if (phalaVault.contribution.v1199.is(event)) {
@@ -226,9 +212,8 @@ const decodeEvent = (
             shares: toBalance(shares),
           },
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaBasePool.nftCreated.name: {
       if (phalaBasePool.nftCreated.v1199.is(event)) {
@@ -244,9 +229,8 @@ const decodeEvent = (
             shares: toBalance(shares),
           },
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaBasePool.withdrawal.name: {
       if (phalaBasePool.withdrawal.v1254.is(event)) {
@@ -262,7 +246,8 @@ const decodeEvent = (
             burntShares: toBalance(burntShares),
           },
         }
-      } else if (phalaBasePool.withdrawal.v1199.is(event)) {
+      }
+      if (phalaBasePool.withdrawal.v1199.is(event)) {
         const {pid, user, amount, shares} =
           phalaBasePool.withdrawal.v1199.decode(event)
         return {
@@ -274,9 +259,8 @@ const decodeEvent = (
             shares: toBalance(shares),
           },
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaBasePool.withdrawalQueued.name: {
       if (phalaBasePool.withdrawalQueued.v1254.is(event)) {
@@ -293,7 +277,8 @@ const decodeEvent = (
             withdrawingNftId,
           },
         }
-      } else if (phalaBasePool.withdrawalQueued.v1199.is(event)) {
+      }
+      if (phalaBasePool.withdrawalQueued.v1199.is(event)) {
         const {pid, user, shares, nftId, asVault} =
           phalaBasePool.withdrawalQueued.v1199.decode(event)
 
@@ -307,25 +292,22 @@ const decodeEvent = (
             asVault: asVault?.toString(),
           },
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaBasePool.poolWhitelistCreated.name: {
       if (phalaBasePool.poolWhitelistCreated.v1199.is(event)) {
         const {pid} = phalaBasePool.poolWhitelistCreated.v1199.decode(event)
         return {name, args: {pid: String(pid)}}
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaBasePool.poolWhitelistDeleted.name: {
       if (phalaBasePool.poolWhitelistDeleted.v1199.is(event)) {
         const {pid} = phalaBasePool.poolWhitelistDeleted.v1199.decode(event)
         return {name, args: {pid: String(pid)}}
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaBasePool.poolWhitelistStakerAdded.name: {
       if (phalaBasePool.poolWhitelistStakerAdded.v1199.is(event)) {
@@ -335,9 +317,8 @@ const decodeEvent = (
           name,
           args: {pid: String(pid), accountId: encodeAddress(staker)},
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaBasePool.poolWhitelistStakerRemoved.name: {
       if (phalaBasePool.poolWhitelistStakerRemoved.v1199.is(event)) {
@@ -347,9 +328,8 @@ const decodeEvent = (
           name,
           args: {pid: String(pid), accountId: encodeAddress(staker)},
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaComputation.sessionBound.name: {
       if (phalaComputation.sessionBound.v1199.is(event)) {
@@ -359,9 +339,8 @@ const decodeEvent = (
           name,
           args: {sessionId: encodeAddress(session), workerId: worker},
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaComputation.sessionUnbound.name: {
       if (phalaComputation.sessionUnbound.v1199.is(event)) {
@@ -371,9 +350,8 @@ const decodeEvent = (
           name,
           args: {sessionId: encodeAddress(session), workerId: worker},
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaComputation.sessionSettled.name: {
       if (phalaComputation.sessionSettled.v1199.is(event)) {
@@ -387,9 +365,8 @@ const decodeEvent = (
             payout: fromBits(payoutBits).round(12, 0),
           },
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaComputation.workerStarted.name: {
       if (phalaComputation.workerStarted.v1199.is(event)) {
@@ -403,17 +380,15 @@ const decodeEvent = (
             initP,
           },
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaComputation.workerStopped.name: {
       if (phalaComputation.workerStopped.v1199.is(event)) {
         const {session} = phalaComputation.workerStopped.v1199.decode(event)
         return {name, args: {sessionId: encodeAddress(session)}}
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaComputation.workerReclaimed.name: {
       if (phalaComputation.workerReclaimed.v1199.is(event)) {
@@ -427,36 +402,32 @@ const decodeEvent = (
             slashed: toBalance(slashed),
           },
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaComputation.workerEnterUnresponsive.name: {
       if (phalaComputation.workerEnterUnresponsive.v1199.is(event)) {
         const {session} =
           phalaComputation.workerEnterUnresponsive.v1199.decode(event)
         return {name, args: {sessionId: encodeAddress(session)}}
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaComputation.workerExitUnresponsive.name: {
       if (phalaComputation.workerExitUnresponsive.v1199.is(event)) {
         const {session} =
           phalaComputation.workerExitUnresponsive.v1199.decode(event)
         return {name, args: {sessionId: encodeAddress(session)}}
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaComputation.benchmarkUpdated.name: {
       if (phalaComputation.benchmarkUpdated.v1199.is(event)) {
         const {session, pInstant} =
           phalaComputation.benchmarkUpdated.v1199.decode(event)
         return {name, args: {sessionId: encodeAddress(session), pInstant}}
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaComputation.tokenomicParametersChanged.name: {
       return {name, args: {}}
@@ -469,16 +440,16 @@ const decodeEvent = (
           name,
           args: {workerId: pubkey, confidenceLevel},
         }
-      } else if (phalaRegistry.workerAdded.v1199.is(event)) {
+      }
+      if (phalaRegistry.workerAdded.v1199.is(event)) {
         const {pubkey, confidenceLevel} =
           phalaRegistry.workerAdded.v1199.decode(event)
         return {
           name,
           args: {workerId: pubkey, confidenceLevel},
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaRegistry.workerUpdated.name: {
       if (phalaRegistry.workerUpdated.v1260.is(event)) {
@@ -488,16 +459,16 @@ const decodeEvent = (
           name,
           args: {workerId: pubkey, confidenceLevel},
         }
-      } else if (phalaRegistry.workerUpdated.v1199.is(event)) {
+      }
+      if (phalaRegistry.workerUpdated.v1199.is(event)) {
         const {pubkey, confidenceLevel} =
           phalaRegistry.workerUpdated.v1199.decode(event)
         return {
           name,
           args: {workerId: pubkey, confidenceLevel},
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case phalaRegistry.initialScoreSet.name: {
       if (phalaRegistry.initialScoreSet.v1182.is(event)) {
@@ -507,9 +478,8 @@ const decodeEvent = (
           name,
           args: {workerId: pubkey, initialScore: initScore},
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case rmrkCore.nftMinted.name: {
       // if (rmrkCore.nftMinted.v1170.is(event)) {
@@ -521,9 +491,8 @@ const decodeEvent = (
         name,
         args: {owner: encodeAddress(owner.value), cid: collectionId, nftId},
       }
-      // } else {
-      //   throw error
       // }
+      // throw error
     }
     case rmrkCore.nftBurned.name: {
       if (rmrkCore.nftBurned.v1181.is(event)) {
@@ -533,33 +502,29 @@ const decodeEvent = (
           name,
           args: {owner: encodeAddress(owner), cid: collectionId, nftId},
         }
-      } else {
-        throw error
       }
+      throw error
     }
     case identity.identitySet.name: {
       if (identity.identitySet.v1090.is(event)) {
         const {who} = identity.identitySet.v1090.decode(event)
         return {name, args: {accountId: encodeAddress(who)}}
-      } else {
-        throw error
       }
+      throw error
     }
     case identity.identityCleared.name: {
       if (identity.identityCleared.v1090.is(event)) {
         const {who} = identity.identityCleared.v1090.decode(event)
         return {name, args: {accountId: encodeAddress(who)}}
-      } else {
-        throw error
       }
+      throw error
     }
     case identity.judgementGiven.name: {
       if (identity.judgementGiven.v1090.is(event)) {
         const {target} = identity.judgementGiven.v1090.decode(event)
         return {name, args: {accountId: encodeAddress(target)}}
-      } else {
-        throw error
       }
+      throw error
     }
   }
 }

@@ -1,6 +1,6 @@
+import assert from 'assert'
 import {BigDecimal} from '@subsquid/big-decimal'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
-import assert from 'assert'
 import {In} from 'typeorm'
 import {BASE_POOL_ACCOUNT} from './constants'
 import decodeEvents from './decodeEvents'
@@ -21,6 +21,15 @@ import {
 } from './model'
 import {processor} from './processor'
 import {
+  identity,
+  phalaBasePool,
+  phalaComputation,
+  phalaRegistry,
+  phalaStakePoolv2,
+  phalaVault,
+  rmrkCore,
+} from './types/events'
+import {
   createPool,
   updateSharePrice,
   updateStakePoolAprMultiplier,
@@ -35,15 +44,6 @@ import {
 import {queryIdentities} from './utils/identity'
 import postUpdate from './utils/postUpdate'
 import {updateWorkerShares} from './utils/worker'
-import {
-  phalaStakePoolv2,
-  identity,
-  phalaBasePool,
-  phalaComputation,
-  phalaRegistry,
-  phalaVault,
-  rmrkCore,
-} from './types/events'
 
 processor.run(new TypeormDatabase(), async (ctx) => {
   if ((await ctx.store.get(GlobalState, '0')) == null) {
@@ -129,10 +129,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       basePoolWhitelistIdSet.add(join(args.pid, args.accountId))
     }
 
-    if (
-      name === rmrkCore.nftBurned.name
-      // || name === RmrkCore.PropertySet.name
-    ) {
+    if (name === rmrkCore.nftBurned.name) {
       nftIdSet.add(join(args.cid, args.nftId))
     }
 
@@ -757,9 +754,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         nftMap.set(id, nft)
         break
       }
-      // case RmrkCore.PropertySet.name: {
-      //   break
-      // }
       case rmrkCore.nftBurned.name: {
         const {cid, nftId} = args
         const nft = assertGet(nftMap, join(cid, nftId))

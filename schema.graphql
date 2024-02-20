@@ -44,8 +44,6 @@ type Account @entity {
   identityDisplay: String @index
   identityLevel: IdentityJudgement
   identityJudgements: [IdentityJudgement!]
-  # subIdentity: String
-  # super: Account
   stakePoolValue: BigDecimal!
   stakePoolNftCount: Int!
   stakePoolAvgAprMultiplier: BigDecimal!

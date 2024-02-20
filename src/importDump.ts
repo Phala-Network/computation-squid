@@ -1,24 +1,24 @@
-import {BigDecimal} from '@subsquid/big-decimal'
 import assert from 'assert'
+import path from 'path'
+import {BigDecimal} from '@subsquid/big-decimal'
 import {readFile} from 'fs/promises'
 import {groupBy} from 'lodash'
-import path from 'path'
 import {BASE_POOL_ACCOUNT, DUMP_BLOCK} from './constants'
 import {
+  type Account,
+  type AccountSnapshot,
+  type BasePool,
   BasePoolKind,
   BasePoolWhitelist,
   Delegation,
   GlobalState,
+  type IdentityJudgement,
   Nft,
   Session,
-  Worker,
-  WorkerState,
-  type Account,
-  type AccountSnapshot,
-  type BasePool,
-  type IdentityJudgement,
   type StakePool,
   type Vault,
+  Worker,
+  WorkerState,
 } from './model'
 import {type Ctx} from './processor'
 import {
@@ -96,8 +96,6 @@ interface Dump {
     id: string
     identity: string | null
     judgements: IdentityJudgement[]
-    // superId: string | null
-    // subIdentity: string | null
   }>
   nfts: Array<{
     cid: number
@@ -153,10 +151,6 @@ const importDump = async (ctx: Ctx): Promise<void> => {
       account.identityLevel = i.judgements[i.judgements.length - 1]
       account.identityJudgements = i.judgements
     }
-    // account.subIdentity = i.subIdentity
-    // if (i.superId != null) {
-    //   account.super = getAccount(accountMap, i.superId)
-    // }
     accountMap.set(account.id, account)
   }
 

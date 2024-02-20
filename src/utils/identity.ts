@@ -1,5 +1,5 @@
 import {decodeHex} from '@subsquid/substrate-processor'
-import {IdentityJudgement, type Account} from '../model'
+import {type Account, IdentityJudgement} from '../model'
 import {type SubstrateBlock} from '../processor'
 import {identity} from '../types/storage'
 import {getAccount} from './common'
