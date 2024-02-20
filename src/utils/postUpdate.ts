@@ -60,7 +60,7 @@ const postUpdate = async (
     let clearWithdrawalDate: number | undefined
     try {
       clearWithdrawalDate = new Date(
-        process.env.CLEAR_WITHDRAWAL_DATE as string,
+        Bun.env.CLEAR_WITHDRAWAL_DATE as string,
       ).getTime()
     } catch (err) {
       // noop
@@ -70,7 +70,7 @@ const postUpdate = async (
       latestBlock.header.timestamp >= clearWithdrawalDate
     ) {
       const clearWithdrawalThreshold =
-        process.env.CLEAR_WITHDRAWAL_THRESHOLD ?? '0.01'
+        Bun.env.CLEAR_WITHDRAWAL_THRESHOLD ?? '0.01'
       for (const delegation of delegations) {
         const basePool = assertGet(basePoolMap, delegation.basePool.id)
         const prevWithdrawingShares = delegation.withdrawingShares

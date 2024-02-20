@@ -20,11 +20,10 @@ import {
 
 export const processor = new SubstrateBatchProcessor()
   .setGateway(lookupArchive('khala', {release: 'ArrowSquid'}))
-  .setRpcEndpoint(assertNotNull(process.env.RPC_ENDPOINT))
+  .setRpcEndpoint(assertNotNull(Bun.env.RPC_ENDPOINT))
   .setBlockRange({
     from: DUMP_BLOCK + 1,
-    to:
-      process.env.TO_BLOCK != null ? parseInt(process.env.TO_BLOCK) : undefined,
+    to: Bun.env.TO_BLOCK != null ? parseInt(Bun.env.TO_BLOCK) : undefined,
   })
   .includeAllBlocks()
 

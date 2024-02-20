@@ -141,7 +141,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       identityUpdatedAccountIdSet.add(args.accountId)
     }
   }
-  const globalState = await ctx.store.findOneByOrFail(GlobalState, {id: '0'})
+  const globalState = await ctx.store.findOneBy(GlobalState, {id: '0'})
+  assert(globalState)
   const accountMap: Map<string, Account> = await ctx.store
     .find(Account)
     .then(toMap)
@@ -764,7 +765,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     updateAverageBlockTime(block, globalState)
   }
 
-  if (process.env.REFRESH_IDENTITY === '1') {
+  if (Bun.env.REFRESH_IDENTITY === '1') {
     await queryIdentities(
       ctx.blocks[ctx.blocks.length - 1].header,
       [...accountMap.keys()],

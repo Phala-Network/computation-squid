@@ -1,16 +1,35 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2020",
+    // Enable latest features
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleDetection": "force",
+    "allowJs": true,
+
+    // Bundler mode
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    // Best practices
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // Some stricter flags
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    // "noPropertyAccessFromIndexSignature": true,
+   
     "outDir": "lib",
     "rootDir": "src",
-    "strict": true,
     "declaration": false,
     "sourceMap": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "skipLibCheck": true
   },
   "include": ["src"],
   "exclude": ["node_modules"]

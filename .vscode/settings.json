@@ -12,15 +12,18 @@
     "editor.defaultFormatter": "biomejs.biome"
   },
   "cSpell.words": [
-    "subsquid",
-    "phala",
-    "typeorm",
+    "biomejs",
+    "codegen",
     "khala",
+    "phala",
+    "poolv2",
     "rmrk",
-    "tokenomic",
     "staker",
     "stakers",
-    "poolv2"
+    "subsquid",
+    "tokenomic",
+    "typegen",
+    "typeorm"
   ],
   "editor.codeActionsOnSave": {
     "quickfix.biome": "explicit",
