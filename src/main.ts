@@ -7,6 +7,7 @@ import decodeEvents from './decodeEvents'
 import {getAccount} from './helper/account'
 import {
   createPool,
+  updateFreeValue,
   updateSharePrice,
   updateStakePoolAprMultiplier,
   updateStakePoolDelegable,
@@ -272,7 +273,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const basePool = assertGet(basePoolMap, pid)
         const session = assertGet(workerSessionMap, workerId)
         session.stake = amount
-        basePool.freeValue = basePool.freeValue.minus(amount)
+        updateFreeValue(basePool, basePool.freeValue.minus(amount))
         break
       }
       case phalaStakePoolv2.rewardReceived.name: {
@@ -282,7 +283,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const owner = assertGet(accountMap, basePool.owner.id)
         stakePool.ownerReward = stakePool.ownerReward.plus(toOwner)
         basePool.totalValue = basePool.totalValue.plus(toStakers)
-        basePool.freeValue = basePool.freeValue.plus(toStakers)
+        updateFreeValue(basePool, basePool.freeValue.plus(toStakers))
         globalState.totalValue = globalState.totalValue.plus(toStakers)
         globalState.cumulativeRewards = globalState.cumulativeRewards
           .plus(toOwner)
@@ -314,7 +315,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           globalState.totalValue = globalState.totalValue.plus(amount)
         } else {
           const vaultBasePool = assertGet(basePoolMap, asVault)
-          vaultBasePool.freeValue = vaultBasePool.freeValue.minus(amount)
+          updateFreeValue(vaultBasePool, vaultBasePool.freeValue.minus(amount))
         }
         updateStakePoolDelegable(basePool, stakePool)
         break
@@ -451,7 +452,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const delegation = assertGet(delegationMap, delegationId)
         basePool.totalShares = basePool.totalShares.minus(removedShares)
         basePool.totalValue = basePool.totalValue.minus(amount)
-        basePool.freeValue = basePool.freeValue.minus(amount)
+        updateFreeValue(basePool, basePool.freeValue.minus(amount))
         basePool.withdrawingShares = max(
           basePool.withdrawingShares.minus(removedShares),
           BigDecimal(0),
@@ -478,7 +479,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
 
         if (basePoolAccountIdMap.has(accountId)) {
           const vaultBasePool = assertGet(basePoolAccountIdMap, accountId)
-          vaultBasePool.freeValue = vaultBasePool.freeValue.plus(amount)
+          updateFreeValue(vaultBasePool, vaultBasePool.freeValue.plus(amount))
         } else {
           // MEMO: exclude vault's withdrawal
           globalState.totalValue = globalState.totalValue.minus(amount)
