@@ -2,21 +2,22 @@ import assert from 'assert'
 import {type GlobalState} from '../model'
 import {type SubstrateBlock} from '../processor'
 import {phalaComputation} from '../types/storage'
-import {fromBits} from './converter'
+import {fromBits} from '../utils'
 
 export const updateAverageBlockTime = (
   block: SubstrateBlock,
   globalState: GlobalState,
 ): void => {
   const blockCount = block.height - globalState.averageBlockTimeUpdatedHeight
-  if (blockCount < 100) return
-  assert(block.timestamp)
-  const duration =
-    block.timestamp - globalState.averageBlockTimeUpdatedTime.getTime()
+  if (blockCount >= 100) {
+    assert(block.timestamp)
+    const duration =
+      block.timestamp - globalState.averageBlockTimeUpdatedTime.getTime()
 
-  globalState.averageBlockTime = Math.floor(duration / blockCount)
-  globalState.averageBlockTimeUpdatedHeight = block.height
-  globalState.averageBlockTimeUpdatedTime = new Date(block.timestamp)
+    globalState.averageBlockTime = Math.floor(duration / blockCount)
+    globalState.averageBlockTimeUpdatedHeight = block.height
+    globalState.averageBlockTimeUpdatedTime = new Date(block.timestamp)
+  }
 }
 
 export const updateTokenomicParameters = async (

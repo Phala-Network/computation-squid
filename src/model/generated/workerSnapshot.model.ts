@@ -1,7 +1,6 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_} from "typeorm"
 import * as marshal from "./marshal"
-import {Worker} from "./worker.model"
 import {WorkerState} from "./_workerState"
 
 @Index_(["worker", "updatedTime"], {unique: true})
@@ -20,14 +19,14 @@ export class WorkerSnapshot {
     @Column_("timestamp with time zone", {nullable: false})
     updatedTime!: Date
 
-    @ManyToOne_(() => Worker, {nullable: true})
-    worker!: Worker
+    @Column_("text", {nullable: false})
+    worker!: string
 
-    @Column_("text", {nullable: true})
-    stakePoolId!: string | undefined | null
+    @Column_("text", {nullable: false})
+    stakePool!: string
 
-    @Column_("text", {nullable: true})
-    sessionId!: string | undefined | null
+    @Column_("text", {nullable: false})
+    session!: string
 
     @Column_("int4", {nullable: false})
     confidenceLevel!: number
@@ -35,24 +34,24 @@ export class WorkerSnapshot {
     @Column_("int4", {nullable: true})
     initialScore!: number | undefined | null
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: true})
-    stake!: BigDecimal | undefined | null
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    stake!: BigDecimal
 
-    @Column_("varchar", {length: 18, nullable: true})
-    state!: WorkerState | undefined | null
+    @Column_("varchar", {length: 18, nullable: false})
+    state!: WorkerState
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: true})
-    v!: BigDecimal | undefined | null
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    v!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: true})
-    ve!: BigDecimal | undefined | null
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    ve!: BigDecimal
 
-    @Column_("int4", {nullable: true})
-    pInit!: number | undefined | null
+    @Column_("int4", {nullable: false})
+    pInit!: number
 
-    @Column_("int4", {nullable: true})
-    pInstant!: number | undefined | null
+    @Column_("int4", {nullable: false})
+    pInstant!: number
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: true})
-    totalReward!: BigDecimal | undefined | null
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    totalReward!: BigDecimal
 }

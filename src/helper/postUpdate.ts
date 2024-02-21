@@ -3,57 +3,37 @@ import {BigDecimal} from '@subsquid/big-decimal'
 import {groupBy} from 'lodash'
 import {
   type Account,
-  type AccountSnapshot,
   type BasePool,
   BasePoolKind,
-  type BasePoolSnapshot,
   type Delegation,
-  type DelegationSnapshot,
   type GlobalState,
-  type StakePool,
-  Worker,
-  type WorkerSnapshot,
 } from '../model'
-import {type Ctx} from '../processor'
+import {type SubstrateBlock} from '../processor'
+import {assertGet, max, sum} from '../utils'
 import {
+  getApr,
   getBasePoolAvgAprMultiplier,
   updateSharePrice,
   updateVaultAprMultiplier,
 } from './basePool'
-import {assertGet, max, sum, toMap} from './common'
 import {
   getDelegationAvgAprMultiplier,
   updateDelegationValue,
 } from './delegation'
-import {
-  createAccountSnapshot,
-  createBasePoolSnapshot,
-  createDelegationSnapshot,
-  createGlobalStateSnapshot,
-  createWorkerSnapshot,
-} from './snapshot'
+import {updateAverageBlockTime} from './globalState'
 
-const ONE_YEAR = 365 * 24 * 60 * 60 * 1000
-
-const postUpdate = async (
-  ctx: Ctx,
+const postUpdate = (
+  block: SubstrateBlock,
   globalState: GlobalState,
   accountMap: Map<string, Account>,
-  basePools: BasePool[],
-  stakePoolMap: Map<string, StakePool>,
+  basePoolMap: Map<string, BasePool>,
   delegations: Delegation[],
-): Promise<void> => {
-  const latestBlock = ctx.blocks.at(-1)
-  assert(latestBlock?.header.timestamp)
-  const updatedTime = new Date(latestBlock.header.timestamp)
-  updatedTime.setUTCMinutes(0, 0, 0)
-  const shouldTakeSnapshot =
-    updatedTime.getTime() !== globalState.snapshotUpdatedTime.getTime()
+): void => {
+  updateAverageBlockTime(block, globalState)
+  const timestamp = block.timestamp
+  assert(timestamp)
 
   const delegatorSet = new Set<string>()
-  const accountSnapshots: AccountSnapshot[] = []
-  const delegationSnapshots: DelegationSnapshot[] = []
-  const basePoolMap = toMap(basePools)
   const delegationAccountIdMap = groupBy(delegations, (x) => x.account.id)
 
   if (globalState.withdrawalDustCleared !== true) {
@@ -65,10 +45,7 @@ const postUpdate = async (
     } catch (err) {
       // noop
     }
-    if (
-      clearWithdrawalDate != null &&
-      latestBlock.header.timestamp >= clearWithdrawalDate
-    ) {
+    if (clearWithdrawalDate != null && timestamp >= clearWithdrawalDate) {
       const clearWithdrawalThreshold =
         Bun.env.CLEAR_WITHDRAWAL_THRESHOLD ?? '0.01'
       for (const delegation of delegations) {
@@ -96,22 +73,8 @@ const postUpdate = async (
     }
   }
 
-  const getApr = (aprMultiplier: BigDecimal): BigDecimal => {
-    const {averageBlockTime, idleWorkerShares, budgetPerBlock, treasuryRatio} =
-      globalState
-    const value = aprMultiplier
-      .times(budgetPerBlock)
-      .times(BigDecimal(1).minus(treasuryRatio))
-      .times(ONE_YEAR)
-      .div(averageBlockTime)
-      .div(idleWorkerShares)
-      .round(6, 0)
-
-    return value
-  }
-
   globalState.delegatorCount = 0
-  for (const basePool of basePools) {
+  for (const basePool of basePoolMap.values()) {
     basePool.delegatorCount = 0
   }
 
@@ -126,7 +89,7 @@ const postUpdate = async (
     }
   }
 
-  for (const [, account] of accountMap) {
+  for (const account of accountMap.values()) {
     const accountDelegations = delegationAccountIdMap[account.id]
     if (accountDelegations === undefined) continue
     const accountStakePoolDelegations = accountDelegations.filter(
@@ -143,7 +106,7 @@ const postUpdate = async (
     )
   }
 
-  for (const [, basePool] of basePoolMap) {
+  for (const basePool of basePoolMap.values()) {
     const account = assertGet(accountMap, basePool.account.id)
     if (basePool.kind === BasePoolKind.Vault) {
       basePool.totalValue = basePool.freeValue.plus(account.stakePoolValue)
@@ -171,15 +134,9 @@ const postUpdate = async (
     if (delegation.value.gt(0) && !basePoolMap.has(delegation.account.id)) {
       delegatorSet.add(delegation.account.id)
     }
-
-    if (shouldTakeSnapshot && delegation.shares.gt(0)) {
-      delegationSnapshots.push(
-        createDelegationSnapshot({delegation, updatedTime}),
-      )
-    }
   }
 
-  for (const [, account] of accountMap) {
+  for (const account of accountMap.values()) {
     const accountDelegations = delegationAccountIdMap[account.id]
     if (accountDelegations === undefined) continue
     const accountVaultDelegations = accountDelegations.filter(
@@ -189,67 +146,19 @@ const postUpdate = async (
     account.vaultNftCount = accountVaultDelegations.filter((x) =>
       x.shares.gt(0),
     ).length
-
-    if (shouldTakeSnapshot) {
-      accountSnapshots.push(createAccountSnapshot({account, updatedTime}))
-    }
-
     account.vaultAvgAprMultiplier = getDelegationAvgAprMultiplier(
       accountVaultDelegations,
     )
   }
 
-  globalState.averageAprMultiplier = getBasePoolAvgAprMultiplier(basePools)
+  globalState.averageAprMultiplier = getBasePoolAvgAprMultiplier(basePoolMap)
   globalState.budgetPerShare = globalState.budgetPerBlock
     .div(globalState.idleWorkerShares)
     .div(globalState.averageBlockTime)
-    .times(1e7 * 24 * 60 * 60)
-    .round(12, 0)
-  globalState.averageApr = getApr(globalState.averageAprMultiplier)
+    .times(1e7)
+    .times(24 * 60 * 60)
+  globalState.averageApr = getApr(globalState, globalState.averageAprMultiplier)
   globalState.delegatorCount = delegatorSet.size
-  if (shouldTakeSnapshot) {
-    globalState.snapshotUpdatedTime = updatedTime
-  }
-
-  if (shouldTakeSnapshot) {
-    const workerSnapshots: WorkerSnapshot[] = []
-    const basePoolSnapshots: BasePoolSnapshot[] = []
-
-    // Take worker snapshot at 00:00 UTC
-    if (updatedTime.getUTCHours() === 0) {
-      const workers = await ctx.store.find(Worker, {
-        relations: {
-          stakePool: true,
-          session: true,
-        },
-      })
-      for (const worker of workers) {
-        workerSnapshots.push(createWorkerSnapshot({worker, updatedTime}))
-      }
-    }
-
-    for (const basePool of basePools) {
-      basePoolSnapshots.push(
-        createBasePoolSnapshot({
-          basePool,
-          updatedTime,
-          apr: getApr(basePool.aprMultiplier),
-          stakePool: stakePoolMap.get(basePool.id),
-        }),
-      )
-    }
-
-    const globalStateSnapshot = createGlobalStateSnapshot(
-      globalState,
-      updatedTime,
-    )
-
-    await ctx.store.save(workerSnapshots)
-    await ctx.store.save(basePoolSnapshots)
-    await ctx.store.save(globalStateSnapshot)
-    await ctx.store.save(accountSnapshots)
-    await ctx.store.save(delegationSnapshots)
-  }
 }
 
 export default postUpdate

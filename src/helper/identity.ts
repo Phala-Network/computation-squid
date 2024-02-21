@@ -2,8 +2,8 @@ import {decodeHex} from '@subsquid/substrate-processor'
 import {type Account, IdentityJudgement} from '../model'
 import {type SubstrateBlock} from '../processor'
 import {identity} from '../types/storage'
-import {getAccount} from './common'
-import {decodeAddress} from './converter'
+import {decodeAddress} from '../utils'
+import {getAccount} from './account'
 
 const decoder = new TextDecoder()
 

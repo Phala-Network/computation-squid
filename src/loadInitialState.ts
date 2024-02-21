@@ -1,9 +1,23 @@
 import assert from 'assert'
 import path from 'path'
 import {BigDecimal} from '@subsquid/big-decimal'
-import {readFile} from 'fs/promises'
 import {groupBy} from 'lodash'
-import {BASE_POOL_ACCOUNT, DUMP_BLOCK} from './constants'
+import {BASE_POOL_ACCOUNT, INITIAL_BLOCK} from './constants'
+import {getAccount} from './helper/account'
+import {
+  createPool,
+  updateSharePrice,
+  updateStakePoolAprMultiplier,
+  updateStakePoolDelegable,
+  updateVaultAprMultiplier,
+} from './helper/basePool'
+import {
+  getDelegationAvgAprMultiplier,
+  updateDelegationValue,
+} from './helper/delegation'
+import {updateTokenomicParameters} from './helper/globalState'
+import {createAccountSnapshot} from './helper/snapshot'
+import {updateSessionShares} from './helper/worker'
 import {
   type Account,
   type AccountSnapshot,
@@ -21,22 +35,8 @@ import {
   WorkerState,
 } from './model'
 import {type Ctx} from './processor'
-import {
-  createPool,
-  updateSharePrice,
-  updateStakePoolAprMultiplier,
-  updateStakePoolDelegable,
-  updateVaultAprMultiplier,
-} from './utils/basePool'
-import {assertGet, getAccount, join, sum} from './utils/common'
-import {fromBits, toBalance} from './utils/converter'
-import {
-  getDelegationAvgAprMultiplier,
-  updateDelegationValue,
-} from './utils/delegation'
-import {updateTokenomicParameters} from './utils/globalState'
-import {createAccountSnapshot} from './utils/snapshot'
-import {updateWorkerShares} from './utils/worker'
+import {fromBits, toBalance} from './utils'
+import {assertGet, join, sum} from './utils'
 
 interface IBasePool {
   pid: string
@@ -72,7 +72,7 @@ interface BasePoolWithStakePool extends IBasePool {
   }
 }
 
-interface Dump {
+interface InitialState {
   timestamp: number
   basePools: Array<BasePoolWithVault | BasePoolWithStakePool>
   workers: Array<{
@@ -106,18 +106,16 @@ interface Dump {
   }>
 }
 
-const importDump = async (ctx: Ctx): Promise<void> => {
-  const dumpFile = await readFile(
-    path.join(__dirname, `../dump_${DUMP_BLOCK}.json`),
-    'utf8',
-  )
-  const dump: Dump = JSON.parse(dumpFile)
-  const updatedTime = new Date(dump.timestamp)
+const loadInitialState = async (ctx: Ctx): Promise<void> => {
+  const initialState: InitialState = await Bun.file(
+    path.resolve(__dirname, `../initial_state/${INITIAL_BLOCK}.json`),
+  ).json()
+  const updatedTime = new Date(initialState.timestamp)
   const globalState = new GlobalState({
     id: '0',
     averageApr: BigDecimal(0),
     averageAprMultiplier: BigDecimal(0),
-    averageBlockTimeUpdatedHeight: DUMP_BLOCK,
+    averageBlockTimeUpdatedHeight: INITIAL_BLOCK,
     averageBlockTimeUpdatedTime: updatedTime,
     snapshotUpdatedTime: updatedTime,
     averageBlockTime: 12000,
@@ -132,11 +130,12 @@ const importDump = async (ctx: Ctx): Promise<void> => {
   await updateTokenomicParameters(ctx.blocks[0].header, globalState)
   const accountMap = new Map<string, Account>()
   const workerMap = new Map<string, Worker>()
+  const sessionMap = new Map<string, Session>()
+  const workerSessionMap = new Map<string, Session>()
   const basePoolMap = new Map<string, BasePool>()
   const basePoolCidMap = new Map<string, BasePool>()
   const stakePoolMap = new Map<string, StakePool>()
   const vaultMap = new Map<string, Vault>()
-  const sessionMap = new Map<string, Session>()
   const delegationMap = new Map<string, Delegation>()
   const nftMap = new Map<string, Nft>()
   const basePoolWhitelistMap = new Map<string, BasePoolWhitelist>()
@@ -144,7 +143,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
   const accountValueSnapshots: AccountSnapshot[] = []
   const whitelists: BasePoolWhitelist[] = []
 
-  for (const i of dump.identities) {
+  for (const i of initialState.identities) {
     const account = getAccount(accountMap, i.id)
     account.identityDisplay = i.identity
     if (i.judgements.length > 0) {
@@ -154,7 +153,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
     accountMap.set(account.id, account)
   }
 
-  for (const w of dump.workers) {
+  for (const w of initialState.workers) {
     const worker = new Worker({
       id: w.id,
       confidenceLevel: w.confidenceLevel,
@@ -163,13 +162,9 @@ const importDump = async (ctx: Ctx): Promise<void> => {
     workerMap.set(worker.id, worker)
   }
 
-  // MEMO: insert worker first to avoid invalid foreign key
-  await ctx.store.insert([...workerMap.values()])
-
-  for (const s of dump.sessions) {
+  for (const s of initialState.sessions) {
     const session = new Session({
       id: s.id,
-      isBound: false,
       v: fromBits(s.v),
       ve: fromBits(s.ve),
       state: s.state,
@@ -181,17 +176,17 @@ const importDump = async (ctx: Ctx): Promise<void> => {
           ? null
           : new Date(s.coolingDownStartTime * 1000),
       stake: toBalance(s.stake),
+      shares: BigDecimal(0),
     })
     if (s.worker != null) {
+      workerSessionMap.set(s.worker, session)
       const worker = assertGet(workerMap, s.worker)
-      session.isBound = true
       session.worker = worker
-      worker.session = session
-      updateWorkerShares(worker, session)
+      updateSessionShares(session, worker)
       globalState.workerCount++
       if (session.state === WorkerState.WorkerIdle) {
         globalState.idleWorkerShares = globalState.idleWorkerShares.plus(
-          worker.shares,
+          session.shares,
         )
         globalState.idleWorkerCount++
       }
@@ -199,7 +194,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
     sessionMap.set(session.id, session)
   }
 
-  for (const b of dump.basePools) {
+  for (const b of initialState.basePools) {
     const isVault = b.vault !== undefined
     const props = {
       pid: b.pid,
@@ -238,19 +233,15 @@ const importDump = async (ctx: Ctx): Promise<void> => {
       for (const w of b.stakePool.workers) {
         const worker = assertGet(workerMap, w)
         worker.stakePool = stakePool
-        assert(worker.session)
-        worker.session.stakePool = stakePool
-        if (worker.session.state === WorkerState.WorkerIdle) {
-          assert(worker.shares)
+        const session = assertGet(workerSessionMap, w)
+        if (session.state === WorkerState.WorkerIdle) {
+          const session = assertGet(workerSessionMap, w)
           stakePool.idleWorkerCount++
           stakePool.idleWorkerShares = stakePool.idleWorkerShares.plus(
-            worker.shares,
+            session.shares,
           )
-        }
-        if (worker.session.state === WorkerState.WorkerCoolingDown) {
-          basePool.releasingValue = basePool.releasingValue.plus(
-            worker.session.stake,
-          )
+        } else if (session.state === WorkerState.WorkerCoolingDown) {
+          basePool.releasingValue = basePool.releasingValue.plus(session.stake)
         }
       }
 
@@ -269,7 +260,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
           account: getAccount(accountMap, address),
           basePool,
           // MEMO: keep the order of whitelists
-          createTime: new Date(dump.timestamp - whitelists.length + i),
+          createTime: new Date(initialState.timestamp - whitelists.length + i),
         }),
       )
     }
@@ -300,7 +291,7 @@ const importDump = async (ctx: Ctx): Promise<void> => {
     basePoolCidMap.set(basePool.cid.toString(), basePool)
   }
 
-  for (const d of dump.nfts) {
+  for (const d of initialState.nfts) {
     const owner = getAccount(accountMap, d.owner)
     const nftId = join(d.cid, d.nftId)
 
@@ -396,7 +387,10 @@ const importDump = async (ctx: Ctx): Promise<void> => {
       getDelegationAvgAprMultiplier(stakePoolDelegations)
 
     accountValueSnapshots.push(
-      createAccountSnapshot({account, updatedTime: new Date(dump.timestamp)}),
+      createAccountSnapshot({
+        account,
+        updatedTime: new Date(initialState.timestamp),
+      }),
     )
   }
 
@@ -411,9 +405,9 @@ const importDump = async (ctx: Ctx): Promise<void> => {
         ...stakePoolDelegations.map((x) => x.withdrawingValue),
       )
     }
-    basePool.withdrawingValue = basePool.withdrawingShares
-      .times(basePool.sharePrice)
-      .round(12, 0)
+    basePool.withdrawingValue = basePool.withdrawingShares.times(
+      basePool.sharePrice,
+    )
   }
 
   for (const stakePool of stakePoolMap.values()) {
@@ -435,8 +429,8 @@ const importDump = async (ctx: Ctx): Promise<void> => {
     basePoolMap,
     stakePoolMap,
     vaultMap,
-    sessionMap,
     workerMap,
+    sessionMap,
     nftMap,
     delegationMap,
     basePoolWhitelistMap,
@@ -444,13 +438,13 @@ const importDump = async (ctx: Ctx): Promise<void> => {
     whitelists,
   ]) {
     if (x instanceof Map) {
-      await ctx.store.save([...x.values()])
+      await ctx.store.insert([...x.values()])
     } else if (Array.isArray(x)) {
-      await ctx.store.save([...x])
+      await ctx.store.insert([...x])
     } else {
-      await ctx.store.save(x)
+      await ctx.store.insert(x)
     }
   }
 }
 
-export default importDump
+export default loadInitialState

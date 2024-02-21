@@ -126,7 +126,6 @@ type Delegation @entity @index(fields: ["basePool", "account"], unique: true) {
   withdrawalStartTime: DateTime
   delegationNft: Nft! @unique
   withdrawalNft: Nft
-  snapshots: [DelegationSnapshot!] @derivedFrom(field: "delegation")
 }
 
 type Nft @entity {
@@ -152,10 +151,9 @@ type Worker @entity {
   "worker public key"
   id: ID!
   stakePool: StakePool
-  session: Session
+  session: Session @derivedFrom(field: "worker")
   confidenceLevel: Int!
   initialScore: Int
-  shares: BigDecimal
 }
 
 enum WorkerState {
@@ -168,9 +166,7 @@ enum WorkerState {
 type Session @entity {
   "session account address"
   id: ID!
-  isBound: Boolean!
-  stakePool: StakePool
-  worker: Worker
+  worker: Worker @unique
   stake: BigDecimal!
   state: WorkerState!
   v: BigDecimal!
@@ -179,6 +175,7 @@ type Session @entity {
   pInstant: Int!
   totalReward: BigDecimal!
   coolingDownStartTime: DateTime
+  shares: BigDecimal!
 }
 
 type AccountSnapshot
@@ -187,7 +184,7 @@ type AccountSnapshot
   id: ID!
   "block time"
   updatedTime: DateTime!
-  account: Account!
+  account: String!
   delegationValue: BigDecimal!
   cumulativeStakePoolOwnerRewards: BigDecimal!
   cumulativeVaultOwnerRewards: BigDecimal!
@@ -199,9 +196,10 @@ type BasePoolSnapshot
   id: ID!
   "block time"
   updatedTime: DateTime!
-  basePool: BasePool!
+  basePool: String!
   commission: BigDecimal!
   apr: BigDecimal!
+  totalShares: BigDecimal!
   totalValue: BigDecimal!
   delegatorCount: Int!
   sharePrice: BigDecimal!
@@ -215,7 +213,6 @@ type GlobalStateSnapshot @entity {
   id: ID!
   "block time"
   updatedTime: DateTime! @index
-
   totalValue: BigDecimal!
   averageBlockTime: Int!
   averageApr: BigDecimal!
@@ -234,7 +231,7 @@ type DelegationSnapshot
   id: ID!
   "block time"
   updatedTime: DateTime!
-  delegation: Delegation!
+  delegation: String!
   cost: BigDecimal!
   value: BigDecimal!
 }
@@ -245,16 +242,16 @@ type WorkerSnapshot
   id: ID!
   "block time"
   updatedTime: DateTime!
-  worker: Worker!
-  stakePoolId: String
-  sessionId: String
+  worker: String!
+  stakePool: String!
+  session: String!
   confidenceLevel: Int!
   initialScore: Int
-  stake: BigDecimal
-  state: WorkerState
-  v: BigDecimal
-  ve: BigDecimal
-  pInit: Int
-  pInstant: Int
-  totalReward: BigDecimal
+  stake: BigDecimal!
+  state: WorkerState!
+  v: BigDecimal!
+  ve: BigDecimal!
+  pInit: Int!
+  pInstant: Int!
+  totalReward: BigDecimal!
 }

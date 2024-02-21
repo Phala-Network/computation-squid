@@ -7,7 +7,7 @@ import {
   assertNotNull,
 } from '@subsquid/substrate-processor'
 import {type Store} from '@subsquid/typeorm-store'
-import {DUMP_BLOCK} from './constants'
+import {INITIAL_BLOCK} from './constants'
 import {
   identity,
   phalaBasePool,
@@ -22,7 +22,7 @@ export const processor = new SubstrateBatchProcessor()
   .setGateway(lookupArchive('khala', {release: 'ArrowSquid'}))
   .setRpcEndpoint(assertNotNull(Bun.env.RPC_ENDPOINT))
   .setBlockRange({
-    from: DUMP_BLOCK + 1,
+    from: INITIAL_BLOCK + 1,
     to: Bun.env.TO_BLOCK != null ? parseInt(Bun.env.TO_BLOCK) : undefined,
   })
   .includeAllBlocks()

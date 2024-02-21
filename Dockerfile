@@ -33,8 +33,8 @@ FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /usr/src/app/db db
 COPY --from=prerelease /usr/src/app/lib lib
+COPY --from=prerelease /usr/src/app/initial_state initial_state
 COPY --from=prerelease /usr/src/app/schema.graphql .
-COPY --from=prerelease /usr/src/app/dump_*.json .
 COPY --from=prerelease /usr/src/app/package.json .
 
 # run the app

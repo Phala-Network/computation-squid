@@ -4,7 +4,20 @@ import {TypeormDatabase} from '@subsquid/typeorm-store'
 import {In} from 'typeorm'
 import {BASE_POOL_ACCOUNT} from './constants'
 import decodeEvents from './decodeEvents'
-import importDump from './importDump'
+import {getAccount} from './helper/account'
+import {
+  createPool,
+  updateSharePrice,
+  updateStakePoolAprMultiplier,
+  updateStakePoolDelegable,
+} from './helper/basePool'
+import {updateDelegationValue} from './helper/delegation'
+import {updateTokenomicParameters} from './helper/globalState'
+import {queryIdentities} from './helper/identity'
+import postUpdate from './helper/postUpdate'
+import {isSnapshotUpdateNeeded, takeSnapshot} from './helper/snapshot'
+import {updateSessionShares} from './helper/worker'
+import loadInitialState from './loadInitialState'
 import {
   Account,
   BasePool,
@@ -29,27 +42,13 @@ import {
   phalaVault,
   rmrkCore,
 } from './types/events'
-import {
-  createPool,
-  updateSharePrice,
-  updateStakePoolAprMultiplier,
-  updateStakePoolDelegable,
-} from './utils/basePool'
-import {assertGet, getAccount, join, max, toMap} from './utils/common'
-import {updateDelegationValue} from './utils/delegation'
-import {
-  updateAverageBlockTime,
-  updateTokenomicParameters,
-} from './utils/globalState'
-import {queryIdentities} from './utils/identity'
-import postUpdate from './utils/postUpdate'
-import {updateWorkerShares} from './utils/worker'
+import {assertGet, join, max, toMap} from './utils'
 
 processor.run(new TypeormDatabase(), async (ctx) => {
   if ((await ctx.store.get(GlobalState, '0')) == null) {
-    ctx.log.info('Importing dump')
-    await importDump(ctx)
-    ctx.log.info('Dump imported')
+    ctx.log.info('Loading initial state')
+    await loadInitialState(ctx)
+    ctx.log.info('Initial state loaded')
   }
   const events = decodeEvents(ctx)
 
@@ -146,16 +145,27 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   const accountMap: Map<string, Account> = await ctx.store
     .find(Account)
     .then(toMap)
-  const sessionMap = await ctx.store
-    .find(Session, {
-      where: [
-        {id: In([...sessionIdSet])},
-        {worker: {id: In([...workerIdSet])}},
-      ],
-      relations: {stakePool: true, worker: true},
+  const sessions = await ctx.store.find(Session, {
+    where: [{id: In([...sessionIdSet])}, {worker: {id: In([...workerIdSet])}}],
+    relations: {worker: true},
+  })
+  const sessionMap = toMap(sessions)
+  const workerSessionMap = toMap(
+    sessions.filter((s): s is Session & {worker: Worker} => s.worker != null),
+    (session) => session.worker.id,
+  )
+  for (const session of sessions) {
+    if (session.worker) {
+      workerIdSet.add(session.worker.id)
+    }
+  }
+  const workerMap = await ctx.store
+    .find(Worker, {
+      where: [{id: In([...workerIdSet])}],
+      relations: {stakePool: true},
     })
     .then(toMap)
-  for (const {stakePool} of sessionMap.values()) {
+  for (const {stakePool} of workerMap.values()) {
     if (stakePool != null) {
       basePoolIdSet.add(stakePool.id)
     }
@@ -163,13 +173,11 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   const basePools = await ctx.store.find(BasePool, {
     relations: {owner: true, account: true},
   })
-
   const basePoolMap = toMap(basePools)
   const basePoolAccountIdMap = toMap(
     basePools,
     (basePool) => basePool.account.id,
   )
-
   const stakePoolMap = await ctx.store
     .find(StakePool, {relations: {basePool: true}})
     .then(toMap)
@@ -179,15 +187,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       relations: {basePool: true},
     })
     .then(toMap)
-  const workerMap = await ctx.store
-    .find(Worker, {
-      where: [
-        {id: In([...workerIdSet])},
-        {session: {id: In([...sessionIdSet])}},
-      ],
-      relations: {stakePool: true, session: true},
-    })
-    .then(toMap)
+
   const delegations = await ctx.store.find(Delegation, {
     relations: {
       account: true,
@@ -210,9 +210,11 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     })
     .then(toMap)
 
-  for (const {name, args, block} of events) {
+  for (let i = 0; i < events.length; i++) {
+    const {name, args, block} = events[i]
     assert(block.timestamp)
     const blockTime = new Date(block.timestamp)
+
     switch (name) {
       case phalaStakePoolv2.poolCreated.name: {
         const {pid, owner, cid, poolAccountId} = args
@@ -227,10 +229,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         basePoolMap.set(pid, basePool)
         basePoolAccountIdMap.set(poolAccountId, basePool)
         stakePoolMap.set(pid, stakePool)
-        await ctx.store.save(ownerAccount)
-        await ctx.store.insert(poolAccount)
-        await ctx.store.insert(basePool)
-        await ctx.store.insert(stakePool)
         break
       }
       case phalaStakePoolv2.poolCommissionSet.name: {
@@ -253,12 +251,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {pid, workerId} = args
         const stakePool = assertGet(stakePoolMap, pid)
         const worker = assertGet(workerMap, workerId)
-        assert(worker.session) // MEMO: SessionBound happens before PoolWorkerAdded
-        const session = assertGet(sessionMap, worker.session.id)
+        // MEMO: SessionBound happens before PoolWorkerAdded
         stakePool.workerCount++
         globalState.workerCount++
         worker.stakePool = stakePool
-        session.stakePool = stakePool
         break
       }
       case phalaStakePoolv2.poolWorkerRemoved.name: {
@@ -274,9 +270,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       case phalaStakePoolv2.workingStarted.name: {
         const {pid, workerId, amount} = args
         const basePool = assertGet(basePoolMap, pid)
-        const worker = assertGet(workerMap, workerId)
-        assert(worker.session)
-        const session = assertGet(sessionMap, worker.session.id)
+        const session = assertGet(workerSessionMap, workerId)
         session.stake = amount
         basePool.freeValue = basePool.freeValue.minus(amount)
         break
@@ -323,22 +317,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           vaultBasePool.freeValue = vaultBasePool.freeValue.minus(amount)
         }
         updateStakePoolDelegable(basePool, stakePool)
-        break
-      }
-      case phalaStakePoolv2.workerReclaimed.name: {
-        const {pid, workerId} = args
-        const basePool = assertGet(basePoolMap, pid)
-        const worker = assertGet(workerMap, workerId)
-        assert(worker.session)
-        const session = assertGet(sessionMap, worker.session.id)
-        basePool.releasingValue = basePool.releasingValue.minus(session.stake)
-        // MEMO: freeValue is reset to 0 when pool is empty
-        if (basePool.totalShares.gt(0)) {
-          basePool.freeValue = basePool.freeValue.plus(session.stake)
-        }
-        session.state = WorkerState.Ready
-        session.coolingDownStartTime = null
-        session.stake = BigDecimal(0)
         break
       }
       case phalaBasePool.poolWhitelistCreated.name: {
@@ -388,10 +366,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         basePoolMap.set(pid, basePool)
         basePoolAccountIdMap.set(poolAccountId, basePool)
         vaultMap.set(pid, vault)
-        await ctx.store.insert(poolAccount)
-        await ctx.store.save(ownerAccount)
-        await ctx.store.insert(basePool)
-        await ctx.store.insert(vault)
         break
       }
       case phalaVault.vaultCommissionSet.name: {
@@ -409,7 +383,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         updateSharePrice(basePool)
         vault.claimableOwnerShares = vault.claimableOwnerShares.plus(shares)
         vault.lastSharePriceCheckpoint = basePool.sharePrice
-        const rewards = shares.times(basePool.sharePrice).round(12, 0)
+        const rewards = shares.times(basePool.sharePrice)
         basePool.cumulativeOwnerRewards =
           basePool.cumulativeOwnerRewards.plus(rewards)
         owner.cumulativeVaultOwnerRewards =
@@ -459,11 +433,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           const prevShares = delegation.shares
           delegation.shares = shares.plus(delegation.withdrawingShares)
           updateDelegationValue(delegation, basePool)
-          delegation.cost = delegation.cost
-            .plus(
-              delegation.shares.minus(prevShares).times(basePool.sharePrice),
-            )
-            .round(12, 0)
+          delegation.cost = delegation.cost.plus(
+            delegation.shares.minus(prevShares).times(basePool.sharePrice),
+          )
           delegationMap.set(delegationId, delegation)
         }
         break
@@ -484,9 +456,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           basePool.withdrawingShares.minus(removedShares),
           BigDecimal(0),
         )
-        basePool.withdrawingValue = basePool.withdrawingShares
-          .times(basePool.sharePrice)
-          .round(12, 0)
+        basePool.withdrawingValue = basePool.withdrawingShares.times(
+          basePool.sharePrice,
+        )
         if (basePool.totalShares.eq(0)) {
           updateSharePrice(basePool) // MEMO: reset share price
         }
@@ -523,9 +495,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         basePool.withdrawingShares = basePool.withdrawingShares
           .minus(prevWithdrawingShares)
           .plus(shares)
-        basePool.withdrawingValue = basePool.withdrawingShares
-          .times(basePool.sharePrice)
-          .round(12, 0)
+        basePool.withdrawingValue = basePool.withdrawingShares.times(
+          basePool.sharePrice,
+        )
         // Replace previous withdrawal
         delegation.withdrawingShares = shares
         delegation.withdrawalStartTime = blockTime
@@ -550,7 +522,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         if (session == null) {
           session = new Session({
             id: sessionId,
-            isBound: true,
             state: WorkerState.Ready,
             v: BigDecimal(0),
             ve: BigDecimal(0),
@@ -558,45 +529,43 @@ processor.run(new TypeormDatabase(), async (ctx) => {
             pInstant: 0,
             totalReward: BigDecimal(0),
             stake: BigDecimal(0),
+            shares: BigDecimal(0),
           })
           sessionMap.set(sessionId, session)
         }
-        session.isBound = true
         session.worker = worker
-        worker.session = session
+        workerSessionMap.set(workerId, session as Session & {worker: Worker})
         break
       }
       case phalaComputation.sessionUnbound.name: {
         const {sessionId, workerId} = args
         const session = assertGet(sessionMap, sessionId)
-        const worker = assertGet(workerMap, workerId)
         assert(session.worker)
         assert(session.worker.id === workerId)
-        worker.session = null
-        worker.shares = null
-        session.isBound = false
+        session.shares = BigDecimal(0)
+        session.worker = null
+        workerSessionMap.delete(workerId)
         break
       }
       case phalaComputation.sessionSettled.name: {
         const {sessionId, v, payout} = args
         const session = assertGet(sessionMap, sessionId)
         assert(session.worker)
-        assert(session.stakePool)
         session.totalReward = session.totalReward.plus(payout)
         session.v = v
         const worker = assertGet(workerMap, session.worker.id)
-        assert(worker.shares)
-        const basePool = assertGet(basePoolMap, session.stakePool.id)
-        const stakePool = assertGet(stakePoolMap, session.stakePool.id)
-        const prevShares = worker.shares
-        updateWorkerShares(worker, session)
+        assert(worker.stakePool)
+        const basePool = assertGet(basePoolMap, worker.stakePool.id)
+        const stakePool = assertGet(stakePoolMap, worker.stakePool.id)
+        const prevShares = session.shares
+        updateSessionShares(session, worker)
         if (session.state === WorkerState.WorkerIdle) {
           globalState.idleWorkerShares = globalState.idleWorkerShares
             .minus(prevShares)
-            .plus(worker.shares)
+            .plus(session.shares)
           stakePool.idleWorkerShares = stakePool.idleWorkerShares
             .minus(prevShares)
-            .plus(worker.shares)
+            .plus(session.shares)
           updateStakePoolAprMultiplier(basePool, stakePool)
         }
         break
@@ -605,22 +574,22 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {sessionId, initP, initV} = args
         const session = assertGet(sessionMap, sessionId)
         assert(session.worker)
-        assert(session.stakePool)
-        const basePool = assertGet(basePoolMap, session.stakePool.id)
-        const stakePool = assertGet(stakePoolMap, session.stakePool.id)
+        const worker = assertGet(workerMap, session.worker.id)
+        assert(worker.stakePool)
+        const basePool = assertGet(basePoolMap, worker.stakePool.id)
+        const stakePool = assertGet(stakePoolMap, worker.stakePool.id)
         stakePool.idleWorkerCount++
         globalState.idleWorkerCount++
         session.pInit = initP
         session.ve = initV
         session.v = initV
         session.state = WorkerState.WorkerIdle
-        const worker = assertGet(workerMap, session.worker.id)
-        updateWorkerShares(worker, session)
+        updateSessionShares(session, worker)
         globalState.idleWorkerShares = globalState.idleWorkerShares.plus(
-          worker.shares,
+          session.shares,
         )
         stakePool.idleWorkerShares = stakePool.idleWorkerShares.plus(
-          worker.shares,
+          session.shares,
         )
         updateStakePoolAprMultiplier(basePool, stakePool)
         break
@@ -629,17 +598,16 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {sessionId} = args
         const session = assertGet(sessionMap, sessionId)
         assert(session.worker)
-        assert(session.stakePool)
-        const basePool = assertGet(basePoolMap, session.stakePool.id)
-        const stakePool = assertGet(stakePoolMap, session.stakePool.id)
         const worker = assertGet(workerMap, session.worker.id)
-        assert(worker.shares)
+        assert(worker.stakePool)
+        const basePool = assertGet(basePoolMap, worker.stakePool.id)
+        const stakePool = assertGet(stakePoolMap, worker.stakePool.id)
         if (session.state === WorkerState.WorkerIdle) {
           globalState.idleWorkerShares = globalState.idleWorkerShares.minus(
-            worker.shares,
+            session.shares,
           )
           stakePool.idleWorkerShares = stakePool.idleWorkerShares.minus(
-            worker.shares,
+            session.shares,
           )
           updateStakePoolAprMultiplier(basePool, stakePool)
           stakePool.idleWorkerCount--
@@ -650,24 +618,37 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         basePool.releasingValue = basePool.releasingValue.plus(session.stake)
         break
       }
+      case phalaComputation.workerReclaimed.name: {
+        const {sessionId} = args
+        const session = assertGet(sessionMap, sessionId)
+        assert(session.worker)
+        const worker = assertGet(workerMap, session.worker.id)
+        assert(worker.stakePool)
+        const basePool = assertGet(basePoolMap, worker.stakePool.id)
+        basePool.releasingValue = basePool.releasingValue.minus(session.stake)
+        basePool.freeValue = basePool.freeValue.plus(session.stake)
+        session.state = WorkerState.Ready
+        session.coolingDownStartTime = null
+        session.stake = BigDecimal(0)
+        break
+      }
       case phalaComputation.workerEnterUnresponsive.name: {
         const {sessionId} = args
         const session = assertGet(sessionMap, sessionId)
         assert(session.worker)
-        assert(session.stakePool)
-        const basePool = assertGet(basePoolMap, session.stakePool.id)
-        const stakePool = assertGet(stakePoolMap, session.stakePool.id)
+        const worker = assertGet(workerMap, session.worker.id)
+        assert(worker.stakePool)
+        const basePool = assertGet(basePoolMap, worker.stakePool.id)
+        const stakePool = assertGet(stakePoolMap, worker.stakePool.id)
         if (session.state === WorkerState.WorkerIdle) {
           session.state = WorkerState.WorkerUnresponsive
           stakePool.idleWorkerCount--
           globalState.idleWorkerCount--
-          const worker = assertGet(workerMap, session.worker.id)
-          assert(worker.shares)
           globalState.idleWorkerShares = globalState.idleWorkerShares.minus(
-            worker.shares,
+            session.shares,
           )
           stakePool.idleWorkerShares = stakePool.idleWorkerShares.minus(
-            worker.shares,
+            session.shares,
           )
           updateStakePoolAprMultiplier(basePool, stakePool)
         }
@@ -677,19 +658,18 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {sessionId} = args
         const session = assertGet(sessionMap, sessionId)
         assert(session.worker)
-        assert(session.stakePool)
-        const basePool = assertGet(basePoolMap, session.stakePool.id)
-        const stakePool = assertGet(stakePoolMap, session.stakePool.id)
+        const worker = assertGet(workerMap, session.worker.id)
+        assert(worker.stakePool)
+        const basePool = assertGet(basePoolMap, worker.stakePool.id)
+        const stakePool = assertGet(stakePoolMap, worker.stakePool.id)
         if (session.state === WorkerState.WorkerUnresponsive) {
           stakePool.idleWorkerCount++
           globalState.idleWorkerCount++
-          const worker = assertGet(workerMap, session.worker.id)
-          assert(worker.shares)
           globalState.idleWorkerShares = globalState.idleWorkerShares.plus(
-            worker.shares,
+            session.shares,
           )
           stakePool.idleWorkerShares = stakePool.idleWorkerShares.plus(
-            worker.shares,
+            session.shares,
           )
           updateStakePoolAprMultiplier(basePool, stakePool)
         }
@@ -699,21 +679,21 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       case phalaComputation.benchmarkUpdated.name: {
         const {sessionId, pInstant} = args
         const session = assertGet(sessionMap, sessionId)
-        session.pInstant = pInstant
         assert(session.worker)
-        assert(session.stakePool)
         const worker = assertGet(workerMap, session.worker.id)
-        const prevShares = worker.shares ?? BigDecimal(0)
-        updateWorkerShares(worker, session)
+        assert(worker.stakePool)
+        session.pInstant = pInstant
+        const prevShares = session.shares
+        updateSessionShares(session, worker)
         if (session.state === WorkerState.WorkerIdle) {
           globalState.idleWorkerShares = globalState.idleWorkerShares
             .minus(prevShares)
-            .plus(worker.shares)
-          const basePool = assertGet(basePoolMap, session.stakePool.id)
-          const stakePool = assertGet(stakePoolMap, session.stakePool.id)
+            .plus(session.shares)
+          const basePool = assertGet(basePoolMap, worker.stakePool.id)
+          const stakePool = assertGet(stakePoolMap, worker.stakePool.id)
           stakePool.idleWorkerShares = stakePool.idleWorkerShares
             .minus(prevShares)
-            .plus(worker.shares)
+            .plus(session.shares)
           updateStakePoolAprMultiplier(basePool, stakePool)
         }
         break
@@ -726,7 +706,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {workerId, confidenceLevel} = args
         const worker = new Worker({id: workerId, confidenceLevel})
         workerMap.set(workerId, worker)
-        await ctx.store.insert(worker)
         break
       }
       case phalaRegistry.workerUpdated.name: {
@@ -762,7 +741,29 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         break
       }
     }
-    updateAverageBlockTime(block, globalState)
+
+    const nextEvent = events[i + 1]
+    const isLastEvent = nextEvent == null
+    const isLastEventInBlock =
+      isLastEvent || block.height !== nextEvent.block.height
+    const shouldTakeSnapshot =
+      isLastEventInBlock && isSnapshotUpdateNeeded(block, globalState)
+    if (isLastEvent) {
+      postUpdate(block, globalState, accountMap, basePoolMap, delegations)
+    }
+    if (shouldTakeSnapshot) {
+      // await takeSnapshot(
+      //   ctx,
+      //   block,
+      //   globalState,
+      //   accountMap,
+      //   basePoolMap,
+      //   stakePoolMap,
+      //   workerMap,
+      //   sessionMap,
+      //   delegations,
+      // )
+    }
   }
 
   if (Bun.env.REFRESH_IDENTITY === '1') {
@@ -780,23 +781,19 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     )
   }
 
-  await postUpdate(
-    ctx,
-    globalState,
-    accountMap,
-    basePools,
-    stakePoolMap,
-    delegations,
+  ctx.log.info(
+    `Saving state from ${ctx.blocks[0].header.height} to ${
+      ctx.blocks[ctx.blocks.length - 1].header.height
+    }`,
   )
-
   for (const x of [
     globalState,
     accountMap,
     basePoolMap,
     stakePoolMap,
     vaultMap,
-    sessionMap,
     workerMap,
+    sessionMap,
     nftMap,
     delegationMap,
     basePoolWhitelistMap,

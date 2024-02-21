@@ -1,15 +1,15 @@
 import {BigDecimal} from '@subsquid/big-decimal'
 import {type BasePool, type Delegation} from '../model'
-import {sum} from './common'
+import {sum} from '../utils'
 
 export const updateDelegationValue = (
   delegation: Delegation,
   basePool: BasePool,
 ): void => {
-  delegation.value = delegation.shares.times(basePool.sharePrice).round(12, 0)
-  delegation.withdrawingValue = delegation.withdrawingShares
-    .times(basePool.sharePrice)
-    .round(12, 0)
+  delegation.value = delegation.shares.times(basePool.sharePrice)
+  delegation.withdrawingValue = delegation.withdrawingShares.times(
+    basePool.sharePrice,
+  )
 }
 
 export const getDelegationAvgAprMultiplier = (

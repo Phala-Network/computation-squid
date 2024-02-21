@@ -1,7 +1,6 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, Index as Index_, JoinColumn as JoinColumn_} from "typeorm"
 import * as marshal from "./marshal"
-import {StakePool} from "./stakePool.model"
 import {Worker} from "./worker.model"
 import {WorkerState} from "./_workerState"
 
@@ -17,15 +16,9 @@ export class Session {
     @PrimaryColumn_()
     id!: string
 
-    @Column_("bool", {nullable: false})
-    isBound!: boolean
-
-    @Index_()
-    @ManyToOne_(() => StakePool, {nullable: true})
-    stakePool!: StakePool | undefined | null
-
-    @Index_()
-    @ManyToOne_(() => Worker, {nullable: true})
+    @Index_({unique: true})
+    @OneToOne_(() => Worker, {nullable: true})
+    @JoinColumn_()
     worker!: Worker | undefined | null
 
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
@@ -51,4 +44,7 @@ export class Session {
 
     @Column_("timestamp with time zone", {nullable: true})
     coolingDownStartTime!: Date | undefined | null
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    shares!: BigDecimal
 }

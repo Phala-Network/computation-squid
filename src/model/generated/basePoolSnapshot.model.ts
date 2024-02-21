@@ -1,7 +1,6 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_} from "typeorm"
 import * as marshal from "./marshal"
-import {BasePool} from "./basePool.model"
 
 @Index_(["basePool", "updatedTime"], {unique: true})
 @Entity_()
@@ -19,14 +18,17 @@ export class BasePoolSnapshot {
     @Column_("timestamp with time zone", {nullable: false})
     updatedTime!: Date
 
-    @ManyToOne_(() => BasePool, {nullable: true})
-    basePool!: BasePool
+    @Column_("text", {nullable: false})
+    basePool!: string
 
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     commission!: BigDecimal
 
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     apr!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    totalShares!: BigDecimal
 
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     totalValue!: BigDecimal

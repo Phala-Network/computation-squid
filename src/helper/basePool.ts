@@ -1,5 +1,12 @@
 import {BigDecimal} from '@subsquid/big-decimal'
-import {type Account, BasePool, BasePoolKind, StakePool, Vault} from '../model'
+import {
+  type Account,
+  BasePool,
+  BasePoolKind,
+  GlobalState,
+  StakePool,
+  Vault,
+} from '../model'
 
 export function createPool(
   kind: BasePoolKind.StakePool,
@@ -80,15 +87,12 @@ export function updateSharePrice(basePool: BasePool): void {
   if (basePool.totalShares.eq(0)) {
     basePool.sharePrice = BigDecimal(1)
     basePool.totalValue = BigDecimal(0)
-    basePool.freeValue = BigDecimal(0)
   } else {
-    basePool.sharePrice = basePool.totalValue
-      .div(basePool.totalShares)
-      .round(12, 0)
+    basePool.sharePrice = basePool.totalValue.div(basePool.totalShares)
   }
-  basePool.withdrawingValue = basePool.withdrawingShares
-    .times(basePool.sharePrice)
-    .round(12, 0)
+  basePool.withdrawingValue = basePool.withdrawingShares.times(
+    basePool.sharePrice,
+  )
 }
 
 export function updateStakePoolAprMultiplier(
@@ -100,7 +104,7 @@ export function updateStakePoolAprMultiplier(
     : stakePool.idleWorkerShares
         .times(BigDecimal(1).minus(basePool.commission))
         .div(basePool.totalValue)
-        .round(6, 0)
+        .round(6)
 }
 
 export const updateVaultAprMultiplier = (
@@ -114,7 +118,7 @@ export const updateVaultAprMultiplier = (
       .times(account.stakePoolValue)
       .div(basePool.totalValue)
       .times(BigDecimal(1).minus(basePool.commission))
-      .round(6, 0)
+      .round(6)
   }
 }
 
@@ -134,11 +138,11 @@ export const updateStakePoolDelegable = (
 }
 
 export const getBasePoolAvgAprMultiplier = (
-  basePools: BasePool[],
+  basePoolMap: Map<string, BasePool>,
 ): BigDecimal => {
   let weight = BigDecimal(0)
   let totalValue = BigDecimal(0)
-  for (const basePool of basePools) {
+  for (const basePool of basePoolMap.values()) {
     if (basePool.kind === BasePoolKind.StakePool) {
       totalValue = totalValue.plus(basePool.totalValue)
       weight = weight.plus(basePool.totalValue.times(basePool.aprMultiplier))
@@ -148,17 +152,35 @@ export const getBasePoolAvgAprMultiplier = (
     return BigDecimal(0)
   }
 
-  return weight.div(totalValue).round(6, 0)
+  return weight.div(totalValue).round(6)
 }
 
-export const updateFreeValue = (
-  basePool: BasePool,
-  value: BigDecimal,
-): void => {
-  // free value is wPHA with minBalance
-  if (value.lt('0.0001')) {
-    basePool.freeValue = BigDecimal(0)
-  } else {
-    basePool.freeValue = value
-  }
+export const getApr = (
+  globalState: GlobalState,
+  aprMultiplier: BigDecimal,
+): BigDecimal => {
+  const ONE_YEAR = 365 * 24 * 60 * 60 * 1000
+  const {averageBlockTime, idleWorkerShares, budgetPerBlock, treasuryRatio} =
+    globalState
+  const value = aprMultiplier
+    .times(budgetPerBlock)
+    .times(BigDecimal(1).minus(treasuryRatio))
+    .times(ONE_YEAR)
+    .div(averageBlockTime)
+    .div(idleWorkerShares)
+    .round(6)
+
+  return value
 }
+
+// export const updateFreeValue = (
+//   basePool: BasePool,
+//   value: BigDecimal,
+// ): void => {
+//   // free value is wPHA with minBalance
+//   if (value.lt('0.0001')) {
+//     basePool.freeValue = BigDecimal(0)
+//   } else {
+//     basePool.freeValue = value
+//   }
+// }

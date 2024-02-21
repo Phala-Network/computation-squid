@@ -9,7 +9,7 @@ import {
   phalaVault,
   rmrkCore,
 } from './types/events'
-import {encodeAddress, fromBits, toBalance} from './utils/converter'
+import {encodeAddress, fromBits, toBalance} from './utils'
 
 const decodeEvent = (
   event: Ctx['blocks'][number]['events'][number],
@@ -362,7 +362,7 @@ const decodeEvent = (
           args: {
             sessionId: encodeAddress(session),
             v: fromBits(vBits),
-            payout: fromBits(payoutBits).round(12, 0),
+            payout: fromBits(payoutBits),
           },
         }
       }
