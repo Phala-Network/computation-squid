@@ -59,9 +59,8 @@ const postUpdate = (
           basePool.totalShares = basePool.totalShares.minus(
             prevWithdrawingShares,
           )
-          basePool.withdrawingShares = max(
-            basePool.withdrawingShares.minus(prevWithdrawingShares),
-            BigDecimal(0),
+          basePool.withdrawingShares = basePool.withdrawingShares.minus(
+            prevWithdrawingShares,
           )
           updateSharePrice(basePool)
         }

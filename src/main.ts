@@ -47,9 +47,14 @@ import {
   phalaVault,
   rmrkCore,
 } from './types/events'
-import {assertGet, join, max, save, toMap} from './utils'
+import {assertGet, join, save, toMap} from './utils'
 
 processor.run(new TypeormDatabase(), async (ctx) => {
+  ctx.log.info(
+    `Process from ${ctx.blocks[0].header.height} to ${
+      ctx.blocks[ctx.blocks.length - 1].header.height
+    }`,
+  )
   if ((await ctx.store.get(GlobalState, '0')) == null) {
     ctx.log.info('Loading initial state')
     await loadInitialState(ctx)
@@ -58,51 +63,12 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   const events = decodeEvents(ctx)
 
   const identityUpdatedAccountIdSet = new Set<string>()
-  const basePoolIdSet = new Set<string>()
   const workerIdSet = new Set<string>()
   const sessionIdSet = new Set<string>()
   const nftIdSet = new Set<string>()
   const basePoolWhitelistIdSet = new Set<string>()
-  const basePoolAccountIdSet = new Set<string>()
 
   for (const {name, args} of events) {
-    if (
-      name === phalaStakePoolv2.poolCommissionSet.name ||
-      name === phalaStakePoolv2.poolCapacitySet.name ||
-      name === phalaStakePoolv2.poolWorkerAdded.name ||
-      name === phalaStakePoolv2.workingStarted.name ||
-      name === phalaStakePoolv2.rewardReceived.name ||
-      name === phalaStakePoolv2.ownerRewardsWithdrawn.name ||
-      name === phalaStakePoolv2.contribution.name ||
-      name === phalaStakePoolv2.workerReclaimed.name ||
-      name === phalaVault.vaultCommissionSet.name ||
-      name === phalaVault.ownerSharesClaimed.name ||
-      name === phalaVault.ownerSharesGained.name ||
-      name === phalaVault.contribution.name ||
-      name === phalaBasePool.nftCreated.name ||
-      name === phalaBasePool.withdrawal.name ||
-      name === phalaBasePool.withdrawalQueued.name ||
-      name === phalaBasePool.poolWhitelistCreated.name ||
-      name === phalaBasePool.poolWhitelistDeleted.name ||
-      name === phalaBasePool.poolWhitelistStakerAdded.name ||
-      name === phalaBasePool.poolWhitelistStakerRemoved.name
-    ) {
-      basePoolIdSet.add(args.pid)
-    }
-
-    if (
-      name === phalaStakePoolv2.contribution.name ||
-      name === phalaBasePool.withdrawalQueued.name
-    ) {
-      if (args.asVault !== undefined) {
-        basePoolIdSet.add(args.asVault)
-      }
-    }
-
-    if (name === phalaBasePool.withdrawal.name) {
-      basePoolAccountIdSet.add(args.accountId)
-    }
-
     if (
       name === phalaStakePoolv2.poolWorkerAdded.name ||
       name === phalaStakePoolv2.poolWorkerRemoved.name ||
@@ -170,25 +136,16 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       relations: {stakePool: true},
     })
     .then(toMap)
-  for (const {stakePool} of workerMap.values()) {
-    if (stakePool != null) {
-      basePoolIdSet.add(stakePool.id)
-    }
-  }
   const basePools = await ctx.store.find(BasePool, {
     relations: {owner: true, account: true},
   })
   const basePoolMap = toMap(basePools)
-  const basePoolAccountIdMap = toMap(
-    basePools,
-    (basePool) => basePool.account.id,
-  )
+  const accountBasePoolMap = toMap(basePools, (basePool) => basePool.account.id)
   const stakePoolMap = await ctx.store
     .find(StakePool, {relations: {basePool: true}})
     .then(toMap)
   const vaultMap = await ctx.store
     .find(Vault, {
-      where: {id: In([...basePoolIdSet])},
       relations: {basePool: true},
     })
     .then(toMap)
@@ -232,7 +189,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           poolAccount,
         })
         basePoolMap.set(pid, basePool)
-        basePoolAccountIdMap.set(poolAccountId, basePool)
+        accountBasePoolMap.set(poolAccountId, basePool)
         stakePoolMap.set(pid, stakePool)
         break
       }
@@ -307,19 +264,19 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         break
       }
       case phalaStakePoolv2.contribution.name: {
-        const {pid, amount, shares, asVault} = args
+        const {pid, accountId, amount, shares} = args
         const basePool = assertGet(basePoolMap, pid)
         const stakePool = assertGet(stakePoolMap, pid)
-        basePool.freeValue = basePool.freeValue.plus(amount)
+        updateFreeValue(basePool, basePool.freeValue.plus(amount))
         basePool.totalShares = basePool.totalShares.plus(shares)
         basePool.totalValue = basePool.totalValue.plus(amount)
         updateStakePoolAprMultiplier(basePool, stakePool)
-        // MEMO: delegator is not a vault
-        if (asVault === undefined || asVault === '0') {
-          globalState.totalValue = globalState.totalValue.plus(amount)
-        } else {
-          const vaultBasePool = assertGet(basePoolMap, asVault)
+        // MEMO: delegator is a vault
+        if (accountBasePoolMap.has(accountId)) {
+          const vaultBasePool = assertGet(accountBasePoolMap, accountId)
           updateFreeValue(vaultBasePool, vaultBasePool.freeValue.minus(amount))
+        } else {
+          globalState.totalValue = globalState.totalValue.plus(amount)
         }
         updateStakePoolDelegable(basePool, stakePool)
         break
@@ -369,7 +326,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           poolAccount,
         })
         basePoolMap.set(pid, basePool)
-        basePoolAccountIdMap.set(poolAccountId, basePool)
+        accountBasePoolMap.set(poolAccountId, basePool)
         vaultMap.set(pid, vault)
         break
       }
@@ -404,7 +361,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       case phalaVault.contribution.name: {
         const {pid, amount, shares} = args
         const basePool = assertGet(basePoolMap, pid)
-        basePool.freeValue = basePool.freeValue.plus(amount)
+        updateFreeValue(basePool, basePool.freeValue.plus(amount))
         basePool.totalShares = basePool.totalShares.plus(shares)
         basePool.totalValue = basePool.totalValue.plus(amount)
         globalState.totalValue = globalState.totalValue.plus(amount)
@@ -460,10 +417,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         basePool.totalShares = basePool.totalShares.minus(removedShares)
         basePool.totalValue = basePool.totalValue.minus(amount)
         updateFreeValue(basePool, basePool.freeValue.minus(amount))
-        basePool.withdrawingShares = max(
-          basePool.withdrawingShares.minus(removedShares),
-          BigDecimal(0),
-        )
+        basePool.withdrawingShares =
+          basePool.withdrawingShares.minus(removedShares)
         basePool.withdrawingValue = basePool.withdrawingShares
           .times(basePool.sharePrice)
           .round(12)
@@ -484,8 +439,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           updateStakePoolDelegable(basePool, stakePool)
         }
 
-        if (basePoolAccountIdMap.has(accountId)) {
-          const vaultBasePool = assertGet(basePoolAccountIdMap, accountId)
+        if (accountBasePoolMap.has(accountId)) {
+          const vaultBasePool = assertGet(accountBasePoolMap, accountId)
           updateFreeValue(vaultBasePool, vaultBasePool.freeValue.plus(amount))
         } else {
           // MEMO: exclude vault's withdrawal
@@ -634,7 +589,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         assert(worker.stakePool)
         const basePool = assertGet(basePoolMap, worker.stakePool.id)
         basePool.releasingValue = basePool.releasingValue.minus(session.stake)
-        basePool.freeValue = basePool.freeValue.plus(session.stake)
+        updateFreeValue(basePool, basePool.freeValue.plus(session.stake))
         session.state = WorkerState.Ready
         session.coolingDownStartTime = null
         session.stake = BigDecimal(0)

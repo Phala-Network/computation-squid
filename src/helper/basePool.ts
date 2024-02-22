@@ -180,7 +180,7 @@ export const updateFreeValue = (
   value: BigDecimal,
 ): void => {
   // free value is wPHA with minBalance
-  if (value.lt('0.0001')) {
+  if (value.lt('0.0001') && value.gt('0')) {
     basePool.freeValue = BigDecimal(0)
   } else {
     basePool.freeValue = value
