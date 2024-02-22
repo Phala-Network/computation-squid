@@ -1,8 +1,8 @@
-module.exports = class Data1708547433185 {
-    name = 'Data1708547433185'
+module.exports = class Data1708625686238 {
+    name = 'Data1708625686238'
 
     async up(db) {
-        await db.query(`CREATE TABLE "global_state" ("id" character varying NOT NULL, "total_value" numeric NOT NULL, "average_block_time_updated_height" integer NOT NULL, "average_block_time_updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "snapshot_updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "average_block_time" integer NOT NULL, "average_apr_multiplier" numeric NOT NULL, "average_apr" numeric NOT NULL, "idle_worker_shares" numeric NOT NULL, "cumulative_rewards" numeric NOT NULL, "pha_rate" numeric NOT NULL, "budget_per_block" numeric NOT NULL, "v_max" numeric NOT NULL, "treasury_ratio" numeric NOT NULL, "re" numeric NOT NULL, "k" numeric NOT NULL, "worker_count" integer NOT NULL, "idle_worker_count" integer NOT NULL, "budget_per_share" numeric NOT NULL, "delegator_count" integer NOT NULL, "withdrawal_dust_cleared" boolean, CONSTRAINT "PK_8b4db1150cf49bfd067e2572c74" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "global_state" ("id" character varying NOT NULL, "height" integer NOT NULL, "total_value" numeric NOT NULL, "average_block_time_updated_height" integer NOT NULL, "average_block_time_updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "snapshot_updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "average_block_time" integer NOT NULL, "average_apr_multiplier" numeric NOT NULL, "average_apr" numeric NOT NULL, "idle_worker_shares" numeric NOT NULL, "cumulative_rewards" numeric NOT NULL, "pha_rate" numeric NOT NULL, "budget_per_block" numeric NOT NULL, "v_max" numeric NOT NULL, "treasury_ratio" numeric NOT NULL, "re" numeric NOT NULL, "k" numeric NOT NULL, "worker_count" integer NOT NULL, "idle_worker_count" integer NOT NULL, "budget_per_share" numeric NOT NULL, "delegator_count" integer NOT NULL, "withdrawal_dust_cleared" boolean, CONSTRAINT "PK_8b4db1150cf49bfd067e2572c74" PRIMARY KEY ("id"))`)
         await db.query(`CREATE TABLE "base_pool_whitelist" ("id" character varying NOT NULL, "create_time" TIMESTAMP WITH TIME ZONE NOT NULL, "account_id" character varying, "base_pool_id" character varying, CONSTRAINT "PK_1a86621574257deb7a2b7b4d7d7" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_57aaf3859a02333f595bd5bd22" ON "base_pool_whitelist" ("account_id") `)
         await db.query(`CREATE INDEX "IDX_c9fe1c8727e265ebcdb30019b6" ON "base_pool_whitelist" ("base_pool_id", "create_time") `)
@@ -35,7 +35,8 @@ module.exports = class Data1708547433185 {
         await db.query(`CREATE UNIQUE INDEX "IDX_114923489e01e385119439b38a" ON "account_snapshot" ("account", "updated_time") `)
         await db.query(`CREATE TABLE "base_pool_snapshot" ("id" character varying NOT NULL, "updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "base_pool" text NOT NULL, "commission" numeric NOT NULL, "apr" numeric NOT NULL, "total_shares" numeric NOT NULL, "total_value" numeric NOT NULL, "delegator_count" integer NOT NULL, "share_price" numeric NOT NULL, "worker_count" integer, "idle_worker_count" integer, "stake_pool_count" integer, "cumulative_owner_rewards" numeric NOT NULL, CONSTRAINT "PK_7adc035ceca68381a1613757d2a" PRIMARY KEY ("id"))`)
         await db.query(`CREATE UNIQUE INDEX "IDX_de91ab969c75330a623600b6de" ON "base_pool_snapshot" ("base_pool", "updated_time") `)
-        await db.query(`CREATE TABLE "global_state_snapshot" ("id" character varying NOT NULL, "updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "total_value" numeric NOT NULL, "average_block_time" integer NOT NULL, "average_apr" numeric NOT NULL, "idle_worker_shares" numeric NOT NULL, "cumulative_rewards" numeric NOT NULL, "budget_per_block" numeric NOT NULL, "worker_count" integer NOT NULL, "idle_worker_count" integer NOT NULL, "budget_per_share" numeric NOT NULL, "delegator_count" integer NOT NULL, CONSTRAINT "PK_f168dfb48948e182df276f30021" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "global_state_snapshot" ("id" character varying NOT NULL, "height" integer NOT NULL, "updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "total_value" numeric NOT NULL, "average_block_time" integer NOT NULL, "average_apr" numeric NOT NULL, "idle_worker_shares" numeric NOT NULL, "cumulative_rewards" numeric NOT NULL, "budget_per_block" numeric NOT NULL, "worker_count" integer NOT NULL, "idle_worker_count" integer NOT NULL, "budget_per_share" numeric NOT NULL, "delegator_count" integer NOT NULL, CONSTRAINT "PK_f168dfb48948e182df276f30021" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE INDEX "IDX_b791e12fdeb4c189a73b160a64" ON "global_state_snapshot" ("height") `)
         await db.query(`CREATE INDEX "IDX_51f536d736eee486c1a2acca1a" ON "global_state_snapshot" ("updated_time") `)
         await db.query(`CREATE TABLE "delegation_snapshot" ("id" character varying NOT NULL, "updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "delegation" text NOT NULL, "cost" numeric NOT NULL, "value" numeric NOT NULL, CONSTRAINT "PK_335066227038f09d171baca0bb9" PRIMARY KEY ("id"))`)
         await db.query(`CREATE UNIQUE INDEX "IDX_6bd56f9ee58c8be8ce385a4c08" ON "delegation_snapshot" ("delegation", "updated_time") `)
@@ -91,6 +92,7 @@ module.exports = class Data1708547433185 {
         await db.query(`DROP TABLE "base_pool_snapshot"`)
         await db.query(`DROP INDEX "public"."IDX_de91ab969c75330a623600b6de"`)
         await db.query(`DROP TABLE "global_state_snapshot"`)
+        await db.query(`DROP INDEX "public"."IDX_b791e12fdeb4c189a73b160a64"`)
         await db.query(`DROP INDEX "public"."IDX_51f536d736eee486c1a2acca1a"`)
         await db.query(`DROP TABLE "delegation_snapshot"`)
         await db.query(`DROP INDEX "public"."IDX_6bd56f9ee58c8be8ce385a4c08"`)

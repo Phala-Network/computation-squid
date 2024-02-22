@@ -113,6 +113,7 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
   const updatedTime = new Date(initialState.timestamp)
   const globalState = new GlobalState({
     id: '0',
+    height: INITIAL_BLOCK,
     averageApr: BigDecimal(0),
     averageAprMultiplier: BigDecimal(0),
     averageBlockTimeUpdatedHeight: INITIAL_BLOCK,

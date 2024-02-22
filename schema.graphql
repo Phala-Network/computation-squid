@@ -1,6 +1,7 @@
 type GlobalState @entity {
   "constant 0"
   id: ID!
+  height: Int!
   totalValue: BigDecimal!
   averageBlockTimeUpdatedHeight: Int!
   averageBlockTimeUpdatedTime: DateTime!
@@ -212,6 +213,7 @@ type BasePoolSnapshot
 type GlobalStateSnapshot @entity {
   id: ID!
   "block time"
+  height: Int! @index
   updatedTime: DateTime! @index
   totalValue: BigDecimal!
   averageBlockTime: Int!

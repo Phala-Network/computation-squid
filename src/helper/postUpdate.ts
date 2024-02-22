@@ -31,6 +31,7 @@ const postUpdate = (
   basePoolMap: Map<string, BasePool>,
   delegations: Delegation[],
 ): void => {
+  globalState.height = block.height
   updateAverageBlockTime(block, globalState)
   const timestamp = block.timestamp
   assert(timestamp)

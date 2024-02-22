@@ -120,6 +120,7 @@ export const createGlobalStateSnapshot = (
   return new GlobalStateSnapshot({
     id: updatedTime.toISOString(),
     updatedTime,
+    height: globalState.height,
     totalValue: globalState.totalValue,
     averageBlockTime: globalState.averageBlockTime,
     averageApr: globalState.averageApr,
