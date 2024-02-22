@@ -16,7 +16,7 @@ import {
   updateDelegationValue,
 } from './helper/delegation'
 import {updateTokenomicParameters} from './helper/globalState'
-import {createAccountSnapshot} from './helper/snapshot'
+import {createAccountSnapshot, getSnapshotUpdatedTime} from './helper/snapshot'
 import {updateSessionShares} from './helper/worker'
 import {
   type Account,
@@ -117,7 +117,7 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
     averageAprMultiplier: BigDecimal(0),
     averageBlockTimeUpdatedHeight: INITIAL_BLOCK,
     averageBlockTimeUpdatedTime: updatedTime,
-    snapshotUpdatedTime: updatedTime,
+    snapshotUpdatedTime: getSnapshotUpdatedTime(initialState.timestamp),
     averageBlockTime: 12000,
     totalValue: BigDecimal(0),
     idleWorkerShares: BigDecimal(0),

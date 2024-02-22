@@ -2,7 +2,11 @@ import assert from 'assert'
 import {BigDecimal} from '@subsquid/big-decimal'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import {In} from 'typeorm'
-import {BASE_POOL_ACCOUNT} from './constants'
+import {
+  BASE_POOL_ACCOUNT,
+  ENABLE_SNAPSHOT,
+  FORCE_REFRESH_IDENTITY,
+} from './constants'
 import decodeEvents from './decodeEvents'
 import {getAccount} from './helper/account'
 import {
@@ -747,35 +751,40 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     }
 
     const nextEvent = events[i + 1]
-    const isLastEvent = nextEvent == null
+    const isLastEventInHandler = nextEvent == null
     const isLastEventInBlock =
-      isLastEvent || block.height !== nextEvent.block.height
+      isLastEventInHandler || block.height !== nextEvent.block.height
     const shouldTakeSnapshot =
-      isLastEventInBlock && isSnapshotUpdateNeeded(block, globalState)
-    if (isLastEvent) {
+      ENABLE_SNAPSHOT &&
+      isLastEventInBlock &&
+      isSnapshotUpdateNeeded(block, globalState)
+    if (shouldTakeSnapshot || isLastEventInHandler) {
+      ctx.log.info(`Post update ${block.height}`)
       postUpdate(block, globalState, accountMap, basePoolMap, delegations)
     }
     if (shouldTakeSnapshot) {
-      // await takeSnapshot(
-      //   ctx,
-      //   block,
-      //   globalState,
-      //   accountMap,
-      //   basePoolMap,
-      //   stakePoolMap,
-      //   workerMap,
-      //   sessionMap,
-      //   delegations,
-      // )
+      await takeSnapshot(
+        ctx,
+        block,
+        globalState,
+        accountMap,
+        basePoolMap,
+        stakePoolMap,
+        workerMap,
+        sessionMap,
+        delegations,
+      )
     }
   }
 
-  if (Bun.env.REFRESH_IDENTITY === '1') {
+  if (FORCE_REFRESH_IDENTITY) {
+    ctx.log.info('Force refreshing identity')
     await queryIdentities(
       ctx.blocks[ctx.blocks.length - 1].header,
       [...accountMap.keys()],
       accountMap,
     )
+    ctx.log.info('Force refreshing identity done')
   } else {
     // MEMO: identity events don't provide specific args, so query it directly
     await queryIdentities(

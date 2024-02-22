@@ -4,10 +4,9 @@ import {
   type DataHandlerContext,
   SubstrateBatchProcessor,
   type SubstrateBatchProcessorFields,
-  assertNotNull,
 } from '@subsquid/substrate-processor'
 import {type Store} from '@subsquid/typeorm-store'
-import {INITIAL_BLOCK} from './constants'
+import {INITIAL_BLOCK, RPC_ENDPOINT, TO_BLOCK} from './constants'
 import {
   identity,
   phalaBasePool,
@@ -20,10 +19,10 @@ import {
 
 export const processor = new SubstrateBatchProcessor()
   .setGateway(lookupArchive('khala', {release: 'ArrowSquid'}))
-  .setRpcEndpoint(assertNotNull(Bun.env.RPC_ENDPOINT))
+  .setRpcEndpoint(RPC_ENDPOINT)
   .setBlockRange({
     from: INITIAL_BLOCK + 1,
-    to: Bun.env.TO_BLOCK != null ? parseInt(Bun.env.TO_BLOCK) : undefined,
+    to: TO_BLOCK,
   })
   .includeAllBlocks()
 

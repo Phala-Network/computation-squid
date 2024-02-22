@@ -1,6 +1,8 @@
 import assert from 'assert'
 import {BigDecimal} from '@subsquid/big-decimal'
+import {isBefore} from 'date-fns'
 import {groupBy} from 'lodash'
+import {CLEAR_WITHDRAWAL_DATE, CLEAR_WITHDRAWAL_THRESHOLD} from '../constants'
 import {
   type Account,
   type BasePool,
@@ -32,30 +34,24 @@ const postUpdate = (
   updateAverageBlockTime(block, globalState)
   const timestamp = block.timestamp
   assert(timestamp)
+  const blockDate = new Date(timestamp)
 
   const delegatorSet = new Set<string>()
   const delegationAccountIdMap = groupBy(delegations, (x) => x.account.id)
 
-  if (globalState.withdrawalDustCleared !== true) {
-    let clearWithdrawalDate: number | undefined
-    try {
-      clearWithdrawalDate = new Date(
-        Bun.env.CLEAR_WITHDRAWAL_DATE as string,
-      ).getTime()
-    } catch (err) {
-      // noop
-    }
-    if (clearWithdrawalDate != null && timestamp >= clearWithdrawalDate) {
-      const clearWithdrawalThreshold =
-        Bun.env.CLEAR_WITHDRAWAL_THRESHOLD ?? '0.01'
+  if (!globalState.withdrawalDustCleared) {
+    if (
+      CLEAR_WITHDRAWAL_DATE != null &&
+      !isBefore(blockDate, CLEAR_WITHDRAWAL_DATE)
+    ) {
       for (const delegation of delegations) {
         const basePool = assertGet(basePoolMap, delegation.basePool.id)
         const prevWithdrawingShares = delegation.withdrawingShares
         if (
           prevWithdrawingShares.gt(0) &&
-          prevWithdrawingShares.lte(clearWithdrawalThreshold) &&
+          prevWithdrawingShares.lte(CLEAR_WITHDRAWAL_THRESHOLD) &&
           delegation.withdrawalStartTime != null &&
-          delegation.withdrawalStartTime.getTime() < clearWithdrawalDate
+          isBefore(delegation.withdrawalStartTime, CLEAR_WITHDRAWAL_DATE)
         ) {
           delegation.withdrawingShares = BigDecimal(0)
           delegation.shares = delegation.shares.minus(prevWithdrawingShares)

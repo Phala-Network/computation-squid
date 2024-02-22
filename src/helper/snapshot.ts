@@ -1,5 +1,7 @@
 import assert from 'assert'
 import {type BigDecimal} from '@subsquid/big-decimal'
+import {assertNotNull} from '@subsquid/substrate-processor'
+import {addDays, isAfter, isBefore} from 'date-fns'
 import {
   type Account,
   AccountSnapshot,
@@ -131,9 +133,7 @@ export const createGlobalStateSnapshot = (
   })
 }
 
-const getUpdatedTime = (block: SubstrateBlock): Date => {
-  const timestamp = block.timestamp
-  assert(timestamp)
+export const getSnapshotUpdatedTime = (timestamp: number): Date => {
   const updatedTime = new Date(timestamp)
   updatedTime.setUTCHours(0, 0, 0, 0)
   return updatedTime
@@ -143,8 +143,8 @@ export const isSnapshotUpdateNeeded = (
   block: SubstrateBlock,
   globalState: GlobalState,
 ): boolean => {
-  const updatedTime = getUpdatedTime(block)
-  return updatedTime.getTime() !== globalState.snapshotUpdatedTime.getTime()
+  const updatedTime = getSnapshotUpdatedTime(assertNotNull(block.timestamp))
+  return isAfter(updatedTime, globalState.snapshotUpdatedTime)
 }
 
 export const takeSnapshot = async (
@@ -158,12 +158,22 @@ export const takeSnapshot = async (
   sessionMap: Map<string, Session>,
   delegations: Delegation[],
 ) => {
-  const updatedTime = getUpdatedTime(block)
-  globalState.snapshotUpdatedTime = updatedTime
+  const updatedTime = getSnapshotUpdatedTime(assertNotNull(block.timestamp))
+  const updatedTimeStr = updatedTime.toISOString()
+  ctx.log.info(`Saving snapshots ${block.height} ${updatedTimeStr}`)
+  const globalStateSnapshots: GlobalStateSnapshot[] = []
   const accountSnapshots: AccountSnapshot[] = []
   const delegationSnapshots: DelegationSnapshot[] = []
   const workerSnapshots: WorkerSnapshot[] = []
   const basePoolSnapshots: BasePoolSnapshot[] = []
+
+  while (isBefore(globalState.snapshotUpdatedTime, updatedTime)) {
+    const updatedTime = addDays(globalState.snapshotUpdatedTime, 1)
+    globalState.snapshotUpdatedTime = updatedTime
+    globalStateSnapshots.push(
+      createGlobalStateSnapshot(globalState, updatedTime),
+    )
+  }
 
   if (updatedTime.getUTCHours() === 0) {
     for (const session of sessionMap.values()) {
@@ -199,15 +209,10 @@ export const takeSnapshot = async (
     )
   }
 
-  const globalStateSnapshot = createGlobalStateSnapshot(
-    globalState,
-    updatedTime,
-  )
-
-  ctx.log.info(`Saving snapshots ${updatedTime.toISOString()}`)
+  await ctx.store.save(globalStateSnapshots)
   await ctx.store.save(workerSnapshots)
   await ctx.store.save(basePoolSnapshots)
-  await ctx.store.save(globalStateSnapshot)
   await ctx.store.save(accountSnapshots)
   await ctx.store.save(delegationSnapshots)
+  ctx.log.info(`Snapshots saved ${block.height} ${updatedTimeStr}`)
 }
