@@ -88,11 +88,13 @@ export function updateSharePrice(basePool: BasePool): void {
     basePool.sharePrice = BigDecimal(1)
     basePool.totalValue = BigDecimal(0)
   } else {
-    basePool.sharePrice = basePool.totalValue.div(basePool.totalShares)
+    basePool.sharePrice = basePool.totalValue
+      .div(basePool.totalShares)
+      .round(12)
   }
-  basePool.withdrawingValue = basePool.withdrawingShares.times(
-    basePool.sharePrice,
-  )
+  basePool.withdrawingValue = basePool.withdrawingShares
+    .times(basePool.sharePrice)
+    .round(12)
 }
 
 export function updateStakePoolAprMultiplier(

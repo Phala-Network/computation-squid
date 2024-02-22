@@ -6,10 +6,10 @@ export const updateDelegationValue = (
   delegation: Delegation,
   basePool: BasePool,
 ): void => {
-  delegation.value = delegation.shares.times(basePool.sharePrice)
-  delegation.withdrawingValue = delegation.withdrawingShares.times(
-    basePool.sharePrice,
-  )
+  delegation.value = delegation.shares.times(basePool.sharePrice).round(12)
+  delegation.withdrawingValue = delegation.withdrawingShares
+    .times(basePool.sharePrice)
+    .round(12)
 }
 
 export const getDelegationAvgAprMultiplier = (

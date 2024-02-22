@@ -1,5 +1,5 @@
 diff --git a/node_modules/@subsquid/big-decimal/bigdecimal.js b/node_modules/@subsquid/big-decimal/bigdecimal.js
-index a9d3887..a641179 100644
+index a9d3887..ca7d8f3 100644
 --- a/node_modules/@subsquid/big-decimal/bigdecimal.js
 +++ b/node_modules/@subsquid/big-decimal/bigdecimal.js
 @@ -7,7 +7,8 @@ const Base = Big()
@@ -7,7 +7,7 @@ index a9d3887..a641179 100644
  
  // adjust settings
 -Base.DP = 80
-+Base.DP = 12
++Base.DP = 13
 +Base.RM = 0
  Base.NE = -19
  

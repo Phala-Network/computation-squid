@@ -405,9 +405,9 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
         ...stakePoolDelegations.map((x) => x.withdrawingValue),
       )
     }
-    basePool.withdrawingValue = basePool.withdrawingShares.times(
-      basePool.sharePrice,
-    )
+    basePool.withdrawingValue = basePool.withdrawingShares
+      .times(basePool.sharePrice)
+      .round(12)
   }
 
   for (const stakePool of stakePoolMap.values()) {

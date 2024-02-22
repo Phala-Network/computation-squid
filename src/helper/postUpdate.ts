@@ -157,6 +157,7 @@ const postUpdate = (
     .div(globalState.averageBlockTime)
     .times(1e7)
     .times(24 * 60 * 60)
+    .round(12)
   globalState.averageApr = getApr(globalState, globalState.averageAprMultiplier)
   globalState.delegatorCount = delegatorSet.size
 }

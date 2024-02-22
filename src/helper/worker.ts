@@ -25,6 +25,7 @@ export function updateSessionShares(
       .pow(2)
       .plus(BigDecimal(2).mul(pInstant).mul(confidenceScore).pow(2))
       .sqrt()
+      .round(12)
     session.shares = shares
   }
 }

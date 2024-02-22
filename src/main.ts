@@ -384,7 +384,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         updateSharePrice(basePool)
         vault.claimableOwnerShares = vault.claimableOwnerShares.plus(shares)
         vault.lastSharePriceCheckpoint = basePool.sharePrice
-        const rewards = shares.times(basePool.sharePrice)
+        const rewards = shares.times(basePool.sharePrice).round(12)
         basePool.cumulativeOwnerRewards =
           basePool.cumulativeOwnerRewards.plus(rewards)
         owner.cumulativeVaultOwnerRewards =
@@ -435,7 +435,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           delegation.shares = shares.plus(delegation.withdrawingShares)
           updateDelegationValue(delegation, basePool)
           delegation.cost = delegation.cost.plus(
-            delegation.shares.minus(prevShares).times(basePool.sharePrice),
+            delegation.shares
+              .minus(prevShares)
+              .times(basePool.sharePrice)
+              .round(12),
           )
           delegationMap.set(delegationId, delegation)
         }
@@ -457,9 +460,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           basePool.withdrawingShares.minus(removedShares),
           BigDecimal(0),
         )
-        basePool.withdrawingValue = basePool.withdrawingShares.times(
-          basePool.sharePrice,
-        )
+        basePool.withdrawingValue = basePool.withdrawingShares
+          .times(basePool.sharePrice)
+          .round(12)
         if (basePool.totalShares.eq(0)) {
           updateSharePrice(basePool) // MEMO: reset share price
         }
@@ -496,9 +499,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         basePool.withdrawingShares = basePool.withdrawingShares
           .minus(prevWithdrawingShares)
           .plus(shares)
-        basePool.withdrawingValue = basePool.withdrawingShares.times(
-          basePool.sharePrice,
-        )
+        basePool.withdrawingValue = basePool.withdrawingShares
+          .times(basePool.sharePrice)
+          .round(12)
         // Replace previous withdrawal
         delegation.withdrawingShares = shares
         delegation.withdrawalStartTime = blockTime
