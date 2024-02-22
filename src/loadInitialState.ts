@@ -1,4 +1,5 @@
 import assert from 'assert'
+import fs from 'fs'
 import path from 'path'
 import {BigDecimal} from '@subsquid/big-decimal'
 import {groupBy} from 'lodash'
@@ -107,9 +108,11 @@ interface InitialState {
 }
 
 const loadInitialState = async (ctx: Ctx): Promise<void> => {
-  const initialState: InitialState = await Bun.file(
+  const data = fs.readFileSync(
     path.resolve(__dirname, `../initial_state/${INITIAL_BLOCK}.json`),
-  ).json()
+    'utf8',
+  )
+  const initialState: InitialState = JSON.parse(data)
   const updatedTime = new Date(initialState.timestamp)
   const globalState = new GlobalState({
     id: '0',

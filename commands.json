@@ -3,12 +3,12 @@
   "commands": {
     "clean": {
       "description": "delete all build artifacts",
-      "cmd": ["bunx", "rimraf", "lib"]
+      "cmd": ["npx", "--yes", "rimraf", "lib"]
     },
     "build": {
       "description": "Build the squid project",
       "deps": ["clean"],
-      "cmd": ["tsc", "--project", "tsconfig.build.json"]
+      "cmd": ["tsc", "-p", "tsconfig.build.json"]
     },
     "up": {
       "description": "Start a PG database",
@@ -29,7 +29,7 @@
     },
     "migration:clean": {
       "description": "Clean the migrations folder",
-      "cmd": ["bunx", "rimraf", "./db/migrations"]
+      "cmd": ["npx", "--yes", "rimraf", "./db/migrations"]
     },
     "migration": {
       "deps": ["build"],
@@ -47,12 +47,12 @@
     "process": {
       "description": "Load .env and start the squid processor",
       "deps": ["build", "migration:apply"],
-      "cmd": ["bun", "lib/main.js"]
+      "cmd": ["node", "--require=dotenv/config", "lib/main.js"]
     },
     "process:prod": {
       "description": "Start the squid processor",
       "deps": ["migration:apply"],
-      "cmd": ["bun", "lib/main.js"],
+      "cmd": ["node", "lib/main.js"],
       "hidden": true
     },
     "serve": {
@@ -74,17 +74,23 @@
       ]
     },
     "check-updates": {
-      "cmd": ["bunx", "npm-check-updates", "--filter=/subsquid/", "--upgrade"],
+      "cmd": [
+        "npx",
+        "--yes",
+        "npm-check-updates",
+        "--filter=/subsquid/",
+        "--upgrade"
+      ],
       "hidden": true
     },
     "bump": {
       "description": "Bump @subsquid packages to the latest versions",
       "deps": ["check-updates"],
-      "cmd": ["bun", "i", "-f"]
+      "cmd": ["npm", "i", "-f"]
     },
     "open": {
       "description": "Open a local browser window",
-      "cmd": ["bunx", "--yes", "opener"]
+      "cmd": ["npx", "--yes", "opener"]
     }
   }
 }

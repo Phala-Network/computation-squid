@@ -37,4 +37,4 @@ COPY --from=prerelease /usr/src/app/package.json .
 
 # run the app
 USER bun
-CMD ["sh", "-c", "bunx squid-typeorm-migration apply && bun lib/main.js"]
+CMD ["sh", "-c", "npx squid-typeorm-migration apply && node lib/main.js"]
