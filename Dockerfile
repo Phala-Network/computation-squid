@@ -1,6 +1,4 @@
-# use the official Bun image
-# see all versions at https://hub.docker.com/r/oven/bun/tags
-FROM oven/bun:1 as base
+FROM imbios/bun-node:1-20-alpine as base
 WORKDIR /usr/src/app
 
 # install dependencies into temp directory
