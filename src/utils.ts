@@ -39,13 +39,11 @@ export const toBigDecimal = (value: JsonBigInt | bigint): BigDecimal => {
 }
 
 export const toBalance = (value: JsonBigInt | bigint): BigDecimal =>
-  toBigDecimal(value).div(1e12)
+  toBigDecimal(value).div(1e12).round(12)
 
 // divide by 2^64
 export const fromBits = (value: JsonBigInt | bigint): BigDecimal =>
-  toBigDecimal(value)
-    .div(2n ** 64n)
-    .round(12, 1)
+  toBigDecimal(value).div(18446744073709551616n).round(12, 1)
 
 export const encodeAddress = (bytes: ss58.Bytes | Uint8Array): string =>
   ss58.codec('phala').encode(bytes)
@@ -55,7 +53,7 @@ export const decodeAddress = (address: string): ss58.Bytes =>
 
 export const save = async (
   ctx: Ctx,
-  ...entities: (Entity | Entity[] | Map<string, Entity>)[]
+  entities: (Entity | Entity[] | Map<string, Entity>)[],
 ): Promise<void> => {
   for (const e of entities) {
     if (e instanceof Map) {

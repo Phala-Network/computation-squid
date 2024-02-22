@@ -33,11 +33,23 @@ export class BasePoolSnapshot {
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     totalValue!: BigDecimal
 
-    @Column_("int4", {nullable: false})
-    delegatorCount!: number
-
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     sharePrice!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    freeValue!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    releasingValue!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    withdrawingValue!: BigDecimal
+
+    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    withdrawingShares!: BigDecimal
+
+    @Column_("int4", {nullable: false})
+    delegatorCount!: number
 
     @Column_("int4", {nullable: true})
     workerCount!: number | undefined | null

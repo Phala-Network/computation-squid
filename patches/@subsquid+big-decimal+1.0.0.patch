@@ -7,7 +7,7 @@ index a9d3887..ca7d8f3 100644
  
  // adjust settings
 -Base.DP = 80
-+Base.DP = 13
++Base.DP = 14
 +Base.RM = 0
  Base.NE = -19
  

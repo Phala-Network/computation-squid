@@ -236,7 +236,6 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
         worker.stakePool = stakePool
         const session = assertGet(workerSessionMap, w)
         if (session.state === WorkerState.WorkerIdle) {
-          const session = assertGet(workerSessionMap, w)
           stakePool.idleWorkerCount++
           stakePool.idleWorkerShares = stakePool.idleWorkerShares.plus(
             session.shares,
@@ -424,8 +423,7 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
       getDelegationAvgAprMultiplier(vaultDelegations)
   }
 
-  await save(
-    ctx,
+  await save(ctx, [
     globalState,
     accountMap,
     basePoolMap,
@@ -438,7 +436,7 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
     basePoolWhitelistMap,
     accountValueSnapshots,
     whitelists,
-  )
+  ])
 }
 
 export default loadInitialState

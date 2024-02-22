@@ -152,11 +152,10 @@ const postUpdate = (
   globalState.budgetPerShare = globalState.budgetPerBlock
     .div(globalState.idleWorkerShares)
     .div(globalState.averageBlockTime)
-    .times(1e7)
-    .times(24 * 60 * 60)
+    .times(1e7 * 24 * 60 * 60)
     .round(12)
-  globalState.averageApr = getApr(globalState, globalState.averageAprMultiplier)
   globalState.delegatorCount = delegatorSet.size
+  globalState.averageApr = getApr(globalState, globalState.averageAprMultiplier)
 }
 
 export default postUpdate

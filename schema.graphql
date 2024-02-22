@@ -202,8 +202,12 @@ type BasePoolSnapshot
   apr: BigDecimal!
   totalShares: BigDecimal!
   totalValue: BigDecimal!
-  delegatorCount: Int!
   sharePrice: BigDecimal!
+  freeValue: BigDecimal!
+  releasingValue: BigDecimal!
+  withdrawingValue: BigDecimal!
+  withdrawingShares: BigDecimal!
+  delegatorCount: Int!
   workerCount: Int
   idleWorkerCount: Int
   stakePoolCount: Int

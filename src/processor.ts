@@ -24,7 +24,6 @@ export const processor = new SubstrateBatchProcessor()
     from: INITIAL_BLOCK + 1,
     to: TO_BLOCK,
   })
-  .includeAllBlocks()
 
   .addEvent({
     name: [
@@ -37,7 +36,7 @@ export const processor = new SubstrateBatchProcessor()
       phalaStakePoolv2.rewardReceived.name,
       phalaStakePoolv2.ownerRewardsWithdrawn.name,
       phalaStakePoolv2.contribution.name,
-      phalaStakePoolv2.workerReclaimed.name,
+      // phalaStakePoolv2.workerReclaimed.name,
 
       phalaVault.poolCreated.name,
       phalaVault.vaultCommissionSet.name,

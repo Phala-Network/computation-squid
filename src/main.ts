@@ -809,8 +809,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       sessionsWithoutWorker.push(session)
     }
   }
-  await save(
-    ctx,
+  await save(ctx, [
     globalState,
     accountMap,
     basePoolMap,
@@ -822,5 +821,5 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     nftMap,
     delegationMap,
     basePoolWhitelistMap,
-  )
+  ])
 })

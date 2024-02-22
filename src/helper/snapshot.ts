@@ -52,14 +52,18 @@ export const createBasePoolSnapshot = ({
 }): BasePoolSnapshot => {
   return new BasePoolSnapshot({
     id: join(basePool.id, updatedTime.toISOString()),
+    updatedTime,
     basePool: basePool.id,
     commission: basePool.commission,
+    apr,
     totalShares: basePool.totalShares,
     totalValue: basePool.totalValue,
     sharePrice: basePool.sharePrice,
+    freeValue: basePool.freeValue,
+    releasingValue: basePool.releasingValue,
+    withdrawingValue: basePool.withdrawingValue,
+    withdrawingShares: basePool.withdrawingShares,
     delegatorCount: basePool.delegatorCount,
-    apr,
-    updatedTime,
     workerCount: stakePool?.workerCount,
     idleWorkerCount: stakePool?.idleWorkerCount,
     stakePoolCount:
@@ -210,14 +214,13 @@ export const takeSnapshot = async (
     )
   }
 
-  await save(
-    ctx,
+  await save(ctx, [
     globalStateSnapshots,
     workerSnapshots,
     basePoolSnapshots,
     accountSnapshots,
     delegationSnapshots,
-  )
+  ])
 
   ctx.log.info(`Snapshots saved ${block.height} ${updatedTimeStr}`)
 }
