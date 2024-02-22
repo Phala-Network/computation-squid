@@ -1,7 +1,9 @@
 import assert from 'assert'
 import {BigDecimal} from '@subsquid/big-decimal'
 import * as ss58 from '@subsquid/ss58'
+import type {Entity} from '@subsquid/typeorm-store'
 import {isHex} from '@subsquid/util-internal-hex'
+import type {Ctx} from './processor'
 
 export const assertGet = <T, U>(map: Map<U, T>, key: U): T => {
   const value = map.get(key)
@@ -50,3 +52,18 @@ export const encodeAddress = (bytes: ss58.Bytes | Uint8Array): string =>
 
 export const decodeAddress = (address: string): ss58.Bytes =>
   ss58.codec('phala').decode(address)
+
+export const save = async (
+  ctx: Ctx,
+  ...entities: (Entity | Entity[] | Map<string, Entity>)[]
+): Promise<void> => {
+  for (const e of entities) {
+    if (e instanceof Map) {
+      await ctx.store.save(Array.from(e.values()))
+    } else if (Array.isArray(e)) {
+      await ctx.store.save(e)
+    } else {
+      await ctx.store.save(e)
+    }
+  }
+}

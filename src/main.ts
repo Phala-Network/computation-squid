@@ -47,7 +47,7 @@ import {
   phalaVault,
   rmrkCore,
 } from './types/events'
-import {assertGet, join, max, toMap} from './utils'
+import {assertGet, join, max, save, toMap} from './utils'
 
 processor.run(new TypeormDatabase(), async (ctx) => {
   if ((await ctx.store.get(GlobalState, '0')) == null) {
@@ -799,22 +799,28 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       ctx.blocks[ctx.blocks.length - 1].header.height
     }`,
   )
-  for (const x of [
+  // MEMO: save session without worker first to prevent duplicate worker
+  const sessionsWithWorker: Session[] = []
+  const sessionsWithoutWorker: Session[] = []
+  for (const session of sessionMap.values()) {
+    if (session.worker != null) {
+      sessionsWithWorker.push(session)
+    } else {
+      sessionsWithoutWorker.push(session)
+    }
+  }
+  await save(
+    ctx,
     globalState,
     accountMap,
     basePoolMap,
     stakePoolMap,
     vaultMap,
     workerMap,
-    sessionMap,
+    sessionsWithoutWorker,
+    sessionsWithWorker,
     nftMap,
     delegationMap,
     basePoolWhitelistMap,
-  ]) {
-    if (x instanceof Map) {
-      await ctx.store.save([...x.values()])
-    } else {
-      await ctx.store.save(x)
-    }
-  }
+  )
 })

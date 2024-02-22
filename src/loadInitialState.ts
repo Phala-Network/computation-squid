@@ -35,7 +35,7 @@ import {
   WorkerState,
 } from './model'
 import {type Ctx} from './processor'
-import {fromBits, toBalance} from './utils'
+import {fromBits, save, toBalance} from './utils'
 import {assertGet, join, sum} from './utils'
 
 interface IBasePool {
@@ -423,7 +423,8 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
       getDelegationAvgAprMultiplier(vaultDelegations)
   }
 
-  for (const x of [
+  await save(
+    ctx,
     globalState,
     accountMap,
     basePoolMap,
@@ -436,15 +437,7 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
     basePoolWhitelistMap,
     accountValueSnapshots,
     whitelists,
-  ]) {
-    if (x instanceof Map) {
-      await ctx.store.insert([...x.values()])
-    } else if (Array.isArray(x)) {
-      await ctx.store.insert([...x])
-    } else {
-      await ctx.store.insert(x)
-    }
-  }
+  )
 }
 
 export default loadInitialState

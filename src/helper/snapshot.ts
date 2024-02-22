@@ -17,7 +17,7 @@ import {
   WorkerSnapshot,
 } from '../model'
 import type {Ctx, SubstrateBlock} from '../processor'
-import {assertGet, join} from '../utils'
+import {assertGet, join, save} from '../utils'
 import {getApr} from './basePool'
 
 export const createAccountSnapshot = ({
@@ -209,10 +209,14 @@ export const takeSnapshot = async (
     )
   }
 
-  await ctx.store.save(globalStateSnapshots)
-  await ctx.store.save(workerSnapshots)
-  await ctx.store.save(basePoolSnapshots)
-  await ctx.store.save(accountSnapshots)
-  await ctx.store.save(delegationSnapshots)
+  await save(
+    ctx,
+    globalStateSnapshots,
+    workerSnapshots,
+    basePoolSnapshots,
+    accountSnapshots,
+    delegationSnapshots,
+  )
+
   ctx.log.info(`Snapshots saved ${block.height} ${updatedTimeStr}`)
 }
