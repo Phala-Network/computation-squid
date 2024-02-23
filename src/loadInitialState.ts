@@ -2,7 +2,6 @@ import assert from 'assert'
 import fs from 'fs'
 import path from 'path'
 import {BigDecimal} from '@subsquid/big-decimal'
-import {groupBy} from 'lodash'
 import {BASE_POOL_ACCOUNT, INITIAL_BLOCK} from './constants'
 import {getAccount} from './helper/account'
 import {
@@ -10,18 +9,13 @@ import {
   updateSharePrice,
   updateStakePoolAprMultiplier,
   updateStakePoolDelegable,
-  updateVaultAprMultiplier,
 } from './helper/basePool'
-import {
-  getDelegationAvgAprMultiplier,
-  updateDelegationValue,
-} from './helper/delegation'
+import {updateDelegationValue} from './helper/delegation'
 import {updateTokenomicParameters} from './helper/globalState'
-import {createAccountSnapshot, getSnapshotUpdatedTime} from './helper/snapshot'
+import {getSnapshotUpdatedTime} from './helper/snapshot'
 import {updateSessionShares} from './helper/worker'
 import {
   type Account,
-  type AccountSnapshot,
   type BasePool,
   BasePoolKind,
   BasePoolWhitelist,
@@ -35,9 +29,8 @@ import {
   Worker,
   WorkerState,
 } from './model'
-import {type Ctx} from './processor'
-import {fromBits, save, toBalance} from './utils'
-import {assertGet, join, sum} from './utils'
+import type {Ctx} from './processor'
+import {assertGet, fromBits, join, save, toBalance} from './utils'
 
 interface IBasePool {
   pid: string
@@ -137,14 +130,14 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
   const sessionMap = new Map<string, Session>()
   const workerSessionMap = new Map<string, Session>()
   const basePoolMap = new Map<string, BasePool>()
-  const basePoolCidMap = new Map<string, BasePool>()
+  const cidBasePoolMap = new Map<string, BasePool>()
+  const accountBasePoolMap = new Map<string, BasePool>()
   const stakePoolMap = new Map<string, StakePool>()
   const vaultMap = new Map<string, Vault>()
   const delegationMap = new Map<string, Delegation>()
   const nftMap = new Map<string, Nft>()
   const basePoolWhitelistMap = new Map<string, BasePoolWhitelist>()
   const nftUserMap = new Map<string, string>()
-  const accountValueSnapshots: AccountSnapshot[] = []
   const whitelists: BasePoolWhitelist[] = []
 
   for (const i of initialState.identities) {
@@ -274,7 +267,6 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
         owner: getAccount(accountMap, BASE_POOL_ACCOUNT),
         cid: b.cid,
         nftId: withdrawal.nftId,
-        burned: false,
       })
       const delegation = new Delegation({
         id: join(b.pid, withdrawal.user),
@@ -291,7 +283,8 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
       nftUserMap.set(withdrawalNft.id, withdrawal.user)
     }
     basePoolMap.set(basePool.id, basePool)
-    basePoolCidMap.set(basePool.cid.toString(), basePool)
+    cidBasePoolMap.set(basePool.cid.toString(), basePool)
+    accountBasePoolMap.set(b.poolAccountId, basePool)
   }
 
   for (const d of initialState.nfts) {
@@ -299,18 +292,17 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
     const nftId = join(d.cid, d.nftId)
 
     // MEMO: normal nft
-    if (d.shares === undefined || d.createTime === undefined) {
+    if (d.shares == null || d.createTime == null) {
       const nft = new Nft({
         id: nftId,
         owner,
         cid: d.cid,
         nftId: d.nftId,
-        burned: false,
       })
       nftMap.set(nft.id, nft)
       continue
     }
-    const basePool = assertGet(basePoolCidMap, d.cid.toString())
+    const basePool = assertGet(cidBasePoolMap, d.cid.toString())
     const shares = toBalance(d.shares)
     if (nftMap.has(nftId)) {
       // MEMO: is a withdrawal nft
@@ -331,8 +323,6 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
         owner,
         cid: d.cid,
         nftId: d.nftId,
-        // HACK: mark as burned to avoid displaying on dashboard
-        burned: shares.eq(0),
         mintTime: new Date(d.createTime),
       })
 
@@ -350,64 +340,16 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
       delegation.shares = shares.plus(delegation.withdrawingShares)
       updateDelegationValue(delegation, basePool)
       delegation.cost = delegation.value
-      if (![...basePoolMap.values()].some((x) => x.account.id === owner.id)) {
-        // HACK: invalid delegation value
-        if (
-          delegation.id !==
-          '4720-3zxRSK5DquqD1f53e8CXTjqMb9wVBJxPDqb534w77147b5Cz'
-        ) {
-          globalState.totalValue = globalState.totalValue.plus(delegation.value)
-        }
+      if (!accountBasePoolMap.has(owner.id)) {
+        globalState.totalValue = globalState.totalValue.plus(delegation.value)
       }
       delegation.delegationNft = delegationNft
-
       nftMap.set(delegationNft.id, delegationNft)
       delegationMap.set(delegation.id, delegation)
-      if (shares.gt(0)) {
-        basePool.delegatorCount++
-        if (basePool.kind === BasePoolKind.StakePool) {
-          owner.stakePoolValue = owner.stakePoolValue.plus(delegation.value)
-          owner.stakePoolNftCount++
-        } else {
-          owner.vaultValue = owner.vaultValue.plus(delegation.value)
-          owner.vaultNftCount++
-        }
-      }
     }
-  }
-
-  const accountDelegationMap = groupBy(
-    [...delegationMap.values()],
-    (x) => x.account.id,
-  )
-
-  for (const account of accountMap.values()) {
-    const delegations = accountDelegationMap[account.id] ?? []
-    const stakePoolDelegations = delegations.filter(
-      (x) => x.basePool.kind === BasePoolKind.StakePool,
-    )
-    account.stakePoolAvgAprMultiplier =
-      getDelegationAvgAprMultiplier(stakePoolDelegations)
-
-    accountValueSnapshots.push(
-      createAccountSnapshot({
-        account,
-        updatedTime: new Date(initialState.timestamp),
-      }),
-    )
   }
 
   for (const basePool of basePoolMap.values()) {
-    if (basePool.kind === BasePoolKind.Vault) {
-      updateVaultAprMultiplier(basePool, basePool.account)
-      const delegations = accountDelegationMap[basePool.account.id] ?? []
-      const stakePoolDelegations = delegations.filter(
-        (x) => x.basePool.kind === BasePoolKind.StakePool,
-      )
-      basePool.releasingValue = sum(
-        ...stakePoolDelegations.map((x) => x.withdrawingValue),
-      )
-    }
     basePool.withdrawingValue = basePool.withdrawingShares
       .times(basePool.sharePrice)
       .round(12)
@@ -415,15 +357,6 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
 
   for (const stakePool of stakePoolMap.values()) {
     updateStakePoolDelegable(stakePool.basePool, stakePool)
-  }
-
-  for (const account of accountMap.values()) {
-    const delegations = accountDelegationMap[account.id] ?? []
-    const vaultDelegations = delegations.filter(
-      (x) => x.basePool.kind === BasePoolKind.Vault,
-    )
-    account.vaultAvgAprMultiplier =
-      getDelegationAvgAprMultiplier(vaultDelegations)
   }
 
   await save(ctx, [
@@ -437,7 +370,6 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
     nftMap,
     delegationMap,
     basePoolWhitelistMap,
-    accountValueSnapshots,
     whitelists,
   ])
 }

@@ -125,17 +125,16 @@ type Delegation @entity @index(fields: ["basePool", "account"], unique: true) {
   withdrawingValue: BigDecimal!
   withdrawingShares: BigDecimal!
   withdrawalStartTime: DateTime
-  delegationNft: Nft! @unique
-  withdrawalNft: Nft
+  delegationNft: Nft @unique
+  withdrawalNft: Nft @unique
 }
 
-type Nft @entity {
+type Nft @entity @index(fields: ["cid", "nftId"], unique: true) {
   "${cid}-${nftId}"
   id: ID!
   owner: Account!
   cid: Int!
   nftId: Int!
-  burned: Boolean!
   mintTime: DateTime
   delegation: Delegation @derivedFrom(field: "delegationNft")
 }

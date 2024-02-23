@@ -1,17 +1,18 @@
-module.exports = class Data1708631225185 {
-    name = 'Data1708631225185'
+module.exports = class Data1708710076811 {
+    name = 'Data1708710076811'
 
     async up(db) {
         await db.query(`CREATE TABLE "global_state" ("id" character varying NOT NULL, "height" integer NOT NULL, "total_value" numeric NOT NULL, "average_block_time_updated_height" integer NOT NULL, "average_block_time_updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "snapshot_updated_time" TIMESTAMP WITH TIME ZONE NOT NULL, "average_block_time" integer NOT NULL, "average_apr_multiplier" numeric NOT NULL, "average_apr" numeric NOT NULL, "idle_worker_shares" numeric NOT NULL, "cumulative_rewards" numeric NOT NULL, "pha_rate" numeric NOT NULL, "budget_per_block" numeric NOT NULL, "v_max" numeric NOT NULL, "treasury_ratio" numeric NOT NULL, "re" numeric NOT NULL, "k" numeric NOT NULL, "worker_count" integer NOT NULL, "idle_worker_count" integer NOT NULL, "budget_per_share" numeric NOT NULL, "delegator_count" integer NOT NULL, "withdrawal_dust_cleared" boolean, CONSTRAINT "PK_8b4db1150cf49bfd067e2572c74" PRIMARY KEY ("id"))`)
         await db.query(`CREATE TABLE "base_pool_whitelist" ("id" character varying NOT NULL, "create_time" TIMESTAMP WITH TIME ZONE NOT NULL, "account_id" character varying, "base_pool_id" character varying, CONSTRAINT "PK_1a86621574257deb7a2b7b4d7d7" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_57aaf3859a02333f595bd5bd22" ON "base_pool_whitelist" ("account_id") `)
         await db.query(`CREATE INDEX "IDX_c9fe1c8727e265ebcdb30019b6" ON "base_pool_whitelist" ("base_pool_id", "create_time") `)
-        await db.query(`CREATE TABLE "nft" ("id" character varying NOT NULL, "cid" integer NOT NULL, "nft_id" integer NOT NULL, "burned" boolean NOT NULL, "mint_time" TIMESTAMP WITH TIME ZONE, "owner_id" character varying, CONSTRAINT "PK_8f46897c58e23b0e7bf6c8e56b0" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "nft" ("id" character varying NOT NULL, "cid" integer NOT NULL, "nft_id" integer NOT NULL, "mint_time" TIMESTAMP WITH TIME ZONE, "owner_id" character varying, CONSTRAINT "PK_8f46897c58e23b0e7bf6c8e56b0" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_83cfd3a290ed70c660f8c9dfe2" ON "nft" ("owner_id") `)
-        await db.query(`CREATE TABLE "delegation" ("id" character varying NOT NULL, "value" numeric NOT NULL, "cost" numeric NOT NULL, "shares" numeric NOT NULL, "withdrawing_value" numeric NOT NULL, "withdrawing_shares" numeric NOT NULL, "withdrawal_start_time" TIMESTAMP WITH TIME ZONE, "account_id" character varying, "base_pool_id" character varying, "delegation_nft_id" character varying, "withdrawal_nft_id" character varying, CONSTRAINT "REL_2d6f29d59b2d5cd7e3034ab857" UNIQUE ("delegation_nft_id"), CONSTRAINT "PK_a2cb6c9b942d68b109131beab44" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE UNIQUE INDEX "IDX_1491e9421517dacf9493a21e2a" ON "nft" ("cid", "nft_id") `)
+        await db.query(`CREATE TABLE "delegation" ("id" character varying NOT NULL, "value" numeric NOT NULL, "cost" numeric NOT NULL, "shares" numeric NOT NULL, "withdrawing_value" numeric NOT NULL, "withdrawing_shares" numeric NOT NULL, "withdrawal_start_time" TIMESTAMP WITH TIME ZONE, "account_id" character varying, "base_pool_id" character varying, "delegation_nft_id" character varying, "withdrawal_nft_id" character varying, CONSTRAINT "REL_2d6f29d59b2d5cd7e3034ab857" UNIQUE ("delegation_nft_id"), CONSTRAINT "REL_f7f610da28f4e55602c9def52a" UNIQUE ("withdrawal_nft_id"), CONSTRAINT "PK_a2cb6c9b942d68b109131beab44" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_be5a5e334e4fb53a0cab3b0125" ON "delegation" ("account_id") `)
         await db.query(`CREATE UNIQUE INDEX "IDX_2d6f29d59b2d5cd7e3034ab857" ON "delegation" ("delegation_nft_id") `)
-        await db.query(`CREATE INDEX "IDX_f7f610da28f4e55602c9def52a" ON "delegation" ("withdrawal_nft_id") `)
+        await db.query(`CREATE UNIQUE INDEX "IDX_f7f610da28f4e55602c9def52a" ON "delegation" ("withdrawal_nft_id") `)
         await db.query(`CREATE UNIQUE INDEX "IDX_4e416c213dddda196b1b42be7e" ON "delegation" ("base_pool_id", "account_id") `)
         await db.query(`CREATE TABLE "base_pool" ("id" character varying NOT NULL, "pid" numeric NOT NULL, "cid" integer NOT NULL, "kind" character varying(9) NOT NULL, "commission" numeric NOT NULL, "apr_multiplier" numeric NOT NULL, "total_shares" numeric NOT NULL, "total_value" numeric NOT NULL, "share_price" numeric NOT NULL, "free_value" numeric NOT NULL, "releasing_value" numeric NOT NULL, "withdrawing_value" numeric NOT NULL, "withdrawing_shares" numeric NOT NULL, "delegator_count" integer NOT NULL, "whitelist_enabled" boolean NOT NULL, "cumulative_owner_rewards" numeric NOT NULL, "owner_id" character varying, "account_id" character varying, CONSTRAINT "REL_b17f3b9349da680afa1e2e9805" UNIQUE ("account_id"), CONSTRAINT "PK_eddfb05533fbdd025660778c6a2" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_920be3ebc7213397ec0cb30fd8" ON "base_pool" ("pid") `)
@@ -64,6 +65,7 @@ module.exports = class Data1708631225185 {
         await db.query(`DROP INDEX "public"."IDX_c9fe1c8727e265ebcdb30019b6"`)
         await db.query(`DROP TABLE "nft"`)
         await db.query(`DROP INDEX "public"."IDX_83cfd3a290ed70c660f8c9dfe2"`)
+        await db.query(`DROP INDEX "public"."IDX_1491e9421517dacf9493a21e2a"`)
         await db.query(`DROP TABLE "delegation"`)
         await db.query(`DROP INDEX "public"."IDX_be5a5e334e4fb53a0cab3b0125"`)
         await db.query(`DROP INDEX "public"."IDX_2d6f29d59b2d5cd7e3034ab857"`)

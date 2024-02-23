@@ -1,7 +1,8 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
 import {Account} from "./account.model"
 import {Delegation} from "./delegation.model"
 
+@Index_(["cid", "nftId"], {unique: true})
 @Entity_()
 export class Nft {
     constructor(props?: Partial<Nft>) {
@@ -23,9 +24,6 @@ export class Nft {
 
     @Column_("int4", {nullable: false})
     nftId!: number
-
-    @Column_("bool", {nullable: false})
-    burned!: boolean
 
     @Column_("timestamp with time zone", {nullable: true})
     mintTime!: Date | undefined | null

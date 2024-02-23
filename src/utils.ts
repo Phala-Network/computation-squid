@@ -19,12 +19,6 @@ export const toMap = <T extends {id: string}>(
   fn: (a: T) => string = (a) => a.id,
 ): Map<string, T> => new Map(a.map((a) => [fn(a), a]))
 
-export const max = (a: BigDecimal, b: BigDecimal): BigDecimal =>
-  a.gt(b) ? a : b
-
-export const min = (a: BigDecimal, b: BigDecimal): BigDecimal =>
-  a.lt(b) ? a : b
-
 export const sum = (...args: BigDecimal[]): BigDecimal =>
   args.reduce((a, b) => a.plus(b), BigDecimal(0))
 

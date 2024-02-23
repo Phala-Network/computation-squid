@@ -11,7 +11,7 @@ import decodeEvents from './decodeEvents'
 import {getAccount} from './helper/account'
 import {
   createPool,
-  updateFreeValue,
+  fixBasePool,
   updateSharePrice,
   updateStakePoolAprMultiplier,
   updateStakePoolDelegable,
@@ -48,6 +48,10 @@ import {
   rmrkCore,
 } from './types/events'
 import {assertGet, join, save, toMap} from './utils'
+
+type DelegationWithNft = Delegation & {delegationNft: Nft}
+type DelegationWithWithdrawalNft = Delegation & {withdrawalNft: Nft}
+type SessionWithWorker = Session & {worker: Worker}
 
 processor.run(new TypeormDatabase(), async (ctx) => {
   ctx.log.info(
@@ -113,16 +117,18 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   }
   const globalState = await ctx.store.findOneBy(GlobalState, {id: '0'})
   assert(globalState)
+
   const accountMap: Map<string, Account> = await ctx.store
     .find(Account)
     .then(toMap)
+
   const sessions = await ctx.store.find(Session, {
     where: [{id: In([...sessionIdSet])}, {worker: {id: In([...workerIdSet])}}],
     relations: {worker: true},
   })
   const sessionMap = toMap(sessions)
   const workerSessionMap = toMap(
-    sessions.filter((s): s is Session & {worker: Worker} => s.worker != null),
+    sessions.filter((s): s is SessionWithWorker => s.worker != null),
     (session) => session.worker.id,
   )
   for (const session of sessions) {
@@ -136,6 +142,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       relations: {stakePool: true},
     })
     .then(toMap)
+
   const basePools = await ctx.store.find(BasePool, {
     relations: {owner: true, account: true},
   })
@@ -159,6 +166,20 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     },
   })
   const delegationMap = toMap(delegations)
+  const nftDelegationMap = toMap(
+    delegations.filter(
+      (delegation): delegation is DelegationWithNft =>
+        delegation.delegationNft != null,
+    ),
+    (delegation) => delegation.delegationNft.id,
+  )
+  const withdrawalNftDelegationMap = toMap(
+    delegations.filter(
+      (delegation): delegation is DelegationWithWithdrawalNft =>
+        delegation.withdrawalNft != null,
+    ),
+    (delegation) => delegation.withdrawalNft.id,
+  )
 
   const nftMap = await ctx.store
     .find(Nft, {
@@ -171,6 +192,9 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       where: {id: In([...basePoolWhitelistIdSet])},
     })
     .then(toMap)
+
+  const removedBasePoolWhitelistMap = new Map<string, BasePoolWhitelist>()
+  const removedNfts: Nft[] = []
 
   for (let i = 0; i < events.length; i++) {
     const {name, args, block} = events[i]
@@ -234,7 +258,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const basePool = assertGet(basePoolMap, pid)
         const session = assertGet(workerSessionMap, workerId)
         session.stake = amount
-        updateFreeValue(basePool, basePool.freeValue.minus(amount))
+        basePool.freeValue = basePool.freeValue.minus(amount)
         break
       }
       case phalaStakePoolv2.rewardReceived.name: {
@@ -244,7 +268,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const owner = assertGet(accountMap, basePool.owner.id)
         stakePool.ownerReward = stakePool.ownerReward.plus(toOwner)
         basePool.totalValue = basePool.totalValue.plus(toStakers)
-        updateFreeValue(basePool, basePool.freeValue.plus(toStakers))
+        basePool.freeValue = basePool.freeValue.plus(toStakers)
         globalState.totalValue = globalState.totalValue.plus(toStakers)
         globalState.cumulativeRewards = globalState.cumulativeRewards
           .plus(toOwner)
@@ -267,14 +291,14 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const {pid, accountId, amount, shares} = args
         const basePool = assertGet(basePoolMap, pid)
         const stakePool = assertGet(stakePoolMap, pid)
-        updateFreeValue(basePool, basePool.freeValue.plus(amount))
+        basePool.freeValue = basePool.freeValue.plus(amount)
         basePool.totalShares = basePool.totalShares.plus(shares)
         basePool.totalValue = basePool.totalValue.plus(amount)
         updateStakePoolAprMultiplier(basePool, stakePool)
         // MEMO: delegator is a vault
         if (accountBasePoolMap.has(accountId)) {
           const vaultBasePool = assertGet(accountBasePoolMap, accountId)
-          updateFreeValue(vaultBasePool, vaultBasePool.freeValue.minus(amount))
+          vaultBasePool.freeValue = vaultBasePool.freeValue.minus(amount)
         } else {
           globalState.totalValue = globalState.totalValue.plus(amount)
         }
@@ -305,6 +329,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           createTime: blockTime,
         })
         basePoolWhitelistMap.set(id, basePoolWhitelist)
+        removedBasePoolWhitelistMap.delete(id)
         break
       }
       case phalaBasePool.poolWhitelistStakerRemoved.name: {
@@ -312,7 +337,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const id = join(pid, accountId)
         const basePoolWhitelist = assertGet(basePoolWhitelistMap, id)
         basePoolWhitelistMap.delete(id)
-        await ctx.store.remove(basePoolWhitelist)
+        removedBasePoolWhitelistMap.set(id, basePoolWhitelist)
         break
       }
       case phalaVault.poolCreated.name: {
@@ -361,23 +386,20 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       case phalaVault.contribution.name: {
         const {pid, amount, shares} = args
         const basePool = assertGet(basePoolMap, pid)
-        updateFreeValue(basePool, basePool.freeValue.plus(amount))
+        basePool.freeValue = basePool.freeValue.plus(amount)
         basePool.totalShares = basePool.totalShares.plus(shares)
         basePool.totalValue = basePool.totalValue.plus(amount)
         globalState.totalValue = globalState.totalValue.plus(amount)
         break
       }
       case phalaBasePool.nftCreated.name: {
+        // MEMO: contribution will always create nft
         const {pid, owner, cid, nftId, shares} = args
         const ownerAccount = getAccount(accountMap, owner)
         const basePool = assertGet(basePoolMap, pid)
         // MEMO: ignore withdrawal nft
         if (owner !== BASE_POOL_ACCOUNT) {
           const delegationNft = assertGet(nftMap, join(cid, nftId))
-          if (shares.eq(0)) {
-            // HACK: mark empty delegation nft as burned
-            delegationNft.burned = true
-          }
           const delegationId = join(pid, owner)
           const delegation =
             delegationMap.get(delegationId) ??
@@ -392,6 +414,10 @@ processor.run(new TypeormDatabase(), async (ctx) => {
               withdrawingShares: BigDecimal(0),
             })
           delegation.delegationNft = delegationNft
+          nftDelegationMap.set(
+            delegationNft.id,
+            delegation as DelegationWithNft,
+          )
           const prevShares = delegation.shares
           delegation.shares = shares.plus(delegation.withdrawingShares)
           updateDelegationValue(delegation, basePool)
@@ -416,7 +442,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const delegation = assertGet(delegationMap, delegationId)
         basePool.totalShares = basePool.totalShares.minus(removedShares)
         basePool.totalValue = basePool.totalValue.minus(amount)
-        updateFreeValue(basePool, basePool.freeValue.minus(amount))
+        basePool.freeValue = basePool.freeValue.minus(amount)
         basePool.withdrawingShares =
           basePool.withdrawingShares.minus(removedShares)
         basePool.withdrawingValue = basePool.withdrawingShares
@@ -430,9 +456,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         delegation.shares = delegation.shares.minus(removedShares)
         updateDelegationValue(delegation, basePool)
         delegation.cost = delegation.cost.minus(amount)
-        if (delegation.withdrawingShares.eq(0)) {
-          delegation.withdrawalNft = null
-        }
         if (basePool.kind === BasePoolKind.StakePool) {
           const stakePool = assertGet(stakePoolMap, pid)
           updateStakePoolAprMultiplier(basePool, stakePool)
@@ -441,7 +464,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
 
         if (accountBasePoolMap.has(accountId)) {
           const vaultBasePool = assertGet(accountBasePoolMap, accountId)
-          updateFreeValue(vaultBasePool, vaultBasePool.freeValue.plus(amount))
+          vaultBasePool.freeValue = vaultBasePool.freeValue.plus(amount)
         } else {
           // MEMO: exclude vault's withdrawal
           globalState.totalValue = globalState.totalValue.minus(amount)
@@ -453,7 +476,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const delegationId = join(pid, accountId)
         const basePool = assertGet(basePoolMap, pid)
         const delegation = assertGet(delegationMap, delegationId)
-        const stakePool = stakePoolMap.get(pid)
         const prevWithdrawingShares = delegation.withdrawingShares
         basePool.withdrawingShares = basePool.withdrawingShares
           .minus(prevWithdrawingShares)
@@ -466,13 +488,16 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         delegation.withdrawalStartTime = blockTime
         if (withdrawingNftId != null) {
           const withdrawalNftId = join(basePool.cid, withdrawingNftId)
-          const withdrawalNft =
-            nftMap.get(withdrawalNftId) ??
-            (await ctx.store.findOneBy(Nft, {id: withdrawalNftId}))
+          const withdrawalNft = assertGet(nftMap, withdrawalNftId)
           delegation.withdrawalNft = withdrawalNft
+          withdrawalNftDelegationMap.set(
+            withdrawalNftId,
+            delegation as DelegationWithWithdrawalNft,
+          )
         }
 
-        if (stakePool != null) {
+        if (basePool.kind === BasePoolKind.StakePool) {
+          const stakePool = assertGet(stakePoolMap, pid)
           updateStakePoolDelegable(basePool, stakePool)
         }
         break
@@ -497,7 +522,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           sessionMap.set(sessionId, session)
         }
         session.worker = worker
-        workerSessionMap.set(workerId, session as Session & {worker: Worker})
+        workerSessionMap.set(workerId, session as SessionWithWorker)
         break
       }
       case phalaComputation.sessionUnbound.name: {
@@ -589,7 +614,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         assert(worker.stakePool)
         const basePool = assertGet(basePoolMap, worker.stakePool.id)
         basePool.releasingValue = basePool.releasingValue.minus(session.stake)
-        updateFreeValue(basePool, basePool.freeValue.plus(session.stake))
+        basePool.freeValue = basePool.freeValue.plus(session.stake)
         session.state = WorkerState.Ready
         session.coolingDownStartTime = null
         session.stake = BigDecimal(0)
@@ -691,7 +716,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           owner: getAccount(accountMap, owner),
           cid,
           nftId,
-          burned: false,
           mintTime: blockTime,
         })
         nftMap.set(id, nft)
@@ -700,7 +724,23 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       case rmrkCore.nftBurned.name: {
         const {cid, nftId} = args
         const nft = assertGet(nftMap, join(cid, nftId))
-        nft.burned = true
+        nftMap.delete(nft.id)
+        removedNfts.push(nft)
+        {
+          // MEMO: delegation nft won't be immediately burned after withdrawal
+          const delegation = nftDelegationMap.get(nft.id)
+          if (delegation != null) {
+            nftDelegationMap.delete(nft.id)
+            ;(delegation as Delegation).delegationNft = null
+          }
+        }
+        {
+          const delegation = withdrawalNftDelegationMap.get(nft.id)
+          if (delegation != null) {
+            withdrawalNftDelegationMap.delete(nft.id)
+            ;(delegation as Delegation).withdrawalNft = null
+          }
+        }
         break
       }
     }
@@ -713,6 +753,11 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       ENABLE_SNAPSHOT &&
       isLastEventInBlock &&
       isSnapshotUpdateNeeded(block, globalState)
+    if (isLastEventInBlock) {
+      for (const basePool of basePoolMap.values()) {
+        fixBasePool(basePool)
+      }
+    }
     if (shouldTakeSnapshot || isLastEventInHandler) {
       ctx.log.info(`Post update ${block.height}`)
       postUpdate(block, globalState, accountMap, basePoolMap, delegations)
@@ -777,4 +822,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     delegationMap,
     basePoolWhitelistMap,
   ])
+  await ctx.store.remove(Array.from(removedBasePoolWhitelistMap.values()))
+  await ctx.store.remove(removedNfts)
 })

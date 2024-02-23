@@ -175,14 +175,9 @@ export const getApr = (
   return value
 }
 
-export const updateFreeValue = (
-  basePool: BasePool,
-  value: BigDecimal,
-): void => {
+export const fixBasePool = (basePool: BasePool): void => {
   // free value is wPHA with minBalance
-  if (value.lt('0.0001') && value.gt('0')) {
+  if (basePool.freeValue.lt('0.0001')) {
     basePool.freeValue = BigDecimal(0)
-  } else {
-    basePool.freeValue = value
   }
 }

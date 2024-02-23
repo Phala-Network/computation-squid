@@ -11,7 +11,7 @@ import {
   type GlobalState,
 } from '../model'
 import {type SubstrateBlock} from '../processor'
-import {assertGet, max, sum} from '../utils'
+import {assertGet, sum} from '../utils'
 import {
   getApr,
   getBasePoolAvgAprMultiplier,

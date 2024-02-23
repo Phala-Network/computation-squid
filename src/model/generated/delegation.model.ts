@@ -46,9 +46,10 @@ export class Delegation {
     @Index_({unique: true})
     @OneToOne_(() => Nft, {nullable: true})
     @JoinColumn_()
-    delegationNft!: Nft
+    delegationNft!: Nft | undefined | null
 
-    @Index_()
-    @ManyToOne_(() => Nft, {nullable: true})
+    @Index_({unique: true})
+    @OneToOne_(() => Nft, {nullable: true})
+    @JoinColumn_()
     withdrawalNft!: Nft | undefined | null
 }
