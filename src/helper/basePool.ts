@@ -164,13 +164,15 @@ export const getApr = (
   const ONE_YEAR = 365 * 24 * 60 * 60 * 1000
   const {averageBlockTime, idleWorkerShares, budgetPerBlock, treasuryRatio} =
     globalState
-  const value = aprMultiplier
-    .times(budgetPerBlock)
-    .times(BigDecimal(1).minus(treasuryRatio))
-    .times(ONE_YEAR)
-    .div(averageBlockTime)
-    .div(idleWorkerShares)
-    .round(6)
+  const value = idleWorkerShares.eq(0)
+    ? BigDecimal(0)
+    : aprMultiplier
+        .times(budgetPerBlock)
+        .times(BigDecimal(1).minus(treasuryRatio))
+        .times(ONE_YEAR)
+        .div(averageBlockTime)
+        .div(idleWorkerShares)
+        .round(6)
 
   return value
 }

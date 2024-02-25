@@ -2,6 +2,7 @@ import assert from 'assert'
 import fs from 'fs'
 import path from 'path'
 import {BigDecimal} from '@subsquid/big-decimal'
+import {addDays} from 'date-fns'
 import {BASE_POOL_ACCOUNT, INITIAL_BLOCK} from './constants'
 import {getAccount} from './helper/account'
 import {
@@ -114,8 +115,11 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
     averageAprMultiplier: BigDecimal(0),
     averageBlockTimeUpdatedHeight: INITIAL_BLOCK,
     averageBlockTimeUpdatedTime: updatedTime,
-    snapshotUpdatedTime: getSnapshotUpdatedTime(initialState.timestamp),
-    averageBlockTime: 12000,
+    snapshotUpdatedTime: addDays(
+      getSnapshotUpdatedTime(initialState.timestamp),
+      -1,
+    ),
+    averageBlockTime: 12_000,
     totalValue: BigDecimal(0),
     idleWorkerShares: BigDecimal(0),
     cumulativeRewards: BigDecimal(0),

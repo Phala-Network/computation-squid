@@ -148,11 +148,13 @@ const postUpdate = (
   }
 
   globalState.averageAprMultiplier = getBasePoolAvgAprMultiplier(basePoolMap)
-  globalState.budgetPerShare = globalState.budgetPerBlock
-    .div(globalState.idleWorkerShares)
-    .div(globalState.averageBlockTime)
-    .times(1e7 * 24 * 60 * 60)
-    .round(12)
+  globalState.budgetPerShare = globalState.idleWorkerShares.eq(0)
+    ? BigDecimal(0)
+    : globalState.budgetPerBlock
+        .div(globalState.idleWorkerShares)
+        .div(globalState.averageBlockTime)
+        .times(1e7 * 24 * 60 * 60)
+        .round(12)
   globalState.delegatorCount = delegatorSet.size
   globalState.averageApr = getApr(globalState, globalState.averageAprMultiplier)
 }
