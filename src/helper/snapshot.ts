@@ -172,28 +172,33 @@ export const takeSnapshot = async (
   const workerSnapshots: WorkerSnapshot[] = []
   const basePoolSnapshots: BasePoolSnapshot[] = []
 
-  const latestGlobalStateSnapshot = await ctx.store.findOne(
-    GlobalStateSnapshot,
-    {order: {updatedTime: 'DESC'}},
-  )
+  const latestGlobalStateSnapshot = (
+    await ctx.store.find(GlobalStateSnapshot, {
+      order: {updatedTime: 'DESC'},
+      take: 1,
+    })
+  ).at(0)
 
-  while (isBefore(globalState.snapshotUpdatedTime, updatedTime)) {
-    const updatedTime = addDays(globalState.snapshotUpdatedTime, 1)
-    globalState.snapshotUpdatedTime = updatedTime
-    if (isEqual(globalState.snapshotUpdatedTime, updatedTime)) {
-      globalStateSnapshots.push(
-        createGlobalStateSnapshot(globalState, updatedTime),
-      )
-    } else if (latestGlobalStateSnapshot != null) {
-      globalStateSnapshots.push(
-        new GlobalStateSnapshot({
-          ...latestGlobalStateSnapshot,
-          id: updatedTime.toISOString(),
-          updatedTime,
-        }),
-      )
-    }
+  globalState.snapshotUpdatedTime = addDays(globalState.snapshotUpdatedTime, 1)
+
+  while (
+    latestGlobalStateSnapshot != null &&
+    isBefore(globalState.snapshotUpdatedTime, updatedTime)
+  ) {
+    const updatedTime = globalState.snapshotUpdatedTime
+    globalStateSnapshots.push(
+      new GlobalStateSnapshot({
+        ...latestGlobalStateSnapshot,
+        id: updatedTime.toISOString(),
+        updatedTime,
+      }),
+    )
+    globalState.snapshotUpdatedTime = addDays(
+      globalState.snapshotUpdatedTime,
+      1,
+    )
   }
+  globalStateSnapshots.push(createGlobalStateSnapshot(globalState, updatedTime))
 
   if (updatedTime.getUTCHours() === 0) {
     for (const session of sessionMap.values()) {

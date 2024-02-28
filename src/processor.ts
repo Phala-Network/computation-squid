@@ -18,6 +18,7 @@ import {
 } from './types/events'
 
 export const processor = new SubstrateBatchProcessor()
+  .includeAllBlocks()
   .setGateway(lookupArchive('khala', {release: 'ArrowSquid'}))
   .setRpcEndpoint(RPC_ENDPOINT)
   .setBlockRange({
