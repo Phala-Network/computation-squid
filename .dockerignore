@@ -20,3 +20,4 @@ commands.json
 renovate.json
 typegen.json
 biome.json
+*.sh
