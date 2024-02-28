@@ -1,7 +1,7 @@
 import assert from 'assert'
 import {type BigDecimal} from '@subsquid/big-decimal'
 import {assertNotNull} from '@subsquid/substrate-processor'
-import {addDays, isAfter, isBefore} from 'date-fns'
+import {addDays, isAfter, isBefore, isEqual} from 'date-fns'
 import {
   type Account,
   AccountSnapshot,
@@ -172,12 +172,27 @@ export const takeSnapshot = async (
   const workerSnapshots: WorkerSnapshot[] = []
   const basePoolSnapshots: BasePoolSnapshot[] = []
 
+  const latestGlobalStateSnapshot = await ctx.store.findOne(
+    GlobalStateSnapshot,
+    {order: {updatedTime: 'DESC'}},
+  )
+
   while (isBefore(globalState.snapshotUpdatedTime, updatedTime)) {
     const updatedTime = addDays(globalState.snapshotUpdatedTime, 1)
     globalState.snapshotUpdatedTime = updatedTime
-    globalStateSnapshots.push(
-      createGlobalStateSnapshot(globalState, updatedTime),
-    )
+    if (isEqual(globalState.snapshotUpdatedTime, updatedTime)) {
+      globalStateSnapshots.push(
+        createGlobalStateSnapshot(globalState, updatedTime),
+      )
+    } else if (latestGlobalStateSnapshot != null) {
+      globalStateSnapshots.push(
+        new GlobalStateSnapshot({
+          ...latestGlobalStateSnapshot,
+          id: updatedTime.toISOString(),
+          updatedTime,
+        }),
+      )
+    }
   }
 
   if (updatedTime.getUTCHours() === 0) {
