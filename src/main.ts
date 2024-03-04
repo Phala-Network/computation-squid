@@ -1,7 +1,7 @@
 import assert from 'assert'
 import {BigDecimal} from '@subsquid/big-decimal'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
-import {In} from 'typeorm'
+import {In, IsNull, Not} from 'typeorm'
 import {
   BASE_POOL_ACCOUNT,
   ENABLE_SNAPSHOT,
@@ -753,16 +753,75 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       ENABLE_SNAPSHOT &&
       isLastEventInBlock &&
       isSnapshotUpdateNeeded(block, globalState)
+    const shouldRefreshIdentity = FORCE_REFRESH_IDENTITY && ctx.isHead
     if (isLastEventInBlock) {
       for (const basePool of basePoolMap.values()) {
         fixBasePool(basePool)
       }
     }
+    if (isLastEventInHandler) {
+      if (shouldRefreshIdentity) {
+        ctx.log.info('Force refreshing identity')
+        await queryIdentities(
+          ctx.blocks[ctx.blocks.length - 1].header,
+          [...accountMap.keys()],
+          accountMap,
+        )
+        ctx.log.info('Force refreshing identity done')
+      } else {
+        // MEMO: identity events don't provide specific args, so query it directly
+        await queryIdentities(
+          ctx.blocks[ctx.blocks.length - 1].header,
+          [...identityUpdatedAccountIdSet],
+          accountMap,
+        )
+      }
+    }
     if (shouldTakeSnapshot || isLastEventInHandler) {
       ctx.log.info(`Post update ${block.height}`)
       postUpdate(block, globalState, accountMap, basePoolMap, delegations)
+      ctx.log.info(`Saving state ${block.height}`)
+      // MEMO: save session without worker first to prevent duplicate worker
+      const sessionsWithWorker: Session[] = []
+      const sessionsWithoutWorker: Session[] = []
+      for (const session of sessionMap.values()) {
+        if (session.worker != null) {
+          sessionsWithWorker.push(session)
+        } else {
+          sessionsWithoutWorker.push(session)
+        }
+      }
+      await save(ctx, [
+        globalState,
+        accountMap,
+        basePoolMap,
+        stakePoolMap,
+        vaultMap,
+        workerMap,
+        sessionsWithoutWorker,
+        sessionsWithWorker,
+        nftMap,
+        delegationMap,
+        basePoolWhitelistMap,
+      ])
+      await ctx.store.remove(Array.from(removedBasePoolWhitelistMap.values()))
+      await ctx.store.remove(removedNfts)
     }
+
     if (shouldTakeSnapshot) {
+      const sessionMap = await ctx.store
+        .find(Session, {
+          where: {worker: Not(IsNull())},
+          relations: {worker: true},
+        })
+        .then((sessions) => toMap(sessions as SessionWithWorker[]))
+      const workerIds = Array.from(sessionMap.values()).map((s) => s.worker.id)
+      const workerMap = await ctx.store
+        .find(Worker, {
+          where: {id: In(workerIds)},
+          relations: {stakePool: true},
+        })
+        .then(toMap)
       await takeSnapshot(
         ctx,
         block,
@@ -776,52 +835,4 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       )
     }
   }
-
-  if (FORCE_REFRESH_IDENTITY) {
-    ctx.log.info('Force refreshing identity')
-    await queryIdentities(
-      ctx.blocks[ctx.blocks.length - 1].header,
-      [...accountMap.keys()],
-      accountMap,
-    )
-    ctx.log.info('Force refreshing identity done')
-  } else {
-    // MEMO: identity events don't provide specific args, so query it directly
-    await queryIdentities(
-      ctx.blocks[ctx.blocks.length - 1].header,
-      [...identityUpdatedAccountIdSet],
-      accountMap,
-    )
-  }
-
-  ctx.log.info(
-    `Saving state from ${ctx.blocks[0].header.height} to ${
-      ctx.blocks[ctx.blocks.length - 1].header.height
-    }`,
-  )
-  // MEMO: save session without worker first to prevent duplicate worker
-  const sessionsWithWorker: Session[] = []
-  const sessionsWithoutWorker: Session[] = []
-  for (const session of sessionMap.values()) {
-    if (session.worker != null) {
-      sessionsWithWorker.push(session)
-    } else {
-      sessionsWithoutWorker.push(session)
-    }
-  }
-  await save(ctx, [
-    globalState,
-    accountMap,
-    basePoolMap,
-    stakePoolMap,
-    vaultMap,
-    workerMap,
-    sessionsWithoutWorker,
-    sessionsWithWorker,
-    nftMap,
-    delegationMap,
-    basePoolWhitelistMap,
-  ])
-  await ctx.store.remove(Array.from(removedBasePoolWhitelistMap.values()))
-  await ctx.store.remove(removedNfts)
 })
