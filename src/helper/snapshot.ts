@@ -172,12 +172,12 @@ export const takeSnapshot = async (
   const workerSnapshots: WorkerSnapshot[] = []
   const basePoolSnapshots: BasePoolSnapshot[] = []
 
-  const latestGlobalStateSnapshot = (
-    await ctx.store.find(GlobalStateSnapshot, {
+  const latestGlobalStateSnapshot = await ctx.store
+    .find(GlobalStateSnapshot, {
       order: {updatedTime: 'DESC'},
       take: 1,
     })
-  ).at(0)
+    .then((arr) => arr.at(0))
 
   globalState.snapshotUpdatedTime = addDays(globalState.snapshotUpdatedTime, 1)
 
@@ -235,6 +235,7 @@ export const takeSnapshot = async (
   }
 
   await save(ctx, [
+    globalState,
     globalStateSnapshots,
     workerSnapshots,
     basePoolSnapshots,
