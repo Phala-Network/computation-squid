@@ -1,6 +1,6 @@
 import assert from 'assert'
-import {type GlobalState} from '../model'
-import {type SubstrateBlock} from '../processor'
+import type {GlobalState} from '../model'
+import type {SubstrateBlock} from '../processor'
 import {phalaComputation} from '../types/storage'
 import {fromBits} from '../utils'
 

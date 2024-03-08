@@ -1,5 +1,5 @@
 import assert from 'assert'
-import {type BigDecimal} from '@subsquid/big-decimal'
+import type {BigDecimal} from '@subsquid/big-decimal'
 import {assertNotNull} from '@subsquid/substrate-processor'
 import {addDays, isAfter, isBefore} from 'date-fns'
 import {

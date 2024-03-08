@@ -3,7 +3,7 @@ import {
   type Account,
   BasePool,
   BasePoolKind,
-  GlobalState,
+  type GlobalState,
   StakePool,
   Vault,
 } from '../model'

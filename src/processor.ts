@@ -5,7 +5,7 @@ import {
   SubstrateBatchProcessor,
   type SubstrateBatchProcessorFields,
 } from '@subsquid/substrate-processor'
-import {type Store} from '@subsquid/typeorm-store'
+import type {Store} from '@subsquid/typeorm-store'
 import {INITIAL_BLOCK, RPC_ENDPOINT, TO_BLOCK} from './constants'
 import {
   identity,

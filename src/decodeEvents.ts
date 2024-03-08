@@ -1,5 +1,5 @@
 import {BigDecimal} from '@subsquid/big-decimal'
-import {type Ctx, type SubstrateBlock} from './processor'
+import type {Ctx, SubstrateBlock} from './processor'
 import {
   identity,
   phalaBasePool,

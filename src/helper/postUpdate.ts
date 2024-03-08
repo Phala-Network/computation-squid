@@ -10,7 +10,7 @@ import {
   type Delegation,
   type GlobalState,
 } from '../model'
-import {type SubstrateBlock} from '../processor'
+import type {SubstrateBlock} from '../processor'
 import {assertGet, sum} from '../utils'
 import {
   getApr,

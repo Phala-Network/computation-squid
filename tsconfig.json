@@ -22,14 +22,14 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     // "noPropertyAccessFromIndexSignature": true,
-   
+
     "outDir": "lib",
     "rootDir": "src",
     "declaration": false,
     "sourceMap": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
+    "emitDecoratorMetadata": true
   },
   "include": ["src"],
   "exclude": ["node_modules"]

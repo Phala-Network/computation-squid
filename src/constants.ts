@@ -1,7 +1,9 @@
 export const INITIAL_BLOCK = 3000000
 
 export const TO_BLOCK =
-  process.env.TO_BLOCK != null ? parseInt(process.env.TO_BLOCK) : undefined
+  process.env.TO_BLOCK != null
+    ? Number.parseInt(process.env.TO_BLOCK)
+    : undefined
 
 export const BASE_POOL_ACCOUNT =
   '42qnPyfw3sbWMGGtTPPc2YFNZRKPGXswRszyQQjGs2FDxdim'

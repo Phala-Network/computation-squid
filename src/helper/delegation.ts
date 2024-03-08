@@ -1,5 +1,5 @@
 import {BigDecimal} from '@subsquid/big-decimal'
-import {type BasePool, type Delegation} from '../model'
+import type {BasePool, Delegation} from '../model'
 import {sum} from '../utils'
 
 export const updateDelegationValue = (
