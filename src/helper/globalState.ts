@@ -1,4 +1,4 @@
-import assert from 'assert'
+import assert from 'node:assert'
 import type {GlobalState} from '../model'
 import type {SubstrateBlock} from '../processor'
 import {phalaComputation} from '../types/storage'
@@ -39,4 +39,6 @@ export const updateTokenomicParameters = async (
     })
 
   Object.assign(globalState, tokenomicParameters)
+  assert(block.timestamp)
+  globalState.tokenomicUpdatedTime = new Date(block.timestamp)
 }

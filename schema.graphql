@@ -15,6 +15,7 @@ type GlobalState @entity {
 
   phaRate: BigDecimal!
   budgetPerBlock: BigDecimal!
+  tokenomicUpdatedTime: DateTime!
   vMax: BigDecimal!
   treasuryRatio: BigDecimal!
   re: BigDecimal!

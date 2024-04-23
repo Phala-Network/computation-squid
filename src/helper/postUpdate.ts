@@ -1,4 +1,4 @@
-import assert from 'assert'
+import assert from 'node:assert'
 import {BigDecimal} from '@subsquid/big-decimal'
 import {isBefore} from 'date-fns'
 import {groupBy} from 'lodash'

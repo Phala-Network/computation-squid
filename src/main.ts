@@ -1,4 +1,4 @@
-import assert from 'assert'
+import assert from 'node:assert'
 import {BigDecimal} from '@subsquid/big-decimal'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import {In, IsNull, Not} from 'typeorm'

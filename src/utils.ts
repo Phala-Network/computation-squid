@@ -1,7 +1,7 @@
-import assert from 'assert'
+import assert from 'node:assert'
 import {BigDecimal} from '@subsquid/big-decimal'
 import * as ss58 from '@subsquid/ss58'
-import type {Entity} from '@subsquid/typeorm-store'
+import type {Entity} from '@subsquid/typeorm-store/lib/store'
 import {isHex} from '@subsquid/util-internal-hex'
 import type {Ctx} from './processor'
 

@@ -53,6 +53,9 @@ export class GlobalState {
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     budgetPerBlock!: BigDecimal
 
+    @Column_("timestamp with time zone", {nullable: false})
+    tokenomicUpdatedTime!: Date
+
     @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
     vMax!: BigDecimal
 
