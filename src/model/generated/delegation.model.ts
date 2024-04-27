@@ -1,6 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_, OneToOne as OneToOne_, JoinColumn as JoinColumn_} from "typeorm"
-import * as marshal from "./marshal"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_, BigDecimalColumn as BigDecimalColumn_, DateTimeColumn as DateTimeColumn_, OneToOne as OneToOne_, JoinColumn as JoinColumn_} from "@subsquid/typeorm-store"
 import {Account} from "./account.model"
 import {BasePool} from "./basePool.model"
 import {Nft} from "./nft.model"
@@ -25,22 +24,22 @@ export class Delegation {
     @ManyToOne_(() => BasePool, {nullable: true})
     basePool!: BasePool
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     value!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     cost!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     shares!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     withdrawingValue!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     withdrawingShares!: BigDecimal
 
-    @Column_("timestamp with time zone", {nullable: true})
+    @DateTimeColumn_({nullable: true})
     withdrawalStartTime!: Date | undefined | null
 
     @Index_({unique: true})

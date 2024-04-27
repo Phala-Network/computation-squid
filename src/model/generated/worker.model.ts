@@ -1,4 +1,4 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToOne as OneToOne_, IntColumn as IntColumn_} from "@subsquid/typeorm-store"
 import {StakePool} from "./stakePool.model"
 import {Session} from "./session.model"
 
@@ -18,10 +18,12 @@ export class Worker {
     @ManyToOne_(() => StakePool, {nullable: true})
     stakePool!: StakePool | undefined | null
 
+    @OneToOne_(() => Session, e => e.worker)
+    session!: Session | undefined | null
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     confidenceLevel!: number
 
-    @Column_("int4", {nullable: true})
+    @IntColumn_({nullable: true})
     initialScore!: number | undefined | null
 }

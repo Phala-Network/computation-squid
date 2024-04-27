@@ -1,6 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, Index as Index_, JoinColumn as JoinColumn_} from "typeorm"
-import * as marshal from "./marshal"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, Index as Index_, JoinColumn as JoinColumn_, BigDecimalColumn as BigDecimalColumn_, IntColumn as IntColumn_, DateTimeColumn as DateTimeColumn_} from "@subsquid/typeorm-store"
 import {Worker} from "./worker.model"
 import {WorkerState} from "./_workerState"
 
@@ -21,30 +20,30 @@ export class Session {
     @JoinColumn_()
     worker!: Worker | undefined | null
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     stake!: BigDecimal
 
     @Column_("varchar", {length: 18, nullable: false})
     state!: WorkerState
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     v!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     ve!: BigDecimal
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     pInit!: number
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     pInstant!: number
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     totalReward!: BigDecimal
 
-    @Column_("timestamp with time zone", {nullable: true})
+    @DateTimeColumn_({nullable: true})
     coolingDownStartTime!: Date | undefined | null
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     shares!: BigDecimal
 }

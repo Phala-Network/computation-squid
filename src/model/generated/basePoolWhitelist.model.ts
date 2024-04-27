@@ -1,4 +1,4 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_, DateTimeColumn as DateTimeColumn_} from "@subsquid/typeorm-store"
 import {Account} from "./account.model"
 import {BasePool} from "./basePool.model"
 
@@ -22,6 +22,6 @@ export class BasePoolWhitelist {
     @ManyToOne_(() => BasePool, {nullable: true})
     basePool!: BasePool
 
-    @Column_("timestamp with time zone", {nullable: false})
+    @DateTimeColumn_({nullable: false})
     createTime!: Date
 }

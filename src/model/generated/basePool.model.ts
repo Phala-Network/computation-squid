@@ -1,6 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_, OneToOne as OneToOne_, JoinColumn as JoinColumn_, OneToMany as OneToMany_} from "typeorm"
-import * as marshal from "./marshal"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, BigIntColumn as BigIntColumn_, Index as Index_, IntColumn as IntColumn_, ManyToOne as ManyToOne_, OneToOne as OneToOne_, JoinColumn as JoinColumn_, BigDecimalColumn as BigDecimalColumn_, BooleanColumn as BooleanColumn_, OneToMany as OneToMany_} from "@subsquid/typeorm-store"
 import {Account} from "./account.model"
 import {BasePoolKind} from "./_basePoolKind"
 import {Vault} from "./vault.model"
@@ -24,13 +23,13 @@ export class BasePool {
      * numeric pid for sorting
      */
     @Index_()
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+    @BigIntColumn_({nullable: false})
     pid!: bigint
 
     /**
      * NFT collection id
      */
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     cid!: number
 
     @Index_()
@@ -49,42 +48,46 @@ export class BasePool {
     /**
      * decimal percentage, 1 means 100%
      */
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     commission!: BigDecimal
 
+    @OneToOne_(() => Vault, e => e.basePool)
+    vault!: Vault | undefined | null
 
+    @OneToOne_(() => StakePool, e => e.basePool)
+    stakePool!: StakePool | undefined | null
 
     @Index_()
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     aprMultiplier!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     totalShares!: BigDecimal
 
     @Index_()
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     totalValue!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     sharePrice!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     freeValue!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     releasingValue!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     withdrawingValue!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     withdrawingShares!: BigDecimal
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     delegatorCount!: number
 
     @Index_()
-    @Column_("bool", {nullable: false})
+    @BooleanColumn_({nullable: false})
     whitelistEnabled!: boolean
 
     @OneToMany_(() => BasePoolWhitelist, e => e.basePool)
@@ -93,6 +96,6 @@ export class BasePool {
     @OneToMany_(() => Delegation, e => e.basePool)
     delegations!: Delegation[]
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     cumulativeOwnerRewards!: BigDecimal
 }

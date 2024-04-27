@@ -1,6 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_} from "typeorm"
-import * as marshal from "./marshal"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, IntColumn as IntColumn_, Index as Index_, DateTimeColumn as DateTimeColumn_, BigDecimalColumn as BigDecimalColumn_} from "@subsquid/typeorm-store"
 
 @Entity_()
 export class GlobalStateSnapshot {
@@ -15,40 +14,40 @@ export class GlobalStateSnapshot {
      * block time
      */
     @Index_()
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     height!: number
 
     @Index_()
-    @Column_("timestamp with time zone", {nullable: false})
+    @DateTimeColumn_({nullable: false})
     updatedTime!: Date
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     totalValue!: BigDecimal
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     averageBlockTime!: number
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     averageApr!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     idleWorkerShares!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     cumulativeRewards!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     budgetPerBlock!: BigDecimal
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     workerCount!: number
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     idleWorkerCount!: number
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     budgetPerShare!: BigDecimal
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     delegatorCount!: number
 }

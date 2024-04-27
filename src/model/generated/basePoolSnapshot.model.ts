@@ -1,6 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_} from "typeorm"
-import * as marshal from "./marshal"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, DateTimeColumn as DateTimeColumn_, StringColumn as StringColumn_, BigDecimalColumn as BigDecimalColumn_, IntColumn as IntColumn_} from "@subsquid/typeorm-store"
 
 @Index_(["basePool", "updatedTime"], {unique: true})
 @Entity_()
@@ -15,51 +14,51 @@ export class BasePoolSnapshot {
     /**
      * block time
      */
-    @Column_("timestamp with time zone", {nullable: false})
+    @DateTimeColumn_({nullable: false})
     updatedTime!: Date
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     basePool!: string
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     commission!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     apr!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     totalShares!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     totalValue!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     sharePrice!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     freeValue!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     releasingValue!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     withdrawingValue!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     withdrawingShares!: BigDecimal
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     delegatorCount!: number
 
-    @Column_("int4", {nullable: true})
+    @IntColumn_({nullable: true})
     workerCount!: number | undefined | null
 
-    @Column_("int4", {nullable: true})
+    @IntColumn_({nullable: true})
     idleWorkerCount!: number | undefined | null
 
-    @Column_("int4", {nullable: true})
+    @IntColumn_({nullable: true})
     stakePoolCount!: number | undefined | null
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     cumulativeOwnerRewards!: BigDecimal
 }

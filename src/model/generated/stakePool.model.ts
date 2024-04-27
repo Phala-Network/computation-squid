@@ -1,6 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, Index as Index_, JoinColumn as JoinColumn_, OneToMany as OneToMany_} from "typeorm"
-import * as marshal from "./marshal"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, Index as Index_, JoinColumn as JoinColumn_, BigDecimalColumn as BigDecimalColumn_, IntColumn as IntColumn_, OneToMany as OneToMany_} from "@subsquid/typeorm-store"
 import {BasePool} from "./basePool.model"
 import {Worker} from "./worker.model"
 
@@ -24,25 +23,25 @@ export class StakePool {
     /**
      * null means infinite
      */
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: true})
+    @BigDecimalColumn_({nullable: true})
     capacity!: BigDecimal | undefined | null
 
     /**
      * null means infinite
      */
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: true})
+    @BigDecimalColumn_({nullable: true})
     delegable!: BigDecimal | undefined | null
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     ownerReward!: BigDecimal
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     workerCount!: number
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     idleWorkerCount!: number
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     idleWorkerShares!: BigDecimal
 
     @OneToMany_(() => Worker, e => e.stakePool)

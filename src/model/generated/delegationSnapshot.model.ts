@@ -1,6 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_} from "typeorm"
-import * as marshal from "./marshal"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, DateTimeColumn as DateTimeColumn_, StringColumn as StringColumn_, BigDecimalColumn as BigDecimalColumn_} from "@subsquid/typeorm-store"
 
 @Index_(["delegation", "updatedTime"], {unique: true})
 @Entity_()
@@ -15,15 +14,15 @@ export class DelegationSnapshot {
     /**
      * block time
      */
-    @Column_("timestamp with time zone", {nullable: false})
+    @DateTimeColumn_({nullable: false})
     updatedTime!: Date
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     delegation!: string
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     cost!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     value!: BigDecimal
 }

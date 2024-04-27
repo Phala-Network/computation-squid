@@ -1,4 +1,3 @@
-import {lookupArchive} from '@subsquid/archive-registry'
 import {
   type BlockHeader,
   type DataHandlerContext,
@@ -18,8 +17,7 @@ import {
 } from './types/events'
 
 export const processor = new SubstrateBatchProcessor()
-  .includeAllBlocks()
-  .setGateway(lookupArchive('khala', {release: 'ArrowSquid'}))
+  .setGateway('https://v2.archive.subsquid.io/network/khala')
   .setRpcEndpoint(RPC_ENDPOINT)
   .setBlockRange({
     from: INITIAL_BLOCK + 1,

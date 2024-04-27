@@ -1,6 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, OneToMany as OneToMany_} from "typeorm"
-import * as marshal from "./marshal"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, StringColumn as StringColumn_, Index as Index_, BigDecimalColumn as BigDecimalColumn_, IntColumn as IntColumn_, OneToMany as OneToMany_} from "@subsquid/typeorm-store"
 import {BasePool} from "./basePool.model"
 import {IdentityJudgement} from "./_identityJudgement"
 
@@ -16,9 +15,11 @@ export class Account {
     @PrimaryColumn_()
     id!: string
 
+    @OneToOne_(() => BasePool, e => e.account)
+    basePool!: BasePool | undefined | null
 
     @Index_()
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     identityDisplay!: string | undefined | null
 
     @Column_("varchar", {length: 10, nullable: true})
@@ -27,30 +28,30 @@ export class Account {
     @Column_("varchar", {length: 10, array: true, nullable: true})
     identityJudgements!: (IdentityJudgement)[] | undefined | null
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     stakePoolValue!: BigDecimal
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     stakePoolNftCount!: number
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     stakePoolAvgAprMultiplier!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     vaultValue!: BigDecimal
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     vaultNftCount!: number
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     vaultAvgAprMultiplier!: BigDecimal
 
     @OneToMany_(() => BasePool, e => e.owner)
     ownedPools!: BasePool[]
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     cumulativeStakePoolOwnerRewards!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     cumulativeVaultOwnerRewards!: BigDecimal
 }

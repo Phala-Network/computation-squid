@@ -1,4 +1,4 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_, IntColumn as IntColumn_, DateTimeColumn as DateTimeColumn_, OneToOne as OneToOne_} from "@subsquid/typeorm-store"
 import {Account} from "./account.model"
 import {Delegation} from "./delegation.model"
 
@@ -19,13 +19,15 @@ export class Nft {
     @ManyToOne_(() => Account, {nullable: true})
     owner!: Account
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     cid!: number
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     nftId!: number
 
-    @Column_("timestamp with time zone", {nullable: true})
+    @DateTimeColumn_({nullable: true})
     mintTime!: Date | undefined | null
 
+    @OneToOne_(() => Delegation, e => e.delegationNft)
+    delegation!: Delegation | undefined | null
 }

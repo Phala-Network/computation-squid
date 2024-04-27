@@ -1,6 +1,5 @@
 import {BigDecimal} from "@subsquid/big-decimal"
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_} from "typeorm"
-import * as marshal from "./marshal"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, DateTimeColumn as DateTimeColumn_, StringColumn as StringColumn_, IntColumn as IntColumn_, BigDecimalColumn as BigDecimalColumn_} from "@subsquid/typeorm-store"
 import {WorkerState} from "./_workerState"
 
 @Index_(["worker", "updatedTime"], {unique: true})
@@ -16,42 +15,42 @@ export class WorkerSnapshot {
     /**
      * block time
      */
-    @Column_("timestamp with time zone", {nullable: false})
+    @DateTimeColumn_({nullable: false})
     updatedTime!: Date
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     worker!: string
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     stakePool!: string
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     session!: string
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     confidenceLevel!: number
 
-    @Column_("int4", {nullable: true})
+    @IntColumn_({nullable: true})
     initialScore!: number | undefined | null
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     stake!: BigDecimal
 
     @Column_("varchar", {length: 18, nullable: false})
     state!: WorkerState
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     v!: BigDecimal
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     ve!: BigDecimal
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     pInit!: number
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     pInstant!: number
 
-    @Column_("numeric", {transformer: marshal.bigdecimalTransformer, nullable: false})
+    @BigDecimalColumn_({nullable: false})
     totalReward!: BigDecimal
 }
