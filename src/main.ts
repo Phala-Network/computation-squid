@@ -753,7 +753,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       ENABLE_SNAPSHOT &&
       isLastEventInBlock &&
       isSnapshotUpdateNeeded(block, globalState)
-    const shouldRefreshIdentity = FORCE_REFRESH_IDENTITY && ctx.isHead
+    const shouldRefreshIdentity =
+      isLastEventInHandler && FORCE_REFRESH_IDENTITY && ctx.isHead
     if (isLastEventInBlock) {
       for (const basePool of basePoolMap.values()) {
         fixBasePool(basePool)
