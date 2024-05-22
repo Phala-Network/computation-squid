@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import {BigDecimal} from '@subsquid/big-decimal'
 import {isBefore} from 'date-fns'
-import {groupBy} from 'lodash'
+import {group} from 'radash'
 import {CLEAR_WITHDRAWAL_DATE, CLEAR_WITHDRAWAL_THRESHOLD} from '../constants'
 import {
   type Account,
@@ -38,7 +38,7 @@ const postUpdate = (
   const blockDate = new Date(timestamp)
 
   const delegatorSet = new Set<string>()
-  const delegationAccountIdMap = groupBy(delegations, (x) => x.account.id)
+  const delegationAccountIdMap = group(delegations, (x) => x.account.id)
 
   if (!globalState.withdrawalDustCleared) {
     if (
