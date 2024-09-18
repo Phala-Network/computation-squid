@@ -117,6 +117,24 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   }
   const globalState = await ctx.store.findOneBy(GlobalState, {id: '0'})
   assert(globalState)
+  if (
+    globalState.idleWorkerPInit === 0 &&
+    globalState.idleWorkerPInstant === 0
+  ) {
+    const sessions = await ctx.store.find(Session, {
+      where: {state: WorkerState.WorkerIdle, worker: Not(IsNull())},
+    })
+    const idleWorkerPInit = sessions.reduce(
+      (sum, session) => sum + session.pInit,
+      0,
+    )
+    const idleWorkerPInstant = sessions.reduce(
+      (sum, session) => sum + session.pInstant,
+      0,
+    )
+    globalState.idleWorkerPInit = idleWorkerPInit
+    globalState.idleWorkerPInstant = idleWorkerPInstant
+  }
 
   const accountMap: Map<string, Account> = await ctx.store
     .find(Account)
@@ -568,6 +586,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         const stakePool = assertGet(stakePoolMap, worker.stakePool.id)
         stakePool.idleWorkerCount++
         globalState.idleWorkerCount++
+        globalState.idleWorkerPInit += session.pInit
+        globalState.idleWorkerPInstant += session.pInstant
         session.pInit = initP
         session.ve = initV
         session.v = initV
@@ -600,6 +620,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           updateStakePoolAprMultiplier(basePool, stakePool)
           stakePool.idleWorkerCount--
           globalState.idleWorkerCount--
+          globalState.idleWorkerPInit -= session.pInit
+          globalState.idleWorkerPInstant -= session.pInstant
         }
         session.state = WorkerState.WorkerCoolingDown
         session.coolingDownStartTime = blockTime
@@ -632,6 +654,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           session.state = WorkerState.WorkerUnresponsive
           stakePool.idleWorkerCount--
           globalState.idleWorkerCount--
+          globalState.idleWorkerPInit -= session.pInit
+          globalState.idleWorkerPInstant -= session.pInstant
           globalState.idleWorkerShares = globalState.idleWorkerShares.minus(
             session.shares,
           )
@@ -653,6 +677,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
         if (session.state === WorkerState.WorkerUnresponsive) {
           stakePool.idleWorkerCount++
           globalState.idleWorkerCount++
+          globalState.idleWorkerPInit += session.pInit
+          globalState.idleWorkerPInstant += session.pInstant
           globalState.idleWorkerShares = globalState.idleWorkerShares.plus(
             session.shares,
           )

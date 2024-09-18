@@ -1,4 +1,4 @@
-FROM imbios/bun-node:1-20-alpine as base
+FROM imbios/bun-node:1-20-alpine AS base
 WORKDIR /usr/src/app
 
 # install dependencies into temp directory

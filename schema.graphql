@@ -26,6 +26,9 @@ type GlobalState @entity {
   budgetPerShare: BigDecimal!
   delegatorCount: Int!
 
+  idleWorkerPInit: Int!
+  idleWorkerPInstant: Int!
+
   withdrawalDustCleared: Boolean
 }
 

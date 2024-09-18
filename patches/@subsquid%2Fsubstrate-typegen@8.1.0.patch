@@ -1,7 +1,7 @@
-diff --git a/node_modules/@subsquid/substrate-typegen/lib/typegen.js b/node_modules/@subsquid/substrate-typegen/lib/typegen.js
-index d828214..a7cb00e 100644
---- a/node_modules/@subsquid/substrate-typegen/lib/typegen.js
-+++ b/node_modules/@subsquid/substrate-typegen/lib/typegen.js
+diff --git a/lib/typegen.js b/lib/typegen.js
+index d82821491cabd566885ee6e41f4fbfdc1276c315..a7cb00eea7522d13cabb6c866f90b773b050834b 100644
+--- a/lib/typegen.js
++++ b/lib/typegen.js
 @@ -71,7 +71,7 @@ class Typegen {
              for (let [name, versions] of (0, util_1.groupBy)(palletItems, it => it.def.name)) {
                  out.line();

@@ -79,6 +79,12 @@ export class GlobalState {
     @IntColumn_({nullable: false})
     delegatorCount!: number
 
+    @IntColumn_({nullable: false})
+    idleWorkerPInit!: number
+
+    @IntColumn_({nullable: false})
+    idleWorkerPInstant!: number
+
     @BooleanColumn_({nullable: true})
     withdrawalDustCleared!: boolean | undefined | null
 }

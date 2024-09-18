@@ -125,6 +125,8 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
     cumulativeRewards: BigDecimal(0),
     workerCount: 0,
     idleWorkerCount: 0,
+    idleWorkerPInit: 0,
+    idleWorkerPInstant: 0,
     budgetPerShare: BigDecimal(0),
     delegatorCount: 0,
   })
@@ -190,6 +192,8 @@ const loadInitialState = async (ctx: Ctx): Promise<void> => {
           session.shares,
         )
         globalState.idleWorkerCount++
+        globalState.idleWorkerPInit += session.pInit
+        globalState.idleWorkerPInstant += session.pInstant
       }
     }
     sessionMap.set(session.id, session)

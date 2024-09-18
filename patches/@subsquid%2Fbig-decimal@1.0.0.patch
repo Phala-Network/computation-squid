@@ -1,0 +1,14 @@
+diff --git a/bigdecimal.js b/bigdecimal.js
+index a9d388752a7159a49e0f8b952de97e03b3166abe..28a2a90be58c7f1ff589d2156ee49d28dc4f220b 100644
+--- a/bigdecimal.js
++++ b/bigdecimal.js
+@@ -7,7 +7,8 @@ const Base = Big()
+ 
+ 
+ // adjust settings
+-Base.DP = 80
++Base.DP = 14
++Base.RM = 0
+ Base.NE = -19
+ 
+ 
