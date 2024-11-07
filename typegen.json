@@ -35,7 +35,8 @@
         "PoolWhitelistDeleted",
         "PoolWhitelistStakerAdded",
         "PoolWhitelistStakerRemoved"
-      ]
+      ],
+      "storage": ["Pools"]
     },
     "PhalaComputation": {
       "events": [

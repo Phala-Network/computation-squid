@@ -783,7 +783,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
       isLastEventInHandler && FORCE_REFRESH_IDENTITY && ctx.isHead
     if (isLastEventInBlock) {
       for (const basePool of basePoolMap.values()) {
-        fixBasePool(basePool)
+        await fixBasePool(block, basePool)
       }
     }
     if (isLastEventInHandler) {

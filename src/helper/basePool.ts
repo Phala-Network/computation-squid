@@ -7,6 +7,9 @@ import {
   StakePool,
   Vault,
 } from '../model'
+import type {SubstrateBlock} from '../processor'
+import {phalaBasePool} from '../types/storage'
+import {toBalance} from '../utils'
 
 export function createPool(
   kind: BasePoolKind.StakePool,
@@ -177,9 +180,20 @@ export const getApr = (
   return value
 }
 
-export const fixBasePool = (basePool: BasePool): void => {
+export const fixBasePool = async (
+  block: SubstrateBlock,
+  basePool: BasePool,
+): Promise<void> => {
   // free value is wPHA with minBalance
   if (basePool.freeValue.lt('0.0001')) {
     basePool.freeValue = BigDecimal(0)
+  }
+
+  if (basePool.totalShares.gt(1e10)) {
+    const res = await phalaBasePool.pools.v1199.get(block, BigInt(basePool.id))
+    if (res != null) {
+      basePool.totalShares = toBalance(res.value.basepool.totalShares)
+      updateSharePrice(basePool)
+    }
   }
 }
